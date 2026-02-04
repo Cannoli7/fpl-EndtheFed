@@ -169,7 +169,7 @@
         .standings-table th {
             background: #0f3460;
             padding: 12px;
-            text-align: left;
+            text-align: center;
             font-weight: 700;
             font-size: 0.9rem;
             text-transform: uppercase;
@@ -177,10 +177,19 @@
             border-bottom: 2px solid #1b5e20;
         }
         
+        .standings-table th.team-col {
+            text-align: left;
+        }
+        
         .standings-table td {
             padding: 14px 12px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             font-size: 1rem;
+            text-align: center;
+        }
+        
+        .standings-table td.team-col {
+            text-align: left;
         }
         
         .standings-table tr:nth-child(even) {
@@ -191,9 +200,9 @@
             background: rgba(255,255,255,0.08);
         }
         
-        .rank-col { text-align: center; font-weight: 800; color: #2ecc71; width: 60px; }
+        .rank-col { font-weight: 800; color: #fff; width: 60px; }
         .team-col { font-weight: 600; }
-        .stat-col { text-align: center; width: 80px; }
+        .stat-col { width: 80px; }
         
         .rank-1 { color: #f1c40f; font-size: 1.2rem; }
         .rank-2 { color: #bdc3c7; }
@@ -546,7 +555,7 @@
                 html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
                 html += `<td class="stat-col">${team.points_for || 0}</td>`;
                 html += `<td class="stat-col">${team.points_against || 0}</td>`;
-                html += `<td class="stat-col"><strong style="color:#2ecc71;">${team.total || 0}</strong></td>`;
+                html += `<td class="stat-col"><strong>${team.total || 0}</strong></td>`;
                 html += '</tr>';
             });
             
