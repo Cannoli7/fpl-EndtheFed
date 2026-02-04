@@ -364,8 +364,8 @@
         <span></span>
     </div>
     <div id="menu-dropdown" style="display:none;position:fixed;top:60px;left:10px;background:#0f3460;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;min-width:200px;">
-        <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Matchups</div>
-        <div id="menu-standings" style="padding:15px 20px;cursor:pointer;font-weight:600;">🏆 Standings</div>
+        <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
+        <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;font-weight:600;">📊 Matchups</div>
     </div>
     <div class="nav">
         <button id="btn-prev">◀ Prev</button>
@@ -601,7 +601,8 @@
                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
                 const entry = entryMap[team.league_entry] || { entry_name: 'Unknown', player_name: 'Unknown' };
                 const hsw = hswCounts[team.league_entry] || 0;
-                const hswDisplay = hsw % 1 === 0 ? hsw : hsw.toFixed(2);
+                // Remove trailing zeros: 1.50 -> 1.5, 0.50 -> 0.5, 1.00 -> 1
+                const hswDisplay = hsw % 1 === 0 ? hsw : hsw.toString().replace(/\.?0+$/, '');
                 
                 html += '<tr>';
                 html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
@@ -610,8 +611,8 @@
                 html += `<td class="stat-col">${team.matches_won || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
-                html += `<td class="stat-col">${team.points_for || 0}</td>`;
-                html += `<td class="stat-col">${team.points_against || 0}</td>`;
+                html += `<td class="stat-col pf-${index}">${team.points_for || 0}</td>`;
+                html += `<td class="stat-col pa-${index}">${team.points_against || 0}</td>`;
                 html += `<td class="stat-col"><strong>${hswDisplay}</strong></td>`;
                 html += `<td class="stat-col"><strong>${team.total || 0}</strong></td>`;
                 html += '</tr>';
@@ -619,6 +620,38 @@
             
             html += '</tbody></table>';
             content.innerHTML = html;
+            
+            // Apply color gradients after table is rendered
+            setTimeout(() => {
+                // Get all PF and PA values
+                const pfValues = standings.map(t => t.points_for || 0);
+                const paValues = standings.map(t => t.points_against || 0);
+                
+                const maxPF = Math.max(...pfValues);
+                const minPF = Math.min(...pfValues);
+                const maxPA = Math.max(...paValues);
+                const minPA = Math.min(...paValues);
+                
+                standings.forEach((team, index) => {
+                    // PF gradient: green (high) to white (low)
+                    const pfPercent = (team.points_for - minPF) / (maxPF - minPF);
+                    const pfGreen = Math.round(46 + (255 - 46) * (1 - pfPercent));
+                    const pfColor = `rgb(${pfGreen}, ${Math.round(204 + (255 - 204) * (1 - pfPercent))}, ${Math.round(113 + (255 - 113) * (1 - pfPercent))})`;
+                    
+                    // PA gradient: red (high) to white (low)
+                    const paPercent = (team.points_against - minPA) / (maxPA - minPA);
+                    const paRed = Math.round(231 * paPercent + 255 * (1 - paPercent));
+                    const paGreen = Math.round(76 * paPercent + 255 * (1 - paPercent));
+                    const paBlue = Math.round(60 * paPercent + 255 * (1 - paPercent));
+                    const paColor = `rgb(${paRed}, ${paGreen}, ${paBlue})`;
+                    
+                    const pfCell = document.querySelector(`.pf-${index}`);
+                    const paCell = document.querySelector(`.pa-${index}`);
+                    
+                    if (pfCell) pfCell.style.color = pfColor;
+                    if (paCell) paCell.style.color = paColor;
+                });
+            }, 0);
         }
 
         async function loadGameweek(gw) {
