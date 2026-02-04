@@ -178,43 +178,48 @@
             .p-left, .p-right { 
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 4px;
+                gap: 3px;
             }
             
             .p-right {
                 align-items: flex-end;
             }
             
-            /* Top row with jersey and name */
-            .p-left > *, .p-right > * {
-                width: 100%;
+            .p-jersey { 
+                width: 20px;
+                height: 25px;
+                position: absolute;
+                margin-left: -24px;
             }
             
-            .p-left .p-jersey, .p-right .p-jersey {
-                display: none;
+            .p-right .p-jersey {
+                margin-left: 0;
+                margin-right: -24px;
             }
             
             .p-info-wrap { 
-                gap: 3px;
+                gap: 2px;
                 width: 100%;
+                padding-left: 0;
             }
             
             .p-name-row {
                 display: flex;
                 align-items: center;
-                gap: 4px;
+                gap: 3px;
                 width: 100%;
             }
             
             .p-name { 
                 font-size: 0.8rem;
-                max-width: none;
-                flex: 1;
+                max-width: 90px;
+                flex-shrink: 1;
             }
             
             .pos-badge { 
-                font-size: 0.7rem !important; 
-                padding: 1px 3px !important;
+                font-size: 0.65rem !important; 
+                padding: 1px 2px !important;
+                flex-shrink: 0;
             }
             
             .p-fixture { 
@@ -224,17 +229,17 @@
             
             /* Stats go on their own line below */
             .p-stats { 
-                gap: 4px;
+                gap: 3px;
                 width: 100%;
                 justify-content: flex-start !important;
                 flex-direction: row !important;
             }
             
-            .stat-mp { font-size: 0.7rem !important; }
-            .stat-cs { font-size: 1rem !important; }
-            .stat-icon { font-size: 0.95rem; }
+            .stat-mp { font-size: 0.65rem !important; }
+            .stat-cs { font-size: 0.95rem !important; }
+            .stat-icon { font-size: 0.9rem; }
             
-            .card-yellow, .card-red { width: 10px; height: 14px; }
+            .card-yellow, .card-red { width: 9px; height: 13px; }
             
             .p-score { 
                 font-size: 1rem;
