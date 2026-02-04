@@ -184,6 +184,15 @@
             
             .p-right {
                 justify-content: flex-end;
+                flex-direction: row-reverse;
+            }
+            
+            .p-right .p-info-wrap {
+                text-align: right;
+            }
+            
+            .p-right .p-name-row {
+                flex-direction: row-reverse;
             }
             
             .p-jersey { 
@@ -407,15 +416,15 @@
                             : '';
 
                         const rightName = player2
-                            ? `<div class="p-info-wrap">
+                            ? `<img src="${getJerseyUrl(player2.team)}" class="p-jersey">
+                               <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player2.name}</span>
                                        <span class="pos-badge pos-${player2.pos}">${player2.pos}</span>
                                    </div>
                                    <span class="p-fixture">${getFixtureStr(player2)}</span>
                                </div>
-                               <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
-                               <img src="${getJerseyUrl(player2.team)}" class="p-jersey">`
+                               <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>`
                             : '';
 
                         return `<div class="row ${isBench ? 'bench' : ''}">
