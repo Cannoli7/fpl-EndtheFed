@@ -20,6 +20,10 @@
         }
         .topbar h1 { font-size: 1.1rem; font-weight: 600; }
         
+        #menu-dropdown > div:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
         .nav {
             display: flex;
             align-items: center;
@@ -346,9 +350,13 @@
 </head>
 <body>
     <div class="topbar">
-        <span style="font-size:1.9rem">☰</span>
+        <button id="menu-btn" style="background:none;border:none;color:#fff;font-size:1.9rem;cursor:pointer;padding:0;">☰</button>
         <h1>⚽ FPL Draft Matchups</h1>
-        <button id="view-toggle" style="background:#2ecc71;border:none;color:#fff;padding:8px 16px;border-radius:5px;cursor:pointer;font-size:0.9rem;">Standings</button>
+        <span></span>
+    </div>
+    <div id="menu-dropdown" style="display:none;position:fixed;top:60px;left:10px;background:#0f3460;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;min-width:200px;">
+        <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Matchups</div>
+        <div id="menu-standings" style="padding:15px 20px;cursor:pointer;font-weight:600;">🏆 Standings</div>
     </div>
     <div class="nav">
         <button id="btn-prev">◀ Prev</button>
@@ -393,20 +401,33 @@
             document.getElementById('btn-prev').onclick = () => { if (currentGW > 1) loadGameweek(currentGW - 1); };
             document.getElementById('btn-next').onclick = () => { if (currentGW < 38) loadGameweek(currentGW + 1); };
             
-            // Toggle between matchups and standings
-            document.getElementById('view-toggle').onclick = () => {
-                const btn = document.getElementById('view-toggle');
-                const nav = document.querySelector('.nav');
-                if (currentView === 'matchups') {
-                    currentView = 'standings';
-                    btn.textContent = 'Matchups';
-                    showStandings();
-                } else {
-                    currentView = 'matchups';
-                    btn.textContent = 'Standings';
-                    nav.style.display = 'flex';
-                    loadGameweek(currentGW);
+            // Menu toggle
+            const menuBtn = document.getElementById('menu-btn');
+            const menuDropdown = document.getElementById('menu-dropdown');
+            menuBtn.onclick = () => {
+                menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
+            };
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) {
+                    menuDropdown.style.display = 'none';
                 }
+            });
+            
+            // Menu options
+            document.getElementById('menu-matchups').onclick = () => {
+                currentView = 'matchups';
+                const nav = document.querySelector('.nav');
+                nav.style.display = 'flex';
+                loadGameweek(currentGW);
+                menuDropdown.style.display = 'none';
+            };
+            
+            document.getElementById('menu-standings').onclick = () => {
+                currentView = 'standings';
+                showStandings();
+                menuDropdown.style.display = 'none';
             };
             
             // Auto-refresh every 60 seconds (only for matchups view)
@@ -492,6 +513,15 @@
             // Get standings from league data
             const standings = leagueData.standings || [];
             
+            // Create a map of league_entry_id to entry details
+            const entryMap = {};
+            leagueData.league_entries.forEach(e => {
+                entryMap[e.id] = { 
+                    entry_name: e.entry_name, 
+                    player_name: e.player_first_name + ' ' + e.player_last_name 
+                };
+            });
+            
             let html = '<table class="standings-table"><thead><tr>';
             html += '<th class="rank-col">Rank</th>';
             html += '<th class="team-col">Team</th>';
@@ -506,9 +536,10 @@
             
             standings.forEach((team, index) => {
                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                const entry = entryMap[team.league_entry] || { entry_name: 'Unknown', player_name: 'Unknown' };
                 html += '<tr>';
                 html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
-                html += `<td class="team-col"><strong>${team.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${team.player_name}</span></td>`;
+                html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
                 html += `<td class="stat-col">${team.matches_played || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_won || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
