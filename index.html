@@ -326,7 +326,7 @@
 
         function getPlayerStats(elementId, liveData) {
             const el = liveData.elements[String(elementId)];
-            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0 };
+            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0, saves: 0, own_goals: 0 };
             return {
                 mp: el.stats.minutes || 0,
                 g: el.stats.goals_scored || 0,
@@ -334,7 +334,9 @@
                 cs: el.stats.clean_sheets || 0,
                 yc: el.stats.yellow_cards || 0,
                 rc: el.stats.red_cards || 0,
-                bonus: el.stats.bonus || 0
+                bonus: el.stats.bonus || 0,
+                saves: el.stats.saves || 0,
+                own_goals: el.stats.own_goals || 0
             };
         }
 
@@ -342,8 +344,14 @@
             let html = '';
             if (stats.mp > 0) html += `<span class="stat-mp">${stats.mp}'</span>`;
             for (let i = 0; i < stats.g; i++) html += `<span class="stat-icon">⚽</span>`;
+            for (let i = 0; i < stats.own_goals; i++) html += `<span class="stat-icon">🔴</span>`;
             for (let i = 0; i < stats.a; i++) html += `<span class="stat-icon">👟</span>`;
             if (stats.cs > 0 && position !== 'F') html += `<span class="stat-cs">🛡️</span>`;
+            // Goalie gloves - one per 3 saves
+            if (position === 'GK' && stats.saves > 0) {
+                const gloves = Math.floor(stats.saves / 3);
+                for (let i = 0; i < gloves; i++) html += `<span class="stat-icon">🧤</span>`;
+            }
             if (stats.bonus === 3) html += `<span class="stat-icon">🥇</span>`;
             else if (stats.bonus === 2) html += `<span class="stat-icon">🥈</span>`;
             else if (stats.bonus === 1) html += `<span class="stat-icon">🥉</span>`;
@@ -352,8 +360,9 @@
             return html;
         }
 
-        function getJerseyUrl(teamId) {
-            return `https://draft.premierleague.com/img/shirts/standard/shirt_${teamCodeMap[teamId]}-66.png`;
+        function getJerseyUrl(teamId, position) {
+            const jerseyType = position === 'GK' ? 'shirt_goalkeeper' : 'shirt';
+            return `https://draft.premierleague.com/img/shirts/standard/${jerseyType}_${teamCodeMap[teamId]}-66.png`;
         }
 
         async function loadGameweek(gw) {
@@ -416,7 +425,7 @@
                         const stats2 = p2 ? getPlayerStats(p2.element, liveData) : null;
 
                         const leftName = player1
-                            ? `<img src="${getJerseyUrl(player1.team)}" class="p-jersey">
+                            ? `<img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player1.name}</span>
@@ -436,7 +445,7 @@
                                    </div>
                                    <span class="p-fixture">${getFixtureStr(player2)}</span>
                                </div>
-                               <img src="${getJerseyUrl(player2.team)}" class="p-jersey">`
+                               <img src="${getJerseyUrl(player2.team, player2.pos)}" class="p-jersey">`
                             : '';
 
                         return `<div class="row ${isBench ? 'bench' : ''}">
