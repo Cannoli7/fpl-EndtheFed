@@ -527,9 +527,56 @@
             leagueData.league_entries.forEach(e => {
                 entryMap[e.id] = { 
                     entry_name: e.entry_name, 
-                    player_name: e.player_first_name + ' ' + e.player_last_name 
+                    player_name: e.player_first_name + ' ' + e.player_last_name,
+                    entry_id: e.entry_id
                 };
             });
+            
+            // Calculate High Score Weeks for each team
+            const hswCounts = {};
+            const matches = leagueData.matches || [];
+            
+            // Group matches by gameweek
+            const matchesByGW = {};
+            matches.forEach(match => {
+                if (!matchesByGW[match.event]) matchesByGW[match.event] = [];
+                matchesByGW[match.event].push(match);
+            });
+            
+            // For each gameweek, find the highest scorer(s)
+            for (const gw in matchesByGW) {
+                let highestScore = 0;
+                const teamScores = {};
+                
+                // Collect all team scores for this gameweek
+                matchesByGW[gw].forEach(match => {
+                    teamScores[match.league_entry_1] = match.league_entry_1_points;
+                    teamScores[match.league_entry_2] = match.league_entry_2_points;
+                    
+                    if (match.league_entry_1_points > highestScore) {
+                        highestScore = match.league_entry_1_points;
+                    }
+                    if (match.league_entry_2_points > highestScore) {
+                        highestScore = match.league_entry_2_points;
+                    }
+                });
+                
+                // Find all teams with the highest score
+                const highScorers = [];
+                for (const entryId in teamScores) {
+                    if (teamScores[entryId] === highestScore) {
+                        highScorers.push(entryId);
+                    }
+                }
+                
+                // Divide 1 point among all high scorers
+                if (highScorers.length > 0) {
+                    const pointsPerTeam = 1 / highScorers.length;
+                    highScorers.forEach(entryId => {
+                        hswCounts[entryId] = (hswCounts[entryId] || 0) + pointsPerTeam;
+                    });
+                }
+            }
             
             let html = '<table class="standings-table"><thead><tr>';
             html += '<th class="rank-col">Rank</th>';
@@ -540,12 +587,16 @@
             html += '<th class="stat-col">L</th>';
             html += '<th class="stat-col">PF</th>';
             html += '<th class="stat-col">PA</th>';
+            html += '<th class="stat-col">HSW</th>';
             html += '<th class="stat-col">Points</th>';
             html += '</tr></thead><tbody>';
             
             standings.forEach((team, index) => {
                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
                 const entry = entryMap[team.league_entry] || { entry_name: 'Unknown', player_name: 'Unknown' };
+                const hsw = hswCounts[team.league_entry] || 0;
+                const hswDisplay = hsw % 1 === 0 ? hsw : hsw.toFixed(2);
+                
                 html += '<tr>';
                 html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
                 html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
@@ -555,6 +606,7 @@
                 html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
                 html += `<td class="stat-col">${team.points_for || 0}</td>`;
                 html += `<td class="stat-col">${team.points_against || 0}</td>`;
+                html += `<td class="stat-col"><strong>${hswDisplay}</strong></td>`;
                 html += `<td class="stat-col"><strong>${team.total || 0}</strong></td>`;
                 html += '</tr>';
             });
