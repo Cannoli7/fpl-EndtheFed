@@ -422,7 +422,7 @@
                             : '';
 
                         const rightName = player2
-                            ? `<img src="${getJerseyUrl(player2.team)}" class="p-jersey">
+                            ? `<div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player2.name}</span>
@@ -430,7 +430,7 @@
                                    </div>
                                    <span class="p-fixture">${getFixtureStr(player2)}</span>
                                </div>
-                               <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>`
+                               <img src="${getJerseyUrl(player2.team)}" class="p-jersey">`
                             : '';
 
                         return `<div class="row ${isBench ? 'bench' : ''}">
