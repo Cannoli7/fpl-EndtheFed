@@ -124,6 +124,14 @@
         .card-yellow { display: inline-block; width: 14px; height: 20px; background: #f1c40f; border-radius: 2px; }
         .card-red { display: inline-block; width: 14px; height: 20px; background: #e74c3c; border-radius: 2px; }
         
+        .goal-conceded-icon {
+            display: inline-block;
+            width: 1.2em;
+            height: 1.2em;
+            vertical-align: middle;
+            position: relative;
+        }
+        
         .p-score { font-size: 1.2rem; font-weight: 800; color: #2ecc71; min-width: 30px; }
         .p-score-left { text-align: right; padding-right: 6px; }
         .p-score-right { text-align: left; padding-left: 6px; }
@@ -326,7 +334,7 @@
 
         function getPlayerStats(elementId, liveData) {
             const el = liveData.elements[String(elementId)];
-            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0, saves: 0, own_goals: 0 };
+            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0, saves: 0, own_goals: 0, goals_conceded: 0, penalties_missed: 0, penalties_saved: 0 };
             return {
                 mp: el.stats.minutes || 0,
                 g: el.stats.goals_scored || 0,
@@ -336,7 +344,10 @@
                 rc: el.stats.red_cards || 0,
                 bonus: el.stats.bonus || 0,
                 saves: el.stats.saves || 0,
-                own_goals: el.stats.own_goals || 0
+                own_goals: el.stats.own_goals || 0,
+                goals_conceded: el.stats.goals_conceded || 0,
+                penalties_missed: el.stats.penalties_missed || 0,
+                penalties_saved: el.stats.penalties_saved || 0
             };
         }
 
@@ -352,6 +363,22 @@
                 const gloves = Math.floor(stats.saves / 3);
                 for (let i = 0; i < gloves; i++) html += `<span class="stat-icon">🧤</span>`;
             }
+            // Goals conceded penalty - custom SVG soccer ball with X (for GK and D only)
+            if ((position === 'GK' || position === 'D') && stats.goals_conceded > 0) {
+                const concededPenalties = Math.floor(stats.goals_conceded / 2);
+                const svgIcon = `<svg class="goal-conceded-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="#fff" stroke="#000" stroke-width="1.5"/>
+                    <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12" stroke="#000" stroke-width="1"/>
+                    <path d="M6 6 L10 10 M14 14 L18 18 M6 18 L10 14 M14 10 L18 6" stroke="#000" stroke-width="1"/>
+                    <line x1="6" y1="6" x2="18" y2="18" stroke="#e74c3c" stroke-width="2.5"/>
+                    <line x1="18" y1="6" x2="6" y2="18" stroke="#e74c3c" stroke-width="2.5"/>
+                </svg>`;
+                for (let i = 0; i < concededPenalties; i++) html += svgIcon;
+            }
+            // Penalty saved by keeper
+            for (let i = 0; i < stats.penalties_saved; i++) html += `<span class="stat-icon">🦸</span>`;
+            // Penalty missed by any player
+            for (let i = 0; i < stats.penalties_missed; i++) html += `<span class="stat-icon">❌</span>`;
             if (stats.bonus === 3) html += `<span class="stat-icon">🥇</span>`;
             else if (stats.bonus === 2) html += `<span class="stat-icon">🥈</span>`;
             else if (stats.bonus === 1) html += `<span class="stat-icon">🥉</span>`;
@@ -361,8 +388,11 @@
         }
 
         function getJerseyUrl(teamId, position) {
-            const jerseyType = position === 'GK' ? 'shirt_goalkeeper' : 'shirt';
-            return `https://draft.premierleague.com/img/shirts/standard/${jerseyType}_${teamCodeMap[teamId]}-66.png`;
+            const teamCode = teamCodeMap[teamId];
+            if (position === 'GK') {
+                return `https://draft.premierleague.com/img/shirts/standard/shirt_${teamCode}_1-66.png`;
+            }
+            return `https://draft.premierleague.com/img/shirts/standard/shirt_${teamCode}-66.png`;
         }
 
         async function loadGameweek(gw) {
