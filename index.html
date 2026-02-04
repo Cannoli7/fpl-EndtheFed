@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPL Draft Matchups</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #fff; overflow-x: hidden; }
+        
+        .topbar {
+            background: #1b5e20;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .topbar h1 { font-size: 1.1rem; font-weight: 600; }
+        
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #16213e;
+            padding: 12px;
+        }
+        .nav button {
+            background: #0f3460;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-radius: 5px;
+        }
+        .nav button:hover { background: #1a5276; }
+        .nav h2 { color: #fff; margin: 0 20px; font-size: 1.3rem; font-weight: 700; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 15px; }
+        .card {
+            background: #16213e;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            background: #0f3460;
+            padding: 20px 18px;
+        }
+        .header-team { flex: 1; text-align: center; }
+        .owner-name {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .team-name { font-size: 1.4rem; font-weight: 700; color: #ecf0f1; margin-bottom: 6px; }
+        .team-score { font-size: 2.5rem; font-weight: 800; color: #2ecc71; }
+        .header-vs { font-size: 1.1rem; font-weight: 700; color: #7f8c8d; }
+        
+        .row {
+            display: grid;
+            grid-template-columns: 1fr auto 20px auto 1fr;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            min-height: 50px;
+        }
+        .row:nth-child(even) { background: rgba(255,255,255,0.03); }
+        
+        .p-left { display: flex; align-items: center; gap: 8px; justify-content: flex-start; }
+        .p-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+        
+        .p-jersey { width: 28px; height: 35px; object-fit: contain; flex-shrink: 0; }
+        
+        .p-info-wrap { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+        .p-left .p-info-wrap { text-align: left; }
+        .p-right .p-info-wrap { text-align: right; }
+        
+        .p-name-row { display: flex; align-items: center; gap: 3px; }
+        .p-right .p-name-row { flex-direction: row-reverse; }
+        
+        .p-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ecf0f1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+        
+        .pos-badge {
+            font-size: 0.9rem !important;
+            font-weight: 700 !important;
+            padding: 1px 3px !important;
+            border-radius: 2px !important;
+            flex-shrink: 0 !important;
+            line-height: 1 !important;
+            display: inline-block !important;
+        }
+        .pos-GK { background: #e3a019 !important; color: #fff !important; }
+        .pos-D { background: #00a551 !important; color: #fff !important; }
+        .pos-M { background: #1e88e5 !important; color: #fff !important; }
+        .pos-F { background: #e53935 !important; color: #fff !important; }
+        
+        .p-fixture { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; }
+        
+        .p-stats { display: flex; gap: 5px; align-items: center; }
+        .p-right .p-stats { justify-content: flex-end; flex-direction: row-reverse; }
+        
+        .stat-mp { font-size: 0.9rem !important; font-weight: 700 !important; color: #bbb !important; }
+        .stat-cs { font-size: 1.4rem !important; }
+        .stat-icon { font-size: 1.2rem; }
+        
+        .card-yellow { display: inline-block; width: 14px; height: 20px; background: #f1c40f; border-radius: 2px; }
+        .card-red { display: inline-block; width: 14px; height: 20px; background: #e74c3c; border-radius: 2px; }
+        
+        .p-score { font-size: 1.2rem; font-weight: 800; color: #2ecc71; min-width: 30px; }
+        .p-score-left { text-align: right; padding-right: 6px; }
+        .p-score-right { text-align: left; padding-left: 6px; }
+        
+        .divider { width: 2px; height: 40px; background: rgba(255,255,255,0.15); justify-self: center; }
+        
+        .bench-label {
+            background: #0f3460;
+            color: #7f8c8d;
+            text-align: center;
+            font-size: 0.75rem;
+            padding: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .bench .p-name { color: #7f8c8d; }
+        .bench .p-score { color: #7f8c8d; }
+        .bench .pos-badge { opacity: 0.7; }
+        .bench .p-jersey { opacity: 0.6; }
+        
+        .loading { color: #fff; text-align: center; padding: 50px; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <span style="font-size:1.9rem">☰</span>
+        <h1>⚽ FPL Draft Matchups</h1>
+        <span></span>
+    </div>
+    <div class="nav">
+        <button id="btn-prev">◀ Prev</button>
+        <h2 id="gw-title">Gameweek 24</h2>
+        <button id="btn-next">Next ▶</button>
+    </div>
+    <div class="container">
+        <div id="content" class="loading">Loading matchups...</div>
+    </div>
+
+    <script>
+        const LEAGUE_ID = 8308; // CHANGE THIS TO YOUR LEAGUE ID
+        const CURRENT_GW = 24;
+        
+        let currentGW = CURRENT_GW;
+        let leagueData = null;
+        let playerMap = {};
+        let teamMap = {};
+        let teamCodeMap = {};
+        const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
+
+        async function fetchData(endpoint) {
+            const res = await fetch(`/api/fpl/${endpoint}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        }
+
+        async function init() {
+            const staticData = await fetchData('bootstrap-static');
+            staticData.elements.forEach(el => {
+                playerMap[el.id] = { name: el.web_name, pos: POS[el.element_type] || '?', team: el.team };
+            });
+            staticData.teams.forEach(t => {
+                teamMap[t.id] = t.short_name;
+                teamCodeMap[t.id] = t.code;
+            });
+            
+            await loadGameweek(currentGW);
+            
+            document.getElementById('btn-prev').onclick = () => { if (currentGW > 1) loadGameweek(currentGW - 1); };
+            document.getElementById('btn-next').onclick = () => { if (currentGW < 38) loadGameweek(currentGW + 1); };
+        }
+
+        function getPlayerStats(elementId, liveData) {
+            const el = liveData.elements[String(elementId)];
+            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0 };
+            return {
+                mp: el.stats.minutes || 0,
+                g: el.stats.goals_scored || 0,
+                a: el.stats.assists || 0,
+                cs: el.stats.clean_sheets || 0,
+                yc: el.stats.yellow_cards || 0,
+                rc: el.stats.red_cards || 0,
+                bonus: el.stats.bonus || 0
+            };
+        }
+
+        function buildStatsHtml(stats, position) {
+            let html = '';
+            if (stats.mp > 0) html += `<span class="stat-mp">${stats.mp}'</span>`;
+            for (let i = 0; i < stats.g; i++) html += `<span class="stat-icon">⚽</span>`;
+            for (let i = 0; i < stats.a; i++) html += `<span class="stat-icon">👟</span>`;
+            if (stats.cs > 0 && position !== 'F') html += `<span class="stat-cs">🛡️</span>`;
+            if (stats.bonus === 3) html += `<span class="stat-icon">🥇</span>`;
+            else if (stats.bonus === 2) html += `<span class="stat-icon">🥈</span>`;
+            else if (stats.bonus === 1) html += `<span class="stat-icon">🥉</span>`;
+            for (let i = 0; i < stats.yc; i++) html += `<span class="card-yellow"></span>`;
+            for (let i = 0; i < stats.rc; i++) html += `<span class="card-red"></span>`;
+            return html;
+        }
+
+        function getJerseyUrl(teamId) {
+            return `https://draft.premierleague.com/img/shirts/standard/shirt_${teamCodeMap[teamId]}-66.png`;
+        }
+
+        async function loadGameweek(gw) {
+            const content = document.getElementById('content');
+            content.innerHTML = '<div class="loading">Loading gameweek ' + gw + '...</div>';
+            currentGW = gw;
+            document.getElementById('gw-title').textContent = `Gameweek ${gw}`;
+
+            if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
+
+            const entryMap = {};
+            leagueData.league_entries.forEach(e => {
+                entryMap[e.id] = { entry_id: e.entry_id, name: e.entry_name, owner: e.player_first_name };
+            });
+
+            const matches = leagueData.matches.filter(m => m.event === gw);
+            const liveData = await fetchData(`event/${gw}/live`);
+            const fixtures = liveData.fixtures || [];
+
+            const getFixtureStr = (player) => {
+                if (!player) return '';
+                const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
+                if (fix) {
+                    const isHome = fix.team_h === player.team;
+                    const opp = teamMap[isHome ? fix.team_a : fix.team_h] || '';
+                    const vs = isHome ? 'vs' : '@';
+                    const scoreStr = (fix.team_h_score !== null) ? ` ${fix.team_h_score}-${fix.team_a_score}` : '';
+                    return `${teamMap[player.team] || ''} ${vs} ${opp}${scoreStr}`;
+                }
+                return teamMap[player.team] || '';
+            };
+
+            let html = '';
+
+            for (const match of matches) {
+                try {
+                    const t1 = entryMap[match.league_entry_1];
+                    const t2 = entryMap[match.league_entry_2];
+                    const entry1 = await fetchData(`entry/${t1.entry_id}/event/${gw}`);
+                    const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
+
+                    const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
+                        return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
+                    }, 0);
+
+                    const t1Score = getScore(entry1.picks);
+                    const t2Score = getScore(entry2.picks);
+
+                    const starters1 = entry1.picks.filter(p => p.position <= 11);
+                    const bench1 = entry1.picks.filter(p => p.position > 11);
+                    const starters2 = entry2.picks.filter(p => p.position <= 11);
+                    const bench2 = entry2.picks.filter(p => p.position > 11);
+
+                    const makeRow = (p1, p2, isBench) => {
+                        const player1 = p1 ? playerMap[p1.element] || {name:'?', pos:'?', team:0} : null;
+                        const player2 = p2 ? playerMap[p2.element] || {name:'?', pos:'?', team:0} : null;
+                        const pts1 = p1 ? (liveData.elements[String(p1.element)]?.stats?.total_points || 0) : 0;
+                        const pts2 = p2 ? (liveData.elements[String(p2.element)]?.stats?.total_points || 0) : 0;
+                        const stats1 = p1 ? getPlayerStats(p1.element, liveData) : null;
+                        const stats2 = p2 ? getPlayerStats(p2.element, liveData) : null;
+
+                        const leftName = player1
+                            ? `<img src="${getJerseyUrl(player1.team)}" class="p-jersey">
+                               <div class="p-info-wrap">
+                                   <div class="p-name-row">
+                                       <span class="p-name">${player1.name}</span>
+                                       <span class="pos-badge pos-${player1.pos}">${player1.pos}</span>
+                                   </div>
+                                   <span class="p-fixture">${getFixtureStr(player1)}</span>
+                               </div>
+                               <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>`
+                            : '';
+
+                        const rightName = player2
+                            ? `<div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
+                               <div class="p-info-wrap">
+                                   <div class="p-name-row">
+                                       <span class="p-name">${player2.name}</span>
+                                       <span class="pos-badge pos-${player2.pos}">${player2.pos}</span>
+                                   </div>
+                                   <span class="p-fixture">${getFixtureStr(player2)}</span>
+                               </div>
+                               <img src="${getJerseyUrl(player2.team)}" class="p-jersey">`
+                            : '';
+
+                        return `<div class="row ${isBench ? 'bench' : ''}">
+                            <div class="p-left">${leftName}</div>
+                            <div class="p-score p-score-left">${player1 ? pts1 : ''}</div>
+                            <div class="divider"></div>
+                            <div class="p-score p-score-right">${player2 ? pts2 : ''}</div>
+                            <div class="p-right">${rightName}</div>
+                        </div>`;
+                    };
+
+                    let rows = '';
+                    for (let i = 0; i < 11; i++) rows += makeRow(starters1[i], starters2[i], false);
+
+                    let benchRows = '';
+                    for (let i = 0; i < Math.max(bench1.length, bench2.length); i++) {
+                        benchRows += makeRow(bench1[i], bench2[i], true);
+                    }
+
+                    html += `<div class="card">
+                        <div class="header">
+                            <div class="header-team">
+                                <div class="owner-name">${t1.owner}</div>
+                                <div class="team-name">${t1.name}</div>
+                                <div class="team-score">${t1Score}</div>
+                            </div>
+                            <div class="header-vs">VS</div>
+                            <div class="header-team">
+                                <div class="owner-name">${t2.owner}</div>
+                                <div class="team-name">${t2.name}</div>
+                                <div class="team-score">${t2Score}</div>
+                            </div>
+                        </div>
+                        ${rows}
+                        <div class="bench-label">─── Bench ───</div>
+                        ${benchRows}
+                    </div>`;
+                } catch(e) { console.error('Error:', e); }
+            }
+            
+            content.innerHTML = html || '<div class="loading">No matchups loaded</div>';
+        }
+
+        init();
+    </script>
+</body>
+</html>
