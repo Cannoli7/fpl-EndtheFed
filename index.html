@@ -536,11 +536,14 @@
             const hswCounts = {};
             const matches = leagueData.matches || [];
             
-            // Group matches by gameweek
+            // Group matches by gameweek and only include finished matches
             const matchesByGW = {};
             matches.forEach(match => {
-                if (!matchesByGW[match.event]) matchesByGW[match.event] = [];
-                matchesByGW[match.event].push(match);
+                // Only include matches that have been played (both scores exist and are not null)
+                if (match.finished && match.league_entry_1_points !== null && match.league_entry_2_points !== null) {
+                    if (!matchesByGW[match.event]) matchesByGW[match.event] = [];
+                    matchesByGW[match.event].push(match);
+                }
             });
             
             // For each gameweek, find the highest scorer(s)
@@ -560,6 +563,9 @@
                         highestScore = match.league_entry_2_points;
                     }
                 });
+                
+                // Skip this gameweek if no real scores (highest is 0 means not played yet)
+                if (highestScore === 0) continue;
                 
                 // Find all teams with the highest score
                 const highScorers = [];
