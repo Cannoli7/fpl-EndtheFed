@@ -146,6 +146,64 @@
         .bench .p-jersey { opacity: 0.6; }
         
         .loading { color: #fff; text-align: center; padding: 50px; font-size: 1.2rem; }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .topbar { padding: 10px 12px; }
+            .topbar h1 { font-size: 0.9rem; }
+            
+            .nav { padding: 8px; flex-wrap: wrap; }
+            .nav button { padding: 6px 12px; font-size: 0.8rem; }
+            .nav h2 { margin: 0 10px; font-size: 1rem; }
+            
+            .container { padding: 8px; }
+            .card { margin-bottom: 12px; border-radius: 8px; }
+            
+            .header { padding: 12px 8px; flex-direction: column; gap: 8px; }
+            .header-team { width: 100%; }
+            .owner-name { font-size: 0.65rem; margin-bottom: 3px; }
+            .team-name { font-size: 1.1rem; margin-bottom: 4px; }
+            .team-score { font-size: 1.8rem; }
+            .header-vs { font-size: 0.9rem; }
+            
+            .row {
+                grid-template-columns: 1fr auto 15px auto 1fr;
+                padding: 8px 6px;
+                min-height: 45px;
+                gap: 4px;
+            }
+            
+            .p-left, .p-right { gap: 4px; }
+            .p-jersey { width: 22px; height: 28px; }
+            
+            .p-info-wrap { gap: 2px; }
+            .p-name { font-size: 0.8rem; max-width: 100px; }
+            .p-name-row { gap: 2px; }
+            
+            .pos-badge { 
+                font-size: 0.7rem !important; 
+                padding: 1px 2px !important; 
+            }
+            
+            .p-fixture { font-size: 0.65rem; }
+            
+            .p-stats { gap: 3px; }
+            .stat-mp { font-size: 0.75rem !important; }
+            .stat-cs { font-size: 1.1rem !important; }
+            .stat-icon { font-size: 1rem; }
+            
+            .card-yellow, .card-red { width: 10px; height: 14px; }
+            
+            .p-score { font-size: 1rem; min-width: 24px; }
+            .p-score-left { padding-right: 4px; }
+            .p-score-right { padding-left: 4px; }
+            
+            .divider { height: 30px; }
+            
+            .bench-label { font-size: 0.65rem; padding: 5px; }
+            
+            .loading { padding: 30px; font-size: 1rem; }
+        }
     </style>
 </head>
 <body>
