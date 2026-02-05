@@ -1071,80 +1071,49 @@
             html += '<div class="home-section">';
             html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups</div>`;
             
-            // Get Premier League fixtures from free API (football-data.org supports CORS)
+            // DEBUG: Let's see what data we already have
+            console.log('=== DEBUGGING FIXTURE DATA ===');
+            console.log('League data structure:', Object.keys(leagueData));
+            console.log('Full league data:', leagueData);
+            
+            // Try different FPL endpoints for fixtures
             try {
-                // Calculate approximate date range for this gameweek
-                // GW 25 is around early February 2026
-                const today = new Date();
-                const dateFrom = new Date(today);
-                dateFrom.setDate(today.getDate() - 7); // Start from 1 week ago
-                const dateTo = new Date(today);
-                dateTo.setDate(today.getDate() + 14); // Look ahead 2 weeks
-                
-                const dateFromStr = dateFrom.toISOString().split('T')[0];
-                const dateToStr = dateTo.toISOString().split('T')[0];
-                
-                // Free API - no key needed for basic requests
-                const response = await fetch(`https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}`, {
-                    headers: {
-                        'X-Auth-Token': 'free' // Try without token first
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const matches = data.matches || [];
-                    
-                    // Find the earliest upcoming match
-                    let earliestMatch = null;
-                    const now = new Date();
-                    
-                    matches.forEach(match => {
-                        if (match.utcDate) {
-                            const matchDate = new Date(match.utcDate);
-                            if (matchDate > now) {
-                                if (!earliestMatch || matchDate < new Date(earliestMatch.utcDate)) {
-                                    earliestMatch = match;
-                                }
-                            }
-                        }
-                    });
-                    
-                    if (earliestMatch && earliestMatch.utcDate) {
-                        const kickoff = new Date(earliestMatch.utcDate);
-                        const deadline = new Date(kickoff.getTime() - (90 * 60 * 1000)); // 90 min before
-                        
-                        const deadlineStr = deadline.toLocaleString('en-US', { 
-                            weekday: 'short', 
-                            month: 'short', 
-                            day: 'numeric', 
-                            hour: 'numeric', 
-                            minute: '2-digit',
-                            hour12: true 
-                        });
-                        
-                        const kickoffStr = kickoff.toLocaleString('en-US', { 
-                            weekday: 'short', 
-                            month: 'short', 
-                            day: 'numeric', 
-                            hour: 'numeric', 
-                            minute: '2-digit',
-                            hour12: true 
-                        });
-                        
-                        const homeTeam = earliestMatch.homeTeam?.shortName || earliestMatch.homeTeam?.name || 'TBD';
-                        const awayTeam = earliestMatch.awayTeam?.shortName || earliestMatch.awayTeam?.name || 'TBD';
-                        
-                        html += '<div style="background:rgba(52,73,94,0.3);padding:12px 15px;margin-bottom:15px;border-radius:5px;border-left:3px solid #e74c3c;">';
-                        html += `<div style="margin-bottom:8px;"><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
-                        html += `<div><strong style="color:#3498db;">⚽ First Game:</strong> <span style="color:#ecf0f1;">${homeTeam} vs ${awayTeam} - ${kickoffStr}</span></div>`;
-                        html += '</div>';
-                    }
-                } else {
-                    console.log('Could not fetch from football-data.org, status:', response.status);
+                // Try endpoint without event parameter
+                console.log('Trying /api/fixtures without params...');
+                const fixturesAll = await fetch('https://draft.premierleague.com/api/fixtures');
+                console.log('Response status:', fixturesAll.status);
+                if (fixturesAll.ok) {
+                    const data = await fixturesAll.json();
+                    console.log('Fixtures data:', data);
                 }
             } catch (e) {
-                console.log('Could not fetch fixture info:', e);
+                console.log('Fixtures without params failed:', e);
+            }
+            
+            try {
+                // Try game endpoint
+                console.log('Trying /api/game...');
+                const gameData = await fetch('https://draft.premierleague.com/api/game');
+                console.log('Game response status:', gameData.status);
+                if (gameData.ok) {
+                    const data = await gameData.json();
+                    console.log('Game data:', data);
+                }
+            } catch (e) {
+                console.log('Game endpoint failed:', e);
+            }
+            
+            try {
+                // Try event endpoint for next week
+                console.log('Trying /api/event/' + nextWeek);
+                const eventData = await fetch('https://draft.premierleague.com/api/event/' + nextWeek);
+                console.log('Event response status:', eventData.status);
+                if (eventData.ok) {
+                    const data = await eventData.json();
+                    console.log('Event data for GW' + nextWeek + ':', data);
+                }
+            } catch (e) {
+                console.log('Event endpoint failed:', e);
             }
             
             const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
