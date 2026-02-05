@@ -634,11 +634,9 @@
                 let bwMedal = '';
                 if (bestWeek === maxBW) bwMedal = ' 🥇';
                 
-                const currentRank = team.rank || (index + 1);
-                
                 html += '<tr>';
-                html += `<td class="rank-col ${rankClass}">${currentRank}</td>`;
-                html += `<td class="team-col"><strong>${entry.entry_name}</strong> <span style="color:#7f8c8d;font-size:0.9rem;">(${currentRank})</span><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
+                html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
+                html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
                 html += `<td class="stat-col">${team.matches_won || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
@@ -723,6 +721,14 @@
                 try {
                     const t1 = entryMap[match.league_entry_1];
                     const t2 = entryMap[match.league_entry_2];
+                    
+                    // Get current standings rank for each team
+                    const standings = leagueData.standings || [];
+                    const t1Standing = standings.find(s => s.league_entry === match.league_entry_1);
+                    const t2Standing = standings.find(s => s.league_entry === match.league_entry_2);
+                    const t1Rank = t1Standing ? t1Standing.rank : '?';
+                    const t2Rank = t2Standing ? t2Standing.rank : '?';
+                    
                     const entry1 = await fetchData(`entry/${t1.entry_id}/event/${gw}`);
                     const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
 
@@ -807,14 +813,14 @@
                     html += `<div class="card">
                         <div class="header">
                             <div class="header-team">
+                                <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
                                 <div class="owner-name">${t1.owner}</div>
-                                <div class="team-name">${t1.name}</div>
                                 <div class="team-score">${t1Score}</div>
                             </div>
                             <div class="header-vs">VS</div>
                             <div class="header-team">
+                                <div class="team-name">${t2.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t2Rank})</span></div>
                                 <div class="owner-name">${t2.owner}</div>
-                                <div class="team-name">${t2.name}</div>
                                 <div class="team-score">${t2Score}</div>
                             </div>
                         </div>
