@@ -17,8 +17,15 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            position: relative;
         }
-        .topbar h1 { font-size: 1.1rem; font-weight: 600; }
+        .topbar h1 { 
+            font-size: 1.1rem; 
+            font-weight: 600;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
         
         #menu-dropdown > div:hover {
             background: rgba(255,255,255,0.1);
@@ -415,10 +422,20 @@
             * { margin: 0; padding: 0; }
             body { overflow-x: hidden; }
             
-            .topbar { padding: 10px 2px; }
-            .topbar h1 { font-size: 0.9rem; }
+            .topbar { padding: 10px 5px; }
+            .topbar h1 { 
+                font-size: 0.9rem;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
             
-            #btc-price { font-size: 0.7rem; }
+            #menu-btn { font-size: 1.5rem !important; }
+            
+            #btc-price { 
+                font-size: 0.7rem;
+                padding-right: 5px;
+            }
             
             .nav { padding: 8px 2px; flex-wrap: wrap; }
             .nav button { padding: 6px 12px; font-size: 0.8rem; }
@@ -664,9 +681,9 @@
 </head>
 <body>
     <div class="topbar">
-        <button id="menu-btn" style="background:none;border:none;color:#fff;font-size:1.9rem;cursor:pointer;padding:0;">☰</button>
+        <button id="menu-btn" style="background:none;border:none;color:#fff;font-size:1.9rem;cursor:pointer;padding:0;z-index:1;position:relative;">☰</button>
         <h1>End the Fed</h1>
-        <span id="btc-price" style="font-size:0.9rem;color:#F7931A;font-weight:600;">₿ --</span>
+        <span id="btc-price" style="font-size:0.9rem;color:#F7931A;font-weight:600;padding-right:10px;z-index:1;position:relative;">₿ --</span>
     </div>
     <div id="menu-dropdown" style="display:none;position:fixed;top:60px;left:10px;background:#0f3460;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;min-width:200px;">
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
