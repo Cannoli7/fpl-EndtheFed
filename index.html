@@ -171,11 +171,11 @@
         .home-section-title {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #2ecc71;
+            color: #ecf0f1;
             margin-bottom: 15px;
             padding: 10px 15px;
-            background: rgba(46, 204, 113, 0.1);
-            border-left: 4px solid #2ecc71;
+            background: rgba(52, 73, 94, 0.3);
+            border-left: 4px solid #7f8c8d;
         }
         
         .home-match {
@@ -220,6 +220,10 @@
         }
         
         .home-winner {
+            color: #2ecc71;
+        }
+        
+        .home-highest {
             color: #f1c40f;
         }
         
@@ -1010,14 +1014,40 @@
                 const lastWeekMatches = leagueData.matches.filter(m => m.event === lastWeek && m.finished);
                 const lastWeekLive = await fetchData(`event/${lastWeek}/live`);
                 
+                // Find the highest score of the week
+                let highestScore = 0;
+                lastWeekMatches.forEach(match => {
+                    const t1Score = match.league_entry_1_points || 0;
+                    const t2Score = match.league_entry_2_points || 0;
+                    if (t1Score > highestScore) highestScore = t1Score;
+                    if (t2Score > highestScore) highestScore = t2Score;
+                });
+                
                 for (const match of lastWeekMatches) {
                     const t1 = entryMap[match.league_entry_1];
                     const t2 = entryMap[match.league_entry_2];
                     const t1Score = match.league_entry_1_points || 0;
                     const t2Score = match.league_entry_2_points || 0;
                     
-                    const t1Class = t1Score > t2Score ? 'home-winner' : t1Score < t2Score ? 'home-loser' : '';
-                    const t2Class = t2Score > t1Score ? 'home-winner' : t2Score < t1Score ? 'home-loser' : '';
+                    // Determine class: highest scorer gets gold, winner gets green, loser gets grey
+                    let t1Class = '';
+                    let t2Class = '';
+                    
+                    if (t1Score === highestScore) {
+                        t1Class = 'home-highest';
+                    } else if (t1Score > t2Score) {
+                        t1Class = 'home-winner';
+                    } else if (t1Score < t2Score) {
+                        t1Class = 'home-loser';
+                    }
+                    
+                    if (t2Score === highestScore) {
+                        t2Class = 'home-highest';
+                    } else if (t2Score > t1Score) {
+                        t2Class = 'home-winner';
+                    } else if (t2Score < t1Score) {
+                        t2Class = 'home-loser';
+                    }
                     
                     html += '<div class="home-match">';
                     html += `<div class="home-team ${t1Class}">`;
