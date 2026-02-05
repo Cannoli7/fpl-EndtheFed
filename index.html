@@ -92,9 +92,13 @@
         }
         
         .recent-record.show { 
+            display: block;
+        }
+        
+        .records-row {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            justify-content: space-around;
+            margin-bottom: 20px;
         }
         
         .team-record {
@@ -123,15 +127,9 @@
         .record-D { background: #95a5a6; color: #fff; }
         .record-L { background: #e74c3c; color: #fff; }
         
-        .h2h-divider {
-            flex: 0 0 2px;
-            background: rgba(255,255,255,0.1);
-            margin: 0 20px;
-            align-self: stretch;
-        }
-        
         .h2h-section {
-            flex: 1;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
             text-align: center;
         }
         
@@ -145,7 +143,8 @@
         
         .h2h-stats {
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
+            gap: 40px;
         }
         
         .h2h-item {
@@ -965,9 +964,16 @@
                             </div>
                         </div>
                         <div id="${matchId}" class="recent-record">
-                            <div class="team-record">
-                                <div class="record-items">
-                                    ${t1Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                            <div class="records-row">
+                                <div class="team-record">
+                                    <div class="record-items">
+                                        ${t1Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <div class="team-record">
+                                    <div class="record-items">
+                                        ${t2Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                                    </div>
                                 </div>
                             </div>
                             <div class="h2h-section">
@@ -985,11 +991,6 @@
                                         <div class="h2h-value">${t1H2HLosses}</div>
                                         <div class="h2h-label">L</div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="team-record">
-                                <div class="record-items">
-                                    ${t2Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
                                 </div>
                             </div>
                         </div>
