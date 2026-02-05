@@ -1071,79 +1071,77 @@
             html += '<div class="home-section">';
             html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups</div>`;
             
-            // Try to get first fixture and calculate deadline (90 min before kickoff)
+            // Get Premier League fixtures from free API (football-data.org supports CORS)
             try {
-                // Try FPL fixtures API first
-                let firstKickoff = null;
-                let firstGameInfo = '';
+                // Calculate approximate date range for this gameweek
+                // GW 25 is around early February 2026
+                const today = new Date();
+                const dateFrom = new Date(today);
+                dateFrom.setDate(today.getDate() - 7); // Start from 1 week ago
+                const dateTo = new Date(today);
+                dateTo.setDate(today.getDate() + 14); // Look ahead 2 weeks
                 
-                try {
-                    const fixturesResponse = await fetch(`https://draft.premierleague.com/api/fixtures?event=${nextWeek}`);
-                    const fixtures = await fixturesResponse.json();
+                const dateFromStr = dateFrom.toISOString().split('T')[0];
+                const dateToStr = dateTo.toISOString().split('T')[0];
+                
+                // Free API - no key needed for basic requests
+                const response = await fetch(`https://api.football-data.org/v4/competitions/PL/matches?dateFrom=${dateFromStr}&dateTo=${dateToStr}`, {
+                    headers: {
+                        'X-Auth-Token': 'free' // Try without token first
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const matches = data.matches || [];
                     
-                    if (fixtures && fixtures.length > 0) {
-                        // Find earliest fixture with kickoff time
-                        let earliest = null;
-                        fixtures.forEach(f => {
-                            if (f.kickoff_time) {
-                                const kickoff = new Date(f.kickoff_time);
-                                if (!earliest || kickoff < new Date(earliest.kickoff_time)) {
-                                    earliest = f;
+                    // Find the earliest upcoming match
+                    let earliestMatch = null;
+                    const now = new Date();
+                    
+                    matches.forEach(match => {
+                        if (match.utcDate) {
+                            const matchDate = new Date(match.utcDate);
+                            if (matchDate > now) {
+                                if (!earliestMatch || matchDate < new Date(earliestMatch.utcDate)) {
+                                    earliestMatch = match;
                                 }
                             }
+                        }
+                    });
+                    
+                    if (earliestMatch && earliestMatch.utcDate) {
+                        const kickoff = new Date(earliestMatch.utcDate);
+                        const deadline = new Date(kickoff.getTime() - (90 * 60 * 1000)); // 90 min before
+                        
+                        const deadlineStr = deadline.toLocaleString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
                         });
                         
-                        if (earliest && earliest.kickoff_time) {
-                            firstKickoff = new Date(earliest.kickoff_time);
-                            const homeTeam = teamMap[earliest.team_h] || 'TBD';
-                            const awayTeam = teamMap[earliest.team_a] || 'TBD';
-                            firstGameInfo = `${homeTeam} vs ${awayTeam}`;
-                        }
-                    }
-                } catch (e) {
-                    console.log('FPL fixtures blocked, trying alternative API...', e);
-                    
-                    // Fallback to free football API
-                    try {
-                        // Using API-Football free tier (no auth needed for basic data)
-                        const season = new Date().getFullYear();
-                        const response = await fetch(`https://api-football-v1.p.rapidapi.com/v3/fixtures?league=39&season=${season}&round=Regular Season - ${nextWeek}`, {
-                            headers: {
-                                'X-RapidAPI-Key': 'free', // Try without key first
-                            }
+                        const kickoffStr = kickoff.toLocaleString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
                         });
-                        // This will likely fail without a key, but worth trying
-                    } catch (e2) {
-                        console.log('Alternative API also blocked:', e2);
+                        
+                        const homeTeam = earliestMatch.homeTeam?.shortName || earliestMatch.homeTeam?.name || 'TBD';
+                        const awayTeam = earliestMatch.awayTeam?.shortName || earliestMatch.awayTeam?.name || 'TBD';
+                        
+                        html += '<div style="background:rgba(52,73,94,0.3);padding:12px 15px;margin-bottom:15px;border-radius:5px;border-left:3px solid #e74c3c;">';
+                        html += `<div style="margin-bottom:8px;"><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
+                        html += `<div><strong style="color:#3498db;">⚽ First Game:</strong> <span style="color:#ecf0f1;">${homeTeam} vs ${awayTeam} - ${kickoffStr}</span></div>`;
+                        html += '</div>';
                     }
-                }
-                
-                // If we got a first kickoff, calculate deadline and display
-                if (firstKickoff) {
-                    // Deadline is 90 minutes before first game
-                    const deadline = new Date(firstKickoff.getTime() - (90 * 60 * 1000));
-                    const deadlineStr = deadline.toLocaleString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric', 
-                        hour: 'numeric', 
-                        minute: '2-digit',
-                        hour12: true 
-                    });
-                    
-                    const kickoffStr = firstKickoff.toLocaleString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric', 
-                        hour: 'numeric', 
-                        minute: '2-digit',
-                        hour12: true 
-                    });
-                    
-                    html += '<div style="background:rgba(52,73,94,0.3);padding:12px 15px;margin-bottom:15px;border-radius:5px;border-left:3px solid #e74c3c;">';
-                    html += `<div style="margin-bottom:8px;"><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
-                    html += `<div><strong style="color:#3498db;">⚽ First Game:</strong> <span style="color:#ecf0f1;">${firstGameInfo} - ${kickoffStr}</span></div>`;
-                    html += '</div>';
+                } else {
+                    console.log('Could not fetch from football-data.org, status:', response.status);
                 }
             } catch (e) {
                 console.log('Could not fetch fixture info:', e);
