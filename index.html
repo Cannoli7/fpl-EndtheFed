@@ -648,14 +648,12 @@
                 const maxPA = Math.max(...paValues);
                 const minPA = Math.min(...paValues);
                 const maxBW = Math.max(...bwValues);
-                const minBW = Math.min(...bwValues);
+                
+                // Find second highest PF
+                const sortedPF = [...pfValues].sort((a, b) => b - a);
+                const secondPF = sortedPF[1];
                 
                 standings.forEach((team, index) => {
-                    // PF gradient: green (high) to white (low)
-                    const pfPercent = (team.points_for - minPF) / (maxPF - minPF);
-                    const pfGreen = Math.round(46 + (255 - 46) * (1 - pfPercent));
-                    const pfColor = `rgb(${pfGreen}, ${Math.round(204 + (255 - 204) * (1 - pfPercent))}, ${Math.round(113 + (255 - 113) * (1 - pfPercent))})`;
-                    
                     // PA gradient: red (high) to white (low)
                     const paPercent = (team.points_against - minPA) / (maxPA - minPA);
                     const paRed = Math.round(231 * paPercent + 255 * (1 - paPercent));
@@ -663,21 +661,33 @@
                     const paBlue = Math.round(60 * paPercent + 255 * (1 - paPercent));
                     const paColor = `rgb(${paRed}, ${paGreen}, ${paBlue})`;
                     
-                    // Best Week gradient: gold (high) to white (low)
-                    const bwScore = bestWeekScores[team.league_entry] || 0;
-                    const bwPercent = (bwScore - minBW) / (maxBW - minBW);
-                    const bwRed = Math.round(241 * bwPercent + 255 * (1 - bwPercent));
-                    const bwGreen = Math.round(196 * bwPercent + 255 * (1 - bwPercent));
-                    const bwBlue = Math.round(15 * bwPercent + 255 * (1 - bwPercent));
-                    const bwColor = `rgb(${bwRed}, ${bwGreen}, ${bwBlue})`;
-                    
                     const pfCell = document.querySelector(`.pf-${index}`);
                     const paCell = document.querySelector(`.pa-${index}`);
                     const bwCell = document.querySelector(`.bw-${index}`);
                     
-                    if (pfCell) pfCell.style.color = pfColor;
+                    // PF: Gold for 1st, Silver for 2nd, white for rest
+                    if (pfCell) {
+                        if (team.points_for === maxPF) {
+                            pfCell.style.color = '#f1c40f'; // Gold
+                        } else if (team.points_for === secondPF) {
+                            pfCell.style.color = '#bdc3c7'; // Silver
+                        } else {
+                            pfCell.style.color = '#fff'; // White
+                        }
+                    }
+                    
+                    // PA: Keep gradient
                     if (paCell) paCell.style.color = paColor;
-                    if (bwCell) bwCell.style.color = bwColor;
+                    
+                    // Best Week: Gold for highest, white for rest
+                    if (bwCell) {
+                        const bwScore = bestWeekScores[team.league_entry] || 0;
+                        if (bwScore === maxBW) {
+                            bwCell.style.color = '#f1c40f'; // Gold
+                        } else {
+                            bwCell.style.color = '#fff'; // White
+                        }
+                    }
                 });
             }, 0);
         }
