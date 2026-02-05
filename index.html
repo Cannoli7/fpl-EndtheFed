@@ -996,9 +996,9 @@
                 entryMap[e.id] = { entry_id: e.entry_id, name: e.entry_name, owner: e.player_first_name };
             });
             
-            // Get last week (most recent completed gameweek)
-            const lastWeek = currentGW - 1;
-            const nextWeek = currentGW;
+            // Get last week (most recent completed gameweek) and next week
+            const lastWeek = currentGW; // Just completed
+            const nextWeek = currentGW + 1; // Upcoming
             
             let html = '';
             
