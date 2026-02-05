@@ -1,36 +1,25 @@
 // Vercel Serverless Function to fetch FPL deadline data
-// This file should be placed in: api/deadline.js
+// Place this file in: api/deadline.js
 
 export default async function handler(req, res) {
-  // Enable CORS for your domain
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cache-Control', 's-maxage=300'); // Cache for 5 minutes
+  res.setHeader('Cache-Control', 's-maxage=300');
   
   try {
-    // Fetch from FPL API (server-side, no CORS issues)
-    const response = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+    // Fetch from FPL API
+    const fplResponse = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+    const data = await fplResponse.json();
     
-    if (!response.ok) {
-      throw new Error(`FPL API returned ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Extract just the events data (gameweeks with deadlines)
-    const events = data.events || [];
-    
-    // Return the events data
-    res.status(200).json({ 
-      events,
-      cached_at: new Date().toISOString()
+    // Return just the events
+    return res.status(200).json({ 
+      events: data.events || []
     });
     
   } catch (error) {
-    console.error('Error fetching FPL data:', error);
-    res.status(500).json({ 
-      error: 'Failed to fetch FPL data',
-      message: error.message 
+    return res.status(500).json({ 
+      error: error.message 
     });
   }
 }
