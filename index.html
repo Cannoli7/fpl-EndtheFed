@@ -301,6 +301,15 @@
         .rank-2 { color: #bdc3c7; }
         .rank-3 { color: #e67e22; }
         
+        /* Hide mobile toggle on desktop */
+        .mobile-stats-toggle {
+            display: none;
+        }
+        
+        .standings-table-wrapper {
+            overflow-x: visible;
+        }
+        
         /* Score increase animation */
         @keyframes scoreIncrease {
             0% { background-color: rgba(46, 204, 113, 0.6); }
@@ -447,6 +456,90 @@
             .bench-label { font-size: 0.65rem; padding: 5px 2px; }
             
             .loading { padding: 30px 10px; font-size: 1rem; }
+            
+            /* Mobile Standings */
+            .mobile-stats-toggle {
+                display: block;
+                width: calc(100% - 8px);
+                padding: 10px;
+                margin: 10px 4px;
+                background: #2ecc71;
+                border: none;
+                color: #fff;
+                border-radius: 5px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 0.9rem;
+            }
+            
+            .standings-table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .standings-table.mobile-simple .hide-mobile {
+                display: none;
+            }
+            
+            .standings-table.mobile-simple .rank-col {
+                width: 40px;
+                padding: 14px 6px;
+            }
+            
+            .standings-table.mobile-full thead,
+            .standings-table.mobile-full tbody {
+                display: block;
+            }
+            
+            .standings-table.mobile-full tr {
+                display: flex;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+            
+            .standings-table.mobile-full th,
+            .standings-table.mobile-full td {
+                flex-shrink: 0;
+                border-bottom: none;
+            }
+            
+            /* Sticky columns for rank and team */
+            .standings-table.mobile-full .rank-col {
+                position: sticky;
+                left: 0;
+                z-index: 2;
+                background: #1a1a2e;
+                width: 40px;
+                min-width: 40px;
+            }
+            
+            .standings-table.mobile-full .team-col {
+                position: sticky;
+                left: 40px;
+                z-index: 2;
+                background: #1a1a2e;
+                width: 140px;
+                min-width: 140px;
+            }
+            
+            .standings-table.mobile-full th.rank-col,
+            .standings-table.mobile-full th.team-col {
+                background: #0f3460;
+            }
+            
+            .standings-table.mobile-full .stat-col {
+                width: 60px;
+                min-width: 60px;
+                padding: 14px 8px;
+                font-size: 0.9rem;
+            }
+            
+            .standings-table .team-col strong {
+                font-size: 0.9rem;
+            }
+            
+            .standings-table .team-col span {
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
@@ -691,17 +784,19 @@
                 }
             }
             
-            let html = '<table class="standings-table"><thead><tr>';
-            html += '<th class="rank-col">Rank</th>';
+            let html = '<button class="mobile-stats-toggle" onclick="toggleMobileStats()">Show Full Stats</button>';
+            html += '<div class="standings-table-wrapper">';
+            html += '<table class="standings-table mobile-simple" id="standings-table"><thead><tr>';
+            html += '<th class="rank-col">#</th>';
             html += '<th class="team-col">Team</th>';
             html += '<th class="stat-col">W</th>';
             html += '<th class="stat-col">D</th>';
             html += '<th class="stat-col">L</th>';
-            html += '<th class="stat-col">PF</th>';
-            html += '<th class="stat-col">PA</th>';
-            html += '<th class="stat-col">Best Week</th>';
-            html += '<th class="stat-col">HSW</th>';
-            html += '<th class="stat-col">Points</th>';
+            html += '<th class="stat-col hide-mobile">PF</th>';
+            html += '<th class="stat-col hide-mobile">PA</th>';
+            html += '<th class="stat-col hide-mobile">Best Week</th>';
+            html += '<th class="stat-col hide-mobile">HSW</th>';
+            html += '<th class="stat-col">P</th>';
             html += '</tr></thead><tbody>';
             
             standings.forEach((team, index) => {
@@ -733,15 +828,15 @@
                 html += `<td class="stat-col">${team.matches_won || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
-                html += `<td class="stat-col pf-${index}">${team.points_for || 0}${pfMedal}</td>`;
-                html += `<td class="stat-col pa-${index}">${team.points_against || 0}</td>`;
-                html += `<td class="stat-col bw-${index}"><strong>${bestWeek}${bwMedal}</strong></td>`;
-                html += `<td class="stat-col"><strong>${hswDisplay}</strong></td>`;
+                html += `<td class="stat-col hide-mobile pf-${index}">${team.points_for || 0}${pfMedal}</td>`;
+                html += `<td class="stat-col hide-mobile pa-${index}">${team.points_against || 0}</td>`;
+                html += `<td class="stat-col hide-mobile bw-${index}"><strong>${bestWeek}${bwMedal}</strong></td>`;
+                html += `<td class="stat-col hide-mobile"><strong>${hswDisplay}</strong></td>`;
                 html += `<td class="stat-col"><strong>${team.total || 0}</strong></td>`;
                 html += '</tr>';
             });
             
-            html += '</tbody></table>';
+            html += '</tbody></table></div>';
             content.innerHTML = html;
             
             // Apply color gradients after table is rendered
@@ -1105,6 +1200,21 @@
             } else {
                 element.classList.add('show');
                 btn.textContent = '▲';
+            }
+        }
+        
+        function toggleMobileStats() {
+            const table = document.getElementById('standings-table');
+            const btn = event.target;
+            
+            if (table.classList.contains('mobile-simple')) {
+                table.classList.remove('mobile-simple');
+                table.classList.add('mobile-full');
+                btn.textContent = 'Hide Full Stats';
+            } else {
+                table.classList.remove('mobile-full');
+                table.classList.add('mobile-simple');
+                btn.textContent = 'Show Full Stats';
             }
         }
 
