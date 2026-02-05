@@ -534,6 +534,7 @@
             
             // Calculate High Score Weeks for each team
             const hswCounts = {};
+            const bestWeekScores = {}; // Track best weekly score for each team
             const matches = leagueData.matches || [];
             
             // Group matches by gameweek and only include finished matches
@@ -543,6 +544,19 @@
                 if (match.finished && match.league_entry_1_points !== null && match.league_entry_2_points !== null) {
                     if (!matchesByGW[match.event]) matchesByGW[match.event] = [];
                     matchesByGW[match.event].push(match);
+                    
+                    // Track best weekly scores
+                    const entry1 = match.league_entry_1;
+                    const entry2 = match.league_entry_2;
+                    const score1 = match.league_entry_1_points;
+                    const score2 = match.league_entry_2_points;
+                    
+                    if (!bestWeekScores[entry1] || score1 > bestWeekScores[entry1]) {
+                        bestWeekScores[entry1] = score1;
+                    }
+                    if (!bestWeekScores[entry2] || score2 > bestWeekScores[entry2]) {
+                        bestWeekScores[entry2] = score2;
+                    }
                 }
             });
             
@@ -587,12 +601,12 @@
             let html = '<table class="standings-table"><thead><tr>';
             html += '<th class="rank-col">Rank</th>';
             html += '<th class="team-col">Team</th>';
-            html += '<th class="stat-col">Played</th>';
             html += '<th class="stat-col">W</th>';
             html += '<th class="stat-col">D</th>';
             html += '<th class="stat-col">L</th>';
             html += '<th class="stat-col">PF</th>';
             html += '<th class="stat-col">PA</th>';
+            html += '<th class="stat-col">Best Week</th>';
             html += '<th class="stat-col">HSW</th>';
             html += '<th class="stat-col">Points</th>';
             html += '</tr></thead><tbody>';
@@ -603,16 +617,17 @@
                 const hsw = hswCounts[team.league_entry] || 0;
                 // Remove trailing zeros: 1.50 -> 1.5, 0.50 -> 0.5, 1.00 -> 1
                 const hswDisplay = hsw % 1 === 0 ? hsw : hsw.toString().replace(/\.?0+$/, '');
+                const bestWeek = bestWeekScores[team.league_entry] || 0;
                 
                 html += '<tr>';
                 html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
                 html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
-                html += `<td class="stat-col">${team.matches_played || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_won || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
                 html += `<td class="stat-col pf-${index}">${team.points_for || 0}</td>`;
                 html += `<td class="stat-col pa-${index}">${team.points_against || 0}</td>`;
+                html += `<td class="stat-col bw-${index}"><strong>${bestWeek}</strong></td>`;
                 html += `<td class="stat-col"><strong>${hswDisplay}</strong></td>`;
                 html += `<td class="stat-col"><strong>${team.total || 0}</strong></td>`;
                 html += '</tr>';
@@ -623,14 +638,17 @@
             
             // Apply color gradients after table is rendered
             setTimeout(() => {
-                // Get all PF and PA values
+                // Get all PF, PA, and Best Week values
                 const pfValues = standings.map(t => t.points_for || 0);
                 const paValues = standings.map(t => t.points_against || 0);
+                const bwValues = standings.map(t => bestWeekScores[t.league_entry] || 0);
                 
                 const maxPF = Math.max(...pfValues);
                 const minPF = Math.min(...pfValues);
                 const maxPA = Math.max(...paValues);
                 const minPA = Math.min(...paValues);
+                const maxBW = Math.max(...bwValues);
+                const minBW = Math.min(...bwValues);
                 
                 standings.forEach((team, index) => {
                     // PF gradient: green (high) to white (low)
@@ -645,11 +663,21 @@
                     const paBlue = Math.round(60 * paPercent + 255 * (1 - paPercent));
                     const paColor = `rgb(${paRed}, ${paGreen}, ${paBlue})`;
                     
+                    // Best Week gradient: gold (high) to white (low)
+                    const bwScore = bestWeekScores[team.league_entry] || 0;
+                    const bwPercent = (bwScore - minBW) / (maxBW - minBW);
+                    const bwRed = Math.round(241 * bwPercent + 255 * (1 - bwPercent));
+                    const bwGreen = Math.round(196 * bwPercent + 255 * (1 - bwPercent));
+                    const bwBlue = Math.round(15 * bwPercent + 255 * (1 - bwPercent));
+                    const bwColor = `rgb(${bwRed}, ${bwGreen}, ${bwBlue})`;
+                    
                     const pfCell = document.querySelector(`.pf-${index}`);
                     const paCell = document.querySelector(`.pa-${index}`);
+                    const bwCell = document.querySelector(`.bw-${index}`);
                     
                     if (pfCell) pfCell.style.color = pfColor;
                     if (paCell) paCell.style.color = paColor;
+                    if (bwCell) bwCell.style.color = bwColor;
                 });
             }, 0);
         }
