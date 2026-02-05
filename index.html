@@ -1069,26 +1069,18 @@
             
             // Next Week Matchups
             html += '<div class="home-section">';
-            html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups</div>`;
             
-            // Fetch deadline from our own serverless API (no CORS issues!)
+            // Fetch deadline from our serverless API
+            let deadlineStr = '';
             try {
-                console.log('Fetching deadline from serverless function...');
                 const response = await fetch('/api/deadline');
-                console.log('Serverless API response status:', response.status);
-                
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Serverless API data received:', data);
-                    
-                    // Get the event (gameweek) data
                     if (data.events && Array.isArray(data.events)) {
                         const gwEvent = data.events.find(e => e.id === nextWeek);
-                        console.log('Event for GW' + nextWeek + ':', gwEvent);
-                        
                         if (gwEvent && gwEvent.deadline_time) {
                             const deadline = new Date(gwEvent.deadline_time);
-                            const deadlineStr = deadline.toLocaleString('en-US', { 
+                            deadlineStr = deadline.toLocaleString('en-US', { 
                                 weekday: 'short', 
                                 month: 'short', 
                                 day: 'numeric', 
@@ -1096,20 +1088,19 @@
                                 minute: '2-digit',
                                 hour12: true 
                             });
-                            
-                            html += '<div style="background:rgba(52,73,94,0.3);padding:12px 15px;margin-bottom:15px;border-radius:5px;border-left:3px solid #e74c3c;">';
-                            html += `<div><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
-                            html += '</div>';
-                            
-                            console.log('✅ Deadline displayed successfully!');
                         }
                     }
-                } else {
-                    console.log('Serverless API returned error:', response.status);
                 }
             } catch (e) {
                 console.error('Failed to fetch deadline:', e);
             }
+            
+            // Build section header with deadline if available
+            html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups`;
+            if (deadlineStr) {
+                html += `<div style="font-size:0.85rem;font-weight:normal;margin-top:5px;color:#bdc3c7;">Lineups Set: ${deadlineStr}</div>`;
+            }
+            html += `</div>`;
             
             const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
             
