@@ -1071,15 +1071,15 @@
             html += '<div class="home-section">';
             html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups</div>`;
             
-            // Try main FPL API (not Draft) - it has better CORS support
+            // Fetch deadline from our own serverless API (no CORS issues!)
             try {
-                console.log('Trying main FPL API bootstrap-static...');
-                const response = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
-                console.log('Main FPL API response status:', response.status);
+                console.log('Fetching deadline from serverless function...');
+                const response = await fetch('/api/deadline');
+                console.log('Serverless API response status:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Main FPL API data received!');
+                    console.log('Serverless API data received:', data);
                     
                     // Get the event (gameweek) data
                     if (data.events && Array.isArray(data.events)) {
@@ -1101,14 +1101,14 @@
                             html += `<div><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
                             html += '</div>';
                             
-                            console.log('Deadline displayed successfully!');
+                            console.log('✅ Deadline displayed successfully!');
                         }
                     }
                 } else {
-                    console.log('Main FPL API returned error:', response.status);
+                    console.log('Serverless API returned error:', response.status);
                 }
             } catch (e) {
-                console.error('Main FPL API failed:', e);
+                console.error('Failed to fetch deadline:', e);
             }
             
             const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
