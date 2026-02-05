@@ -535,7 +535,7 @@
             // Auto-refresh every 60 seconds (only for matchups view)
             setInterval(() => {
                 if (currentView === 'matchups') {
-                    loadGameweek(currentGW);
+                    loadGameweek(currentGW, true); // true = silent update
                 }
             }, 60000);
         }
@@ -778,9 +778,11 @@
             }, 0);
         }
 
-        async function loadGameweek(gw) {
+        async function loadGameweek(gw, silentUpdate = false) {
             const content = document.getElementById('content');
-            content.innerHTML = '<div class="loading">Loading gameweek ' + gw + '...</div>';
+            if (!silentUpdate) {
+                content.innerHTML = '<div class="loading">Loading gameweek ' + gw + '...</div>';
+            }
             currentGW = gw;
             document.getElementById('gw-title').textContent = `Gameweek ${gw}`;
 
@@ -807,6 +809,96 @@
                 }
                 return teamMap[player.team] || '';
             };
+
+            // Silent update: update existing elements instead of rebuilding
+            if (silentUpdate && content.querySelector('.card')) {
+                const cards = content.querySelectorAll('.card');
+                let cardIndex = 0;
+                
+                for (const match of matches) {
+                    try {
+                        const t1 = entryMap[match.league_entry_1];
+                        const t2 = entryMap[match.league_entry_2];
+                        const entry1 = await fetchData(`entry/${t1.entry_id}/event/${gw}`);
+                        const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
+
+                        const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
+                            return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
+                        }, 0);
+
+                        const t1Score = getScore(entry1.picks);
+                        const t2Score = getScore(entry2.picks);
+
+                        const card = cards[cardIndex];
+                        if (card) {
+                            // Update team scores
+                            const scoreElements = card.querySelectorAll('.team-score');
+                            if (scoreElements[0]) scoreElements[0].textContent = t1Score;
+                            if (scoreElements[1]) scoreElements[1].textContent = t2Score;
+
+                            // Update player scores and stats
+                            const rows = card.querySelectorAll('.row');
+                            const starters1 = entry1.picks.filter(p => p.position <= 11);
+                            const starters2 = entry2.picks.filter(p => p.position <= 11);
+                            const bench1 = entry1.picks.filter(p => p.position > 11);
+                            const bench2 = entry2.picks.filter(p => p.position > 11);
+                            const allPicks1 = [...starters1, ...bench1];
+                            const allPicks2 = [...starters2, ...bench2];
+
+                            rows.forEach((row, i) => {
+                                const p1 = allPicks1[i];
+                                const p2 = allPicks2[i];
+                                
+                                if (p1) {
+                                    const pts1 = liveData.elements[String(p1.element)]?.stats?.total_points || 0;
+                                    const scoreLeft = row.querySelector('.p-score-left');
+                                    if (scoreLeft) scoreLeft.textContent = pts1;
+                                    
+                                    // Check for score changes and animate
+                                    const p1Key = `${gw}-${p1.element}`;
+                                    const p1Increased = previousScores[p1Key] !== undefined && pts1 > previousScores[p1Key];
+                                    const p1Decreased = previousScores[p1Key] !== undefined && pts1 < previousScores[p1Key];
+                                    previousScores[p1Key] = pts1;
+                                    
+                                    if (p1Increased) {
+                                        row.classList.remove('score-decreased');
+                                        row.classList.add('score-increased');
+                                        setTimeout(() => row.classList.remove('score-increased'), 2000);
+                                    } else if (p1Decreased) {
+                                        row.classList.remove('score-increased');
+                                        row.classList.add('score-decreased');
+                                        setTimeout(() => row.classList.remove('score-decreased'), 2000);
+                                    }
+                                }
+                                
+                                if (p2) {
+                                    const pts2 = liveData.elements[String(p2.element)]?.stats?.total_points || 0;
+                                    const scoreRight = row.querySelector('.p-score-right');
+                                    if (scoreRight) scoreRight.textContent = pts2;
+                                    
+                                    // Check for score changes and animate
+                                    const p2Key = `${gw}-${p2.element}`;
+                                    const p2Increased = previousScores[p2Key] !== undefined && pts2 > previousScores[p2Key];
+                                    const p2Decreased = previousScores[p2Key] !== undefined && pts2 < previousScores[p2Key];
+                                    previousScores[p2Key] = pts2;
+                                    
+                                    if (p2Increased && !row.classList.contains('score-increased')) {
+                                        row.classList.remove('score-decreased');
+                                        row.classList.add('score-increased');
+                                        setTimeout(() => row.classList.remove('score-increased'), 2000);
+                                    } else if (p2Decreased && !row.classList.contains('score-decreased')) {
+                                        row.classList.remove('score-increased');
+                                        row.classList.add('score-decreased');
+                                        setTimeout(() => row.classList.remove('score-decreased'), 2000);
+                                    }
+                                }
+                            });
+                        }
+                        cardIndex++;
+                    } catch(e) { console.error('Error:', e); }
+                }
+                return; // Exit early, don't rebuild HTML
+            }
 
             let html = '';
 
