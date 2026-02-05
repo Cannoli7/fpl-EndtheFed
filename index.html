@@ -654,6 +654,11 @@
                 const secondPF = sortedPF[1];
                 
                 standings.forEach((team, index) => {
+                    // PF gradient: green (high) to white (low)
+                    const pfPercent = (team.points_for - minPF) / (maxPF - minPF);
+                    const pfGreen = Math.round(46 + (255 - 46) * (1 - pfPercent));
+                    const pfColor = `rgb(${pfGreen}, ${Math.round(204 + (255 - 204) * (1 - pfPercent))}, ${Math.round(113 + (255 - 113) * (1 - pfPercent))})`;
+                    
                     // PA gradient: red (high) to white (low)
                     const paPercent = (team.points_against - minPA) / (maxPA - minPA);
                     const paRed = Math.round(231 * paPercent + 255 * (1 - paPercent));
@@ -665,27 +670,31 @@
                     const paCell = document.querySelector(`.pa-${index}`);
                     const bwCell = document.querySelector(`.bw-${index}`);
                     
-                    // PF: Gold for 1st, Silver for 2nd, white for rest
+                    // PF: Green gradient with border for top 2
                     if (pfCell) {
+                        pfCell.style.color = pfColor;
                         if (team.points_for === maxPF) {
-                            pfCell.style.color = '#f1c40f'; // Gold
+                            pfCell.style.border = '2px solid #f1c40f'; // Gold border
+                            pfCell.style.borderRadius = '4px';
+                            pfCell.style.padding = '2px 4px';
                         } else if (team.points_for === secondPF) {
-                            pfCell.style.color = '#bdc3c7'; // Silver
-                        } else {
-                            pfCell.style.color = '#fff'; // White
+                            pfCell.style.border = '2px solid #bdc3c7'; // Silver border
+                            pfCell.style.borderRadius = '4px';
+                            pfCell.style.padding = '2px 4px';
                         }
                     }
                     
                     // PA: Keep gradient
                     if (paCell) paCell.style.color = paColor;
                     
-                    // Best Week: Gold for highest, white for rest
+                    // Best Week: White text with gold border for highest
                     if (bwCell) {
                         const bwScore = bestWeekScores[team.league_entry] || 0;
+                        bwCell.style.color = '#fff'; // Always white
                         if (bwScore === maxBW) {
-                            bwCell.style.color = '#f1c40f'; // Gold
-                        } else {
-                            bwCell.style.color = '#fff'; // White
+                            bwCell.style.border = '2px solid #f1c40f'; // Gold border
+                            bwCell.style.borderRadius = '4px';
+                            bwCell.style.padding = '2px 4px';
                         }
                     }
                 });
