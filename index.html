@@ -70,6 +70,44 @@
         .team-score { font-size: 2.5rem; font-weight: 800; color: #2ecc71; }
         .header-vs { font-size: 1.1rem; font-weight: 700; color: #7f8c8d; }
         
+        .expand-btn {
+            background: none;
+            border: none;
+            color: #7f8c8d;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        .expand-btn:hover { color: #fff; }
+        
+        .recent-record {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+            color: #bdc3c7;
+        }
+        
+        .recent-record.show { display: block; }
+        
+        .record-item {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            border-radius: 3px;
+            margin: 0 2px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        
+        .record-W { background: #2ecc71; color: #fff; }
+        .record-D { background: #f39c12; color: #fff; }
+        .record-L { background: #e74c3c; color: #fff; }
+        
         .row {
             display: grid;
             grid-template-columns: 1fr auto 20px auto 1fr;
@@ -729,6 +767,28 @@
                     const t1Rank = t1Standing ? t1Standing.rank : '?';
                     const t2Rank = t2Standing ? t2Standing.rank : '?';
                     
+                    // Get last 5 games for each team (before current gameweek)
+                    const getLastFiveGames = (leagueEntryId) => {
+                        const teamMatches = leagueData.matches.filter(m => 
+                            m.finished && 
+                            m.event < gw && 
+                            (m.league_entry_1 === leagueEntryId || m.league_entry_2 === leagueEntryId)
+                        ).sort((a, b) => b.event - a.event).slice(0, 5);
+                        
+                        return teamMatches.map(m => {
+                            const isTeam1 = m.league_entry_1 === leagueEntryId;
+                            const teamScore = isTeam1 ? m.league_entry_1_points : m.league_entry_2_points;
+                            const oppScore = isTeam1 ? m.league_entry_2_points : m.league_entry_1_points;
+                            
+                            if (teamScore > oppScore) return 'W';
+                            if (teamScore < oppScore) return 'L';
+                            return 'D';
+                        }).reverse(); // Reverse to show oldest to newest
+                    };
+                    
+                    const t1Record = getLastFiveGames(match.league_entry_1);
+                    const t2Record = getLastFiveGames(match.league_entry_2);
+                    
                     const entry1 = await fetchData(`entry/${t1.entry_id}/event/${gw}`);
                     const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
 
@@ -810,18 +870,30 @@
                         benchRows += makeRow(bench1[i], bench2[i], true);
                     }
 
+                    const matchId = `match-${match.league_entry_1}-${match.league_entry_2}-${gw}`;
+                    
                     html += `<div class="card">
                         <div class="header">
                             <div class="header-team">
                                 <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
                                 <div class="owner-name">${t1.owner}</div>
                                 <div class="team-score">${t1Score}</div>
+                                <button class="expand-btn" onclick="toggleRecord('${matchId}-t1')">▼</button>
+                                <div id="${matchId}-t1" class="recent-record">
+                                    <div style="margin-bottom:5px;">Last 5:</div>
+                                    ${t1Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                                </div>
                             </div>
                             <div class="header-vs">VS</div>
                             <div class="header-team">
                                 <div class="team-name">${t2.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t2Rank})</span></div>
                                 <div class="owner-name">${t2.owner}</div>
                                 <div class="team-score">${t2Score}</div>
+                                <button class="expand-btn" onclick="toggleRecord('${matchId}-t2')">▼</button>
+                                <div id="${matchId}-t2" class="recent-record">
+                                    <div style="margin-bottom:5px;">Last 5:</div>
+                                    ${t2Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                                </div>
                             </div>
                         </div>
                         ${rows}
@@ -832,6 +904,18 @@
             }
             
             content.innerHTML = html || '<div class="loading">No matchups loaded</div>';
+        }
+        
+        function toggleRecord(id) {
+            const element = document.getElementById(id);
+            const btn = event.target;
+            if (element.classList.contains('show')) {
+                element.classList.remove('show');
+                btn.textContent = '▼';
+            } else {
+                element.classList.add('show');
+                btn.textContent = '▲';
+            }
         }
 
         init();
