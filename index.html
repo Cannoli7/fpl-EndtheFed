@@ -78,6 +78,9 @@
             font-size: 1.2rem;
             padding: 5px;
             margin-top: 5px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
         .expand-btn:hover { color: #fff; }
         
@@ -86,11 +89,20 @@
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 0.85rem;
-            color: #bdc3c7;
         }
         
         .recent-record.show { display: block; }
+        
+        .record-section {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .record-label {
+            font-size: 0.85rem;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+        }
         
         .record-item {
             display: inline-block;
@@ -105,8 +117,29 @@
         }
         
         .record-W { background: #2ecc71; color: #fff; }
-        .record-D { background: #f39c12; color: #fff; }
+        .record-D { background: #95a5a6; color: #fff; }
         .record-L { background: #e74c3c; color: #fff; }
+        
+        .h2h-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .h2h-item {
+            text-align: center;
+        }
+        
+        .h2h-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        
+        .h2h-wins { color: #2ecc71; }
+        .h2h-draws { color: #95a5a6; }
+        .h2h-losses { color: #e74c3c; }
         
         .row {
             display: grid;
@@ -789,6 +822,25 @@
                     const t1Record = getLastFiveGames(match.league_entry_1);
                     const t2Record = getLastFiveGames(match.league_entry_2);
                     
+                    // Calculate head-to-head record
+                    const h2hMatches = leagueData.matches.filter(m => 
+                        m.finished && 
+                        m.event < gw &&
+                        ((m.league_entry_1 === match.league_entry_1 && m.league_entry_2 === match.league_entry_2) ||
+                         (m.league_entry_1 === match.league_entry_2 && m.league_entry_2 === match.league_entry_1))
+                    );
+                    
+                    let t1H2HWins = 0, t1H2HLosses = 0, h2hDraws = 0;
+                    h2hMatches.forEach(m => {
+                        const isT1First = m.league_entry_1 === match.league_entry_1;
+                        const t1Score = isT1First ? m.league_entry_1_points : m.league_entry_2_points;
+                        const t2Score = isT1First ? m.league_entry_2_points : m.league_entry_1_points;
+                        
+                        if (t1Score > t2Score) t1H2HWins++;
+                        else if (t1Score < t2Score) t1H2HLosses++;
+                        else h2hDraws++;
+                    });
+                    
                     const entry1 = await fetchData(`entry/${t1.entry_id}/event/${gw}`);
                     const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
 
@@ -878,21 +930,41 @@
                                 <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
                                 <div class="owner-name">${t1.owner}</div>
                                 <div class="team-score">${t1Score}</div>
-                                <button class="expand-btn" onclick="toggleRecord('${matchId}-t1')">▼</button>
-                                <div id="${matchId}-t1" class="recent-record">
-                                    <div style="margin-bottom:5px;">Last 5:</div>
-                                    ${t1Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
-                                </div>
                             </div>
-                            <div class="header-vs">VS</div>
+                            <div class="header-vs">
+                                VS
+                                <button class="expand-btn" onclick="toggleRecord('${matchId}')">▼</button>
+                            </div>
                             <div class="header-team">
                                 <div class="team-name">${t2.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t2Rank})</span></div>
                                 <div class="owner-name">${t2.owner}</div>
                                 <div class="team-score">${t2Score}</div>
-                                <button class="expand-btn" onclick="toggleRecord('${matchId}-t2')">▼</button>
-                                <div id="${matchId}-t2" class="recent-record">
-                                    <div style="margin-bottom:5px;">Last 5:</div>
-                                    ${t2Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div id="${matchId}" class="recent-record">
+                            <div class="record-section">
+                                <div class="record-label">${t1.name} - Last 5</div>
+                                ${t1Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                            </div>
+                            <div class="record-section">
+                                <div class="record-label">${t2.name} - Last 5</div>
+                                ${t2Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
+                            </div>
+                            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 15px;">
+                                <div class="record-label">Head-to-Head Record</div>
+                                <div class="h2h-stats">
+                                    <div class="h2h-item">
+                                        <div class="h2h-value h2h-wins">${t1H2HWins}</div>
+                                        <div style="color:#7f8c8d;font-size:0.75rem;">${t1.name}</div>
+                                    </div>
+                                    <div class="h2h-item">
+                                        <div class="h2h-value h2h-draws">${h2hDraws}</div>
+                                        <div style="color:#7f8c8d;font-size:0.75rem;">Draws</div>
+                                    </div>
+                                    <div class="h2h-item">
+                                        <div class="h2h-value h2h-losses">${t1H2HLosses}</div>
+                                        <div style="color:#7f8c8d;font-size:0.75rem;">${t2.name}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
