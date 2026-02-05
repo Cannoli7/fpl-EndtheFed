@@ -1073,56 +1073,62 @@
             
             // Get gameweek deadline and first fixture info
             try {
-                const bootstrapData = await fetchData('bootstrap-static');
-                const nextGWEvent = bootstrapData.events && bootstrapData.events.find(e => e.id === nextWeek);
+                // Fetch bootstrap data for deadline
+                const bootstrapResponse = await fetch('https://draft.premierleague.com/api/bootstrap-static');
+                const bootstrapData = await bootstrapResponse.json();
                 
-                if (nextGWEvent) {
-                    const deadline = new Date(nextGWEvent.deadline_time);
-                    const deadlineStr = deadline.toLocaleString('en-US', { 
-                        weekday: 'short', 
-                        month: 'short', 
-                        day: 'numeric', 
-                        hour: 'numeric', 
-                        minute: '2-digit',
-                        hour12: true 
-                    });
+                if (bootstrapData && bootstrapData.events) {
+                    const nextGWEvent = bootstrapData.events.find(e => e.id === nextWeek);
                     
-                    html += '<div style="background:rgba(52,73,94,0.2);padding:12px 15px;margin-bottom:15px;border-radius:5px;">';
-                    html += `<div style="margin-bottom:8px;"><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
-                    
-                    // Try to get first fixture info
-                    try {
-                        const nextGWFixtures = await fetchData(`event/${nextWeek}/live`);
-                        const fixtures = nextGWFixtures.fixtures || [];
-                        
-                        let earliestFixture = null;
-                        fixtures.forEach(f => {
-                            if (f.kickoff_time) {
-                                if (!earliestFixture || new Date(f.kickoff_time) < new Date(earliestFixture.kickoff_time)) {
-                                    earliestFixture = f;
-                                }
-                            }
+                    if (nextGWEvent && nextGWEvent.deadline_time) {
+                        const deadline = new Date(nextGWEvent.deadline_time);
+                        const deadlineStr = deadline.toLocaleString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
                         });
                         
-                        if (earliestFixture) {
-                            const firstGame = new Date(earliestFixture.kickoff_time);
-                            const firstGameStr = firstGame.toLocaleString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric', 
-                                hour: 'numeric', 
-                                minute: '2-digit',
-                                hour12: true 
-                            });
-                            const homeTeam = teamMap[earliestFixture.team_h] || '';
-                            const awayTeam = teamMap[earliestFixture.team_a] || '';
-                            html += `<div><strong style="color:#3498db;">⚽ First Game:</strong> <span style="color:#ecf0f1;">${homeTeam} vs ${awayTeam} - ${firstGameStr}</span></div>`;
+                        html += '<div style="background:rgba(52,73,94,0.2);padding:12px 15px;margin-bottom:15px;border-radius:5px;">';
+                        html += `<div style="margin-bottom:8px;"><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
+                        
+                        // Try to get first fixture info from fixtures endpoint
+                        try {
+                            const fixturesResponse = await fetch('https://draft.premierleague.com/api/fixtures?event=' + nextWeek);
+                            const allFixtures = await fixturesResponse.json();
+                            
+                            if (allFixtures && allFixtures.length > 0) {
+                                // Find earliest fixture
+                                let earliestFixture = allFixtures[0];
+                                allFixtures.forEach(f => {
+                                    if (f.kickoff_time && new Date(f.kickoff_time) < new Date(earliestFixture.kickoff_time)) {
+                                        earliestFixture = f;
+                                    }
+                                });
+                                
+                                if (earliestFixture && earliestFixture.kickoff_time) {
+                                    const firstGame = new Date(earliestFixture.kickoff_time);
+                                    const firstGameStr = firstGame.toLocaleString('en-US', { 
+                                        weekday: 'short', 
+                                        month: 'short', 
+                                        day: 'numeric', 
+                                        hour: 'numeric', 
+                                        minute: '2-digit',
+                                        hour12: true 
+                                    });
+                                    const homeTeam = teamMap[earliestFixture.team_h] || 'Team ' + earliestFixture.team_h;
+                                    const awayTeam = teamMap[earliestFixture.team_a] || 'Team ' + earliestFixture.team_a;
+                                    html += `<div><strong style="color:#3498db;">⚽ First Game:</strong> <span style="color:#ecf0f1;">${homeTeam} vs ${awayTeam} - ${firstGameStr}</span></div>`;
+                                }
+                            }
+                        } catch (e) {
+                            console.log('Could not fetch fixture info:', e);
                         }
-                    } catch (e) {
-                        console.log('Could not fetch fixture info:', e);
+                        
+                        html += '</div>';
                     }
-                    
-                    html += '</div>';
                 }
             } catch (e) {
                 console.log('Could not fetch deadline info:', e);
