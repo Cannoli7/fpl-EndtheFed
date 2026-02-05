@@ -634,9 +634,11 @@
                 let bwMedal = '';
                 if (bestWeek === maxBW) bwMedal = ' 🥇';
                 
+                const currentRank = team.rank || (index + 1);
+                
                 html += '<tr>';
-                html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
-                html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
+                html += `<td class="rank-col ${rankClass}">${currentRank}</td>`;
+                html += `<td class="team-col"><strong>${entry.entry_name}</strong> <span style="color:#7f8c8d;font-size:0.9rem;">(${currentRank})</span><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
                 html += `<td class="stat-col">${team.matches_won || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
