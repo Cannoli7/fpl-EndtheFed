@@ -1071,6 +1071,53 @@
             html += '<div class="home-section">';
             html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups</div>`;
             
+            // Get gameweek deadline and first fixture info
+            const staticData = await fetchData('bootstrap-static');
+            const nextGWEvent = staticData.events.find(e => e.id === nextWeek);
+            const nextGWFixtures = await fetchData(`event/${nextWeek}/live`);
+            const fixtures = nextGWFixtures.fixtures || [];
+            
+            if (nextGWEvent) {
+                const deadline = new Date(nextGWEvent.deadline_time);
+                const deadlineStr = deadline.toLocaleString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+                
+                // Find earliest fixture
+                let earliestFixture = null;
+                fixtures.forEach(f => {
+                    if (f.kickoff_time) {
+                        if (!earliestFixture || new Date(f.kickoff_time) < new Date(earliestFixture.kickoff_time)) {
+                            earliestFixture = f;
+                        }
+                    }
+                });
+                
+                html += '<div style="background:rgba(52,73,94,0.2);padding:12px 15px;margin-bottom:15px;border-radius:5px;">';
+                html += `<div style="margin-bottom:8px;"><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
+                
+                if (earliestFixture) {
+                    const firstGame = new Date(earliestFixture.kickoff_time);
+                    const firstGameStr = firstGame.toLocaleString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+                    const homeTeam = teamMap[earliestFixture.team_h] || '';
+                    const awayTeam = teamMap[earliestFixture.team_a] || '';
+                    html += `<div><strong style="color:#3498db;">⚽ First Game:</strong> <span style="color:#ecf0f1;">${homeTeam} vs ${awayTeam} - ${firstGameStr}</span></div>`;
+                }
+                html += '</div>';
+            }
+            
             const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
             
             for (const match of nextWeekMatches) {
