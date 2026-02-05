@@ -1071,17 +1071,18 @@
             html += '<div class="home-section">';
             html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups</div>`;
             
-            // Get gameweek deadline and first fixture info
+            // Get gameweek deadline info
             try {
-                // Fetch bootstrap data for deadline
-                const bootstrapResponse = await fetch('https://draft.premierleague.com/api/bootstrap-static');
-                const bootstrapData = await bootstrapResponse.json();
+                const response = await fetch('https://draft.premierleague.com/api/bootstrap-static');
+                const data = await response.json();
+                console.log('Bootstrap data:', data);
                 
-                if (bootstrapData && bootstrapData.events) {
-                    const nextGWEvent = bootstrapData.events.find(e => e.id === nextWeek);
+                if (data && data.events && Array.isArray(data.events)) {
+                    const gwEvent = data.events.find(e => e.id === nextWeek);
+                    console.log('Found event for GW', nextWeek, ':', gwEvent);
                     
-                    if (nextGWEvent && nextGWEvent.deadline_time) {
-                        const deadline = new Date(nextGWEvent.deadline_time);
+                    if (gwEvent && gwEvent.deadline_time) {
+                        const deadline = new Date(gwEvent.deadline_time);
                         const deadlineStr = deadline.toLocaleString('en-US', { 
                             weekday: 'short', 
                             month: 'short', 
@@ -1091,47 +1092,15 @@
                             hour12: true 
                         });
                         
-                        html += '<div style="background:rgba(52,73,94,0.2);padding:12px 15px;margin-bottom:15px;border-radius:5px;">';
-                        html += `<div style="margin-bottom:8px;"><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
-                        
-                        // Try to get first fixture info from fixtures endpoint
-                        try {
-                            const fixturesResponse = await fetch('https://draft.premierleague.com/api/fixtures?event=' + nextWeek);
-                            const allFixtures = await fixturesResponse.json();
-                            
-                            if (allFixtures && allFixtures.length > 0) {
-                                // Find earliest fixture
-                                let earliestFixture = allFixtures[0];
-                                allFixtures.forEach(f => {
-                                    if (f.kickoff_time && new Date(f.kickoff_time) < new Date(earliestFixture.kickoff_time)) {
-                                        earliestFixture = f;
-                                    }
-                                });
-                                
-                                if (earliestFixture && earliestFixture.kickoff_time) {
-                                    const firstGame = new Date(earliestFixture.kickoff_time);
-                                    const firstGameStr = firstGame.toLocaleString('en-US', { 
-                                        weekday: 'short', 
-                                        month: 'short', 
-                                        day: 'numeric', 
-                                        hour: 'numeric', 
-                                        minute: '2-digit',
-                                        hour12: true 
-                                    });
-                                    const homeTeam = teamMap[earliestFixture.team_h] || 'Team ' + earliestFixture.team_h;
-                                    const awayTeam = teamMap[earliestFixture.team_a] || 'Team ' + earliestFixture.team_a;
-                                    html += `<div><strong style="color:#3498db;">⚽ First Game:</strong> <span style="color:#ecf0f1;">${homeTeam} vs ${awayTeam} - ${firstGameStr}</span></div>`;
-                                }
-                            }
-                        } catch (e) {
-                            console.log('Could not fetch fixture info:', e);
-                        }
-                        
+                        html += '<div style="background:rgba(52,73,94,0.3);padding:12px 15px;margin-bottom:15px;border-radius:5px;border-left:3px solid #e74c3c;">';
+                        html += `<div><strong style="color:#e74c3c;">⏰ Deadline:</strong> <span style="color:#ecf0f1;">${deadlineStr}</span></div>`;
                         html += '</div>';
                     }
+                } else {
+                    console.log('Events array not found or not an array');
                 }
             } catch (e) {
-                console.log('Could not fetch deadline info:', e);
+                console.error('Error fetching deadline:', e);
             }
             
             const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
