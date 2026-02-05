@@ -163,6 +163,71 @@
             font-size: 0.7rem;
         }
         
+        /* Home Page Styles */
+        .home-section {
+            margin-bottom: 30px;
+        }
+        
+        .home-section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2ecc71;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .home-match {
+            background: #0f3460;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .home-team {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .home-team-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 3px;
+        }
+        
+        .home-team-owner {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+        
+        .home-score {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2ecc71;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        .home-vs {
+            font-size: 1rem;
+            color: #7f8c8d;
+            font-weight: 600;
+            padding: 0 15px;
+        }
+        
+        .home-winner {
+            color: #f1c40f;
+        }
+        
+        .home-loser {
+            color: #7f8c8d;
+            opacity: 0.6;
+        }
+        
         .row {
             display: grid;
             grid-template-columns: 1fr auto 20px auto 1fr;
@@ -540,6 +605,43 @@
             .standings-table .team-col span {
                 font-size: 0.75rem;
             }
+            
+            /* Home Page Mobile */
+            .home-section {
+                margin-bottom: 20px;
+            }
+            
+            .home-section-title {
+                font-size: 1.1rem;
+                padding: 8px 10px;
+                margin-left: 4px;
+                margin-right: 4px;
+            }
+            
+            .home-match {
+                padding: 10px 6px;
+                margin-left: 4px;
+                margin-right: 4px;
+                gap: 5px;
+            }
+            
+            .home-team-name {
+                font-size: 0.85rem;
+            }
+            
+            .home-team-owner {
+                font-size: 0.7rem;
+            }
+            
+            .home-score {
+                font-size: 1.3rem;
+                min-width: 35px;
+            }
+            
+            .home-vs {
+                padding: 0 8px;
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
@@ -550,6 +652,7 @@
         <span></span>
     </div>
     <div id="menu-dropdown" style="display:none;position:fixed;top:60px;left:10px;background:#0f3460;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;min-width:200px;">
+        <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;font-weight:600;">📊 Matchups</div>
     </div>
@@ -572,7 +675,7 @@
         let teamMap = {};
         let teamCodeMap = {};
         let previousScores = {}; // Track previous scores for animation
-        let currentView = 'matchups'; // 'matchups' or 'standings'
+        let currentView = 'home'; // 'home', 'matchups', or 'standings'
         const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
 
         async function fetchData(endpoint) {
@@ -591,7 +694,7 @@
                 teamCodeMap[t.id] = t.code;
             });
             
-            await loadGameweek(currentGW);
+            await showHome(); // Start on home page
             
             document.getElementById('btn-prev').onclick = () => { if (currentGW > 1) loadGameweek(currentGW - 1); };
             document.getElementById('btn-next').onclick = () => { if (currentGW < 38) loadGameweek(currentGW + 1); };
@@ -611,6 +714,12 @@
             });
             
             // Menu options
+            document.getElementById('menu-home').onclick = () => {
+                currentView = 'home';
+                showHome();
+                menuDropdown.style.display = 'none';
+            };
+            
             document.getElementById('menu-matchups').onclick = () => {
                 currentView = 'matchups';
                 const nav = document.querySelector('.nav');
@@ -871,6 +980,96 @@
                     if (paCell) paCell.style.color = paColor;
                 });
             }, 0);
+        }
+        
+        async function showHome() {
+            const content = document.getElementById('content');
+            const nav = document.querySelector('.nav');
+            nav.style.display = 'none'; // Hide gameweek navigation
+            
+            content.innerHTML = '<div class="loading">Loading home...</div>';
+            
+            if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
+            
+            const entryMap = {};
+            leagueData.league_entries.forEach(e => {
+                entryMap[e.id] = { entry_id: e.entry_id, name: e.entry_name, owner: e.player_first_name };
+            });
+            
+            // Get last week (most recent completed gameweek)
+            const lastWeek = currentGW - 1;
+            const nextWeek = currentGW;
+            
+            let html = '';
+            
+            // Last Week Results
+            if (lastWeek > 0) {
+                html += '<div class="home-section">';
+                html += `<div class="home-section-title">Gameweek ${lastWeek} Results</div>`;
+                
+                const lastWeekMatches = leagueData.matches.filter(m => m.event === lastWeek && m.finished);
+                const lastWeekLive = await fetchData(`event/${lastWeek}/live`);
+                
+                for (const match of lastWeekMatches) {
+                    const t1 = entryMap[match.league_entry_1];
+                    const t2 = entryMap[match.league_entry_2];
+                    const t1Score = match.league_entry_1_points || 0;
+                    const t2Score = match.league_entry_2_points || 0;
+                    
+                    const t1Class = t1Score > t2Score ? 'home-winner' : t1Score < t2Score ? 'home-loser' : '';
+                    const t2Class = t2Score > t1Score ? 'home-winner' : t2Score < t1Score ? 'home-loser' : '';
+                    
+                    html += '<div class="home-match">';
+                    html += `<div class="home-team ${t1Class}">`;
+                    html += `<div class="home-team-name">${t1.name}</div>`;
+                    html += `<div class="home-team-owner">${t1.owner}</div>`;
+                    html += '</div>';
+                    html += `<div class="home-score ${t1Class}">${t1Score}</div>`;
+                    html += '<div class="home-vs">-</div>';
+                    html += `<div class="home-score ${t2Class}">${t2Score}</div>`;
+                    html += `<div class="home-team ${t2Class}">`;
+                    html += `<div class="home-team-name">${t2.name}</div>`;
+                    html += `<div class="home-team-owner">${t2.owner}</div>`;
+                    html += '</div>';
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            }
+            
+            // Next Week Matchups
+            html += '<div class="home-section">';
+            html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups</div>`;
+            
+            const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
+            
+            for (const match of nextWeekMatches) {
+                const t1 = entryMap[match.league_entry_1];
+                const t2 = entryMap[match.league_entry_2];
+                
+                // Get standings rank for each team
+                const standings = leagueData.standings || [];
+                const t1Standing = standings.find(s => s.league_entry === match.league_entry_1);
+                const t2Standing = standings.find(s => s.league_entry === match.league_entry_2);
+                const t1Rank = t1Standing ? t1Standing.rank : '?';
+                const t2Rank = t2Standing ? t2Standing.rank : '?';
+                
+                html += '<div class="home-match">';
+                html += '<div class="home-team">';
+                html += `<div class="home-team-name">${t1.name} (${t1Rank})</div>`;
+                html += `<div class="home-team-owner">${t1.owner}</div>`;
+                html += '</div>';
+                html += '<div class="home-vs">VS</div>';
+                html += '<div class="home-team">';
+                html += `<div class="home-team-name">${t2.name} (${t2Rank})</div>`;
+                html += `<div class="home-team-owner">${t2.owner}</div>`;
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            
+            content.innerHTML = html;
         }
 
         async function loadGameweek(gw, silentUpdate = false) {
