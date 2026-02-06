@@ -397,6 +397,7 @@
             gap: 5px;
             flex-shrink: 0;
             min-width: 50px;
+            position: relative;
         }
         
         .p-jersey { width: 30px; height: 38px; object-fit: contain; flex-shrink: 0; }
@@ -701,6 +702,7 @@
                 align-items: center;
                 flex-shrink: 0;
                 min-width: 35px;
+                position: relative;
             }
             
             .p-info-wrap { 
@@ -1157,8 +1159,8 @@
                                         const teamName = teamMap[player1.team];
                                         const minutes = getMatchMinute(teamName);
                                         
-                                        // Check if halftime
-                                        if (minutes >= 45 && minutes <= 50) {
+                                        // Check if halftime (45-60 mins)
+                                        if (minutes >= 45 && minutes <= 60) {
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
                                         } else if (minutes > 0) {
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
@@ -1173,8 +1175,8 @@
                                         const teamName = teamMap[player2.team];
                                         const minutes = getMatchMinute(teamName);
                                         
-                                        // Check if halftime
-                                        if (minutes >= 45 && minutes <= 50) {
+                                        // Check if halftime (45-60 mins)
+                                        if (minutes >= 45 && minutes <= 60) {
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
                                         } else if (minutes > 0) {
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
@@ -1908,15 +1910,6 @@
                 // Check FPL fixture data
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix && fix.started && !fix.finished) {
-                    // Check if it's halftime
-                    const isHalftime = fix.finished_provisional || 
-                                       (externalMinute >= 45 && externalMinute <= 50) ||
-                                       (fix.stats && fix.stats.some(s => s.identifier === 'halftime'));
-                    
-                    if (isHalftime) {
-                        return { minutes: 'HT' };
-                    }
-                    
                     // Use external API minute if available, otherwise fallback to FPL data
                     let minutes = externalMinute;
                     
@@ -1947,8 +1940,9 @@
                         }
                     }
                     
-                    // Check if it's likely halftime based on minutes
-                    if (minutes >= 45 && minutes <= 50) {
+                    // Check if it's halftime - widen range to catch extended HT breaks (45-60 mins from kickoff)
+                    // Also check for finished_provisional flag which indicates HT
+                    if (fix.finished_provisional || (minutes >= 45 && minutes <= 60)) {
                         return { minutes: 'HT' };
                     }
                     
@@ -2015,16 +2009,6 @@
                             const liveIndicator = row.querySelector(`.p-${side} .live-indicator`);
                             
                             if (fix && fix.started && !fix.finished) {
-                                // Check if it's halftime
-                                const isHalftime = fix.finished_provisional || 
-                                                   (externalMinute >= 45 && externalMinute <= 50) ||
-                                                   (fix.stats && fix.stats.some(s => s.identifier === 'halftime'));
-                                
-                                if (isHalftime && liveIndicator) {
-                                    liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                    return;
-                                }
-                                
                                 // Use external API minute if available
                                 let minutes = externalMinute;
                                 
@@ -2055,8 +2039,8 @@
                                     }
                                 }
                                 
-                                // Check if it's likely halftime based on minutes
-                                if (minutes >= 45 && minutes <= 50) {
+                                // Check if it's halftime (45-60 mins from kickoff catches HT break)
+                                if (fix.finished_provisional || (minutes >= 45 && minutes <= 60)) {
                                     if (liveIndicator) {
                                         liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
                                     }
@@ -2241,8 +2225,8 @@
                         const live2 = player2 ? isPlayerLive(player2) : null;
 
                         const leftName = player1
-                            ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes}${live1.minutes === 'HT' ? '' : "'"}</div>` : ''}
-                               <div class="p-jersey-container">
+                            ? `<div class="p-jersey-container">
+                                   ${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes === 'HT' ? 'HT' : live1.minutes + "'"}</div>` : ''}
                                    <img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
                                    <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>
                                </div>
@@ -2256,8 +2240,7 @@
                             : '';
 
                         const rightName = player2
-                            ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes}${live2.minutes === 'HT' ? '' : "'"}</div>` : ''}
-                               <div class="p-info-wrap">
+                            ? `<div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player2.name}</span>
                                        <span class="pos-badge pos-${player2.pos}">${player2.pos}</span>
@@ -2265,6 +2248,7 @@
                                    <span class="p-fixture">${getFixtureStr(player2)}</span>
                                </div>
                                <div class="p-jersey-container">
+                                   ${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes === 'HT' ? 'HT' : live2.minutes + "'"}</div>` : ''}
                                    <img src="${getJerseyUrl(player2.team, player2.pos)}" class="p-jersey">
                                    <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
                                </div>`
