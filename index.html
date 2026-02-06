@@ -396,7 +396,8 @@
         .p-right .p-info-wrap { text-align: right; }
         
         .p-name-row { display: flex; align-items: center; gap: 3px; }
-        .p-right .p-name-row { flex-direction: row-reverse; }
+        .p-left .p-name-row { justify-content: flex-start; }
+        .p-right .p-name-row { flex-direction: row-reverse; justify-content: flex-end; }
         
         .p-name {
             font-size: 0.95rem;
@@ -422,10 +423,16 @@
         .pos-M { background: #1e88e5 !important; color: #fff !important; }
         .pos-F { background: #e53935 !important; color: #fff !important; }
         
-        .p-fixture { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; }
+        .p-fixture { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; margin-bottom: 4px; }
         
-        .p-stats { display: flex; gap: 5px; align-items: center; }
-        .p-right .p-stats { justify-content: flex-end; flex-direction: row-reverse; }
+        .p-stats { 
+            display: flex; 
+            gap: 5px; 
+            align-items: center;
+            margin-top: 4px;
+        }
+        .p-left .p-stats { justify-content: flex-start; }
+        .p-right .p-stats { justify-content: flex-end; }
         
         .stat-mp { font-size: 0.9rem !important; font-weight: 700 !important; color: #bbb !important; }
         .stat-cs { font-size: 1.4rem !important; }
@@ -677,11 +684,6 @@
                 order: 2;
             }
             
-            .p-right .p-stats {
-                order: 3;
-                justify-content: flex-end !important;
-            }
-            
             .p-right .p-name-row {
                 flex-direction: row-reverse;
             }
@@ -750,9 +752,16 @@
             .p-stats { 
                 gap: 3px;
                 width: 100%;
-                justify-content: flex-start !important;
                 flex-direction: row !important;
                 flex-basis: 100%;
+            }
+            
+            .p-left .p-stats {
+                justify-content: flex-start !important;
+            }
+            
+            .p-right .p-stats {
+                justify-content: flex-end !important;
             }
             
             .stat-mp { font-size: 0.7rem !important; }
@@ -1773,6 +1782,11 @@
             }
             
             if (silentUpdate && content.querySelector('.card')) {
+                // Fetch fresh live data to get updated fixture times
+                const freshLiveData = await fetchData(`event/${gw}/live`);
+                cachedLiveData = freshLiveData;
+                cachedFixtures = freshLiveData.fixtures || [];
+                
                 const card = content.querySelector('.card');
                 const match = matches[currentMatchIndex];
                 
@@ -1784,7 +1798,7 @@
                         const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
 
                         const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
-                            return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
+                            return sum + (freshLiveData.elements[String(p.element)]?.stats?.total_points || 0);
                         }, 0);
 
                         const t1Score = getScore(entry1.picks);
@@ -1803,13 +1817,41 @@
                         const bench2 = entry2.picks.filter(p => p.position > 11);
                         const allPicks1 = [...starters1, ...bench1];
                         const allPicks2 = [...starters2, ...bench2];
+                        
+                        // Function to check if player is live and update indicator
+                        const updateLiveIndicator = (row, player, side) => {
+                            if (!player) return;
+                            const fix = cachedFixtures.find(f => f.team_h === player.team || f.team_a === player.team);
+                            const liveIndicator = row.querySelector(`.p-${side} .live-indicator`);
+                            
+                            if (fix && fix.started && !fix.finished) {
+                                const minutes = fix.minutes || 0;
+                                if (liveIndicator) {
+                                    // Update existing indicator
+                                    liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                }
+                            } else if (liveIndicator) {
+                                // Remove indicator if match finished
+                                liveIndicator.remove();
+                            }
+                        };
 
                         rows.forEach((row, i) => {
                             const p1 = allPicks1[i];
                             const p2 = allPicks2[i];
                             
+                            // Update live indicators
                             if (p1) {
-                                const pts1 = liveData.elements[String(p1.element)]?.stats?.total_points || 0;
+                                const player1 = playerMap[p1.element];
+                                updateLiveIndicator(row, player1, 'left');
+                            }
+                            if (p2) {
+                                const player2 = playerMap[p2.element];
+                                updateLiveIndicator(row, player2, 'right');
+                            }
+                            
+                            if (p1) {
+                                const pts1 = freshLiveData.elements[String(p1.element)]?.stats?.total_points || 0;
                                 const scoreLeft = row.querySelector('.p-score-left');
                                 if (scoreLeft) scoreLeft.textContent = pts1;
                                 
@@ -1831,7 +1873,7 @@
                             }
                             
                             if (p2) {
-                                const pts2 = liveData.elements[String(p2.element)]?.stats?.total_points || 0;
+                                const pts2 = freshLiveData.elements[String(p2.element)]?.stats?.total_points || 0;
                                 const scoreRight = row.querySelector('.p-score-right');
                                 if (scoreRight) scoreRight.textContent = pts2;
                                 
@@ -1964,21 +2006,21 @@
                                        <span class="pos-badge pos-${player1.pos}">${player1.pos}</span>
                                    </div>
                                    <span class="p-fixture">${getFixtureStr(player1)}</span>
-                               </div>
-                               <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>`
+                                   <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>
+                               </div>`
                             : '';
 
                         const rightName = player2
                             ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes}'</div>` : ''}
-                               <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
+                               <img src="${getJerseyUrl(player2.team, player2.pos)}" class="p-jersey">
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player2.name}</span>
                                        <span class="pos-badge pos-${player2.pos}">${player2.pos}</span>
                                    </div>
                                    <span class="p-fixture">${getFixtureStr(player2)}</span>
-                               </div>
-                               <img src="${getJerseyUrl(player2.team, player2.pos)}" class="p-jersey">`
+                                   <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
+                               </div>`
                             : '';
 
                         // Check if scores changed for animation
