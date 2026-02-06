@@ -727,17 +727,14 @@
             
             .p-left, .p-right { 
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
                 gap: 3px;
-            }
-            
-            .p-right {
-                align-items: flex-end;
+                width: 100%;
             }
             
             .p-top-row {
                 display: flex;
-                align-items: center;
+                align-items: flex-start;
                 gap: 6px;
                 width: 100%;
             }
@@ -751,17 +748,16 @@
             }
             
             .live-indicator {
+                position: static;
                 font-size: 0.5rem;
                 padding: 2px 4px;
                 gap: 2px;
-                top: auto;
-                bottom: 0;
-                right: 0;
+                align-self: flex-start;
+                width: fit-content;
             }
             
             .p-right .live-indicator {
-                right: auto;
-                left: 0;
+                align-self: flex-end;
             }
             
             .live-pulse {
@@ -779,15 +775,17 @@
             }
             
             .p-info-wrap { 
-                gap: 2px;
+                gap: 1px;
                 flex: 1;
                 min-width: 0;
                 display: flex;
                 flex-direction: column;
+                align-items: flex-start;
+                justify-content: center;
             }
             
             .p-right .p-info-wrap {
-                text-align: right;
+                align-items: flex-end;
             }
             
             .p-right .p-name-row {
@@ -796,6 +794,8 @@
             
             .p-name-row {
                 gap: 3px;
+                display: flex;
+                align-items: center;
             }
             
             .p-name { 
@@ -813,16 +813,18 @@
             }
             
             .p-fixture { 
-                font-size: 0.7rem;
-                width: 100%;
+                font-size: 0.65rem;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                white-space: nowrap;
+                width: 100%;
             }
             
             /* Stats below top row */
             .p-stats { 
                 gap: 3px;
                 flex-wrap: wrap;
+                width: 100%;
             }
             
             .p-left .p-stats {
