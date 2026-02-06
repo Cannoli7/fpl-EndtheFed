@@ -386,19 +386,26 @@
         }
         .row:nth-child(even) { background: rgba(255,255,255,0.03); }
         
-        .p-left { display: flex; align-items: flex-start; gap: 8px; justify-content: flex-start; position: relative; }
-        .p-right { display: flex; align-items: flex-start; gap: 8px; justify-content: flex-end; position: relative; }
+        .p-left { display: flex; align-items: center; gap: 8px; justify-content: flex-start; position: relative; }
+        .p-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; position: relative; }
         
         .p-jersey-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
+            flex-shrink: 0;
         }
         
         .p-jersey { width: 28px; height: 35px; object-fit: contain; flex-shrink: 0; }
         
-        .p-info-wrap { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
+        .p-info-wrap { 
+            display: flex; 
+            flex-direction: column; 
+            min-width: 0; 
+            gap: 3px;
+            flex: 1;
+        }
         .p-left .p-info-wrap { text-align: left; }
         .p-right .p-info-wrap { text-align: right; }
         
@@ -413,7 +420,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 150px;
+            max-width: 200px;
         }
         
         .pos-badge {
@@ -438,7 +445,7 @@
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
-            max-width: 120px;
+            max-width: 150px;
         }
         
         .stat-mp { font-size: 0.9rem !important; font-weight: 700 !important; color: #bbb !important; }
@@ -665,14 +672,14 @@
             
             .row {
                 grid-template-columns: 1fr auto 4px auto 1fr;
-                padding: 8px 4px;
+                padding: 6px 4px;
                 min-height: auto;
                 gap: 0;
             }
             
             .p-left, .p-right { 
                 flex-direction: row;
-                align-items: flex-start;
+                align-items: center;
                 gap: 4px;
                 flex-wrap: nowrap;
             }
@@ -685,6 +692,14 @@
                 gap: 2px;
                 align-items: center;
                 flex-shrink: 0;
+            }
+            
+            .p-info-wrap { 
+                gap: 1px;
+                flex: 1;
+                min-width: 0;
+                display: flex;
+                flex-direction: column;
             }
             
             .p-right .p-info-wrap {
@@ -716,38 +731,18 @@
                 height: 4px;
             }
             
-            .p-jersey-container {
-                gap: 2px;
-                align-items: center;
-            }
-            
             .p-jersey { 
                 width: 20px;
                 height: 25px;
-                flex-shrink: 0;
-            }
-            
-            .p-info-wrap { 
-                gap: 1px;
-                flex: 1;
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
             }
             
             .p-name-row {
-                display: flex;
-                align-items: center;
                 gap: 2px;
-                width: 100%;
             }
             
             .p-name { 
                 font-size: 0.8rem;
-                max-width: 100px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
+                max-width: 110px;
             }
             
             .pos-badge { 
@@ -759,6 +754,8 @@
             .p-fixture { 
                 font-size: 0.65rem;
                 width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             
             /* Stats centered below jersey */
@@ -766,7 +763,7 @@
                 gap: 2px;
                 justify-content: center !important;
                 flex-wrap: wrap;
-                max-width: 70px;
+                max-width: 85px;
             }
             
             .stat-mp { font-size: 0.65rem !important; }
