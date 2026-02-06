@@ -752,12 +752,13 @@
                 font-size: 0.5rem;
                 padding: 2px 4px;
                 gap: 2px;
-                align-self: flex-start;
+                align-self: flex-end;
                 width: fit-content;
+                order: -1;  /* Move to top of column */
             }
             
             .p-right .live-indicator {
-                align-self: flex-end;
+                align-self: flex-start;  /* Top-left for right column */
             }
             
             .live-pulse {
@@ -1215,7 +1216,12 @@
                                     const liveIndicator = row.querySelector('.p-left .live-indicator');
                                     if (liveIndicator) {
                                         const teamName = teamMap[player1.team];
-                                        const minutes = getMatchMinute(teamName);
+                                        let minutes = getMatchMinute(teamName);
+                                        
+                                        // Adjust for halftime if external API returns elapsed time
+                                        if (minutes > 60 && minutes < 120) {
+                                            minutes = minutes - 15;
+                                        }
                                         
                                         // Check if halftime (45-60 mins)
                                         if (minutes >= 45 && minutes <= 60) {
@@ -1231,7 +1237,12 @@
                                     const liveIndicator = row.querySelector('.p-right .live-indicator');
                                     if (liveIndicator) {
                                         const teamName = teamMap[player2.team];
-                                        const minutes = getMatchMinute(teamName);
+                                        let minutes = getMatchMinute(teamName);
+                                        
+                                        // Adjust for halftime if external API returns elapsed time
+                                        if (minutes > 60 && minutes < 120) {
+                                            minutes = minutes - 15;
+                                        }
                                         
                                         // Check if halftime (45-60 mins)
                                         if (minutes >= 45 && minutes <= 60) {
@@ -1963,7 +1974,12 @@
                 
                 // Get live match minutes from external API cache
                 const teamName = teamMap[player.team];
-                const externalMinute = getMatchMinute(teamName);
+                let externalMinute = getMatchMinute(teamName);
+                
+                // Adjust for halftime if external API returns elapsed time (not game time)
+                if (externalMinute > 60 && externalMinute < 120) {
+                    externalMinute = externalMinute - 15;
+                }
                 
                 // Check FPL fixture data
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
@@ -1991,8 +2007,14 @@
                         if (!minutes && fix.kickoff_time) {
                             const kickoff = new Date(fix.kickoff_time);
                             const now = new Date();
-                            const diff = Math.floor((now - kickoff) / 60000);
-                            if (diff > 0 && diff < 120) {
+                            let diff = Math.floor((now - kickoff) / 60000);
+                            
+                            // Adjust for halftime break (15 minutes) if in 2nd half
+                            if (diff > 60 && diff < 120) {
+                                diff = diff - 15;  // Subtract halftime
+                            }
+                            
+                            if (diff > 0 && diff < 105) {
                                 minutes = diff;
                             }
                         }
@@ -2061,7 +2083,12 @@
                             
                             // Get live match minutes from external API cache
                             const teamName = teamMap[player.team];
-                            const externalMinute = getMatchMinute(teamName);
+                            let externalMinute = getMatchMinute(teamName);
+                            
+                            // Adjust for halftime if external API returns elapsed time (not game time)
+                            if (externalMinute > 60 && externalMinute < 120) {
+                                externalMinute = externalMinute - 15;
+                            }
                             
                             const fix = cachedFixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                             const liveIndicator = row.querySelector(`.p-${side} .live-indicator`);
@@ -2090,8 +2117,14 @@
                                     if (!minutes && fix.kickoff_time) {
                                         const kickoff = new Date(fix.kickoff_time);
                                         const now = new Date();
-                                        const diff = Math.floor((now - kickoff) / 60000);
-                                        if (diff > 0 && diff < 120) {
+                                        let diff = Math.floor((now - kickoff) / 60000);
+                                        
+                                        // Adjust for halftime break (15 minutes) if in 2nd half
+                                        if (diff > 60 && diff < 120) {
+                                            diff = diff - 15;
+                                        }
+                                        
+                                        if (diff > 0 && diff < 105) {
                                             minutes = diff;
                                         }
                                     }
