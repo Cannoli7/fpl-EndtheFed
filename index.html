@@ -57,7 +57,8 @@
             margin-bottom: 18px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+            transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                        opacity 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -514,6 +515,37 @@
             animation: btcPulse 0.5s ease-out;
         }
         
+        /* Slide animations for match navigation */
+        @keyframes slideInFromRight {
+            0% { 
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            100% { 
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideInFromLeft {
+            0% { 
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            100% { 
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .slide-in-right {
+            animation: slideInFromRight 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .slide-in-left {
+            animation: slideInFromLeft 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
         /* Mobile Responsive Styles */
         @media (max-width: 768px) {
             * { margin: 0; padding: 0; }
@@ -841,6 +873,7 @@
         let currentView = 'home'; // 'home', 'matchups', or 'standings'
         let currentMatchIndex = 0; // Track which match is being viewed
         let totalMatches = 0; // Total matches in gameweek
+        let lastNavigationDirection = 0; // Track swipe direction for animation
         const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
         
         // Populate gameweek dropdown
@@ -1070,14 +1103,22 @@
         }
         
         function navigateMatch(direction) {
+            const prevIndex = currentMatchIndex;
             currentMatchIndex += direction;
             if (currentMatchIndex < 0) currentMatchIndex = 0;
             if (currentMatchIndex >= totalMatches) currentMatchIndex = totalMatches - 1;
+            
+            // Set animation direction (1 for right, -1 for left)
+            lastNavigationDirection = currentMatchIndex > prevIndex ? 1 : -1;
             loadGameweek(currentGW);
         }
         
         function jumpToMatch(index) {
+            const prevIndex = currentMatchIndex;
             currentMatchIndex = index;
+            
+            // Set animation direction based on jump
+            lastNavigationDirection = index > prevIndex ? 1 : -1;
             loadGameweek(currentGW);
         }
 
@@ -1544,6 +1585,17 @@
             }
             
             content.innerHTML = html || '<div class="loading">No matchups available</div>';
+            
+            // Apply slide animation
+            setTimeout(() => {
+                const card = document.querySelector('.card');
+                if (card && lastNavigationDirection !== 0) {
+                    card.classList.add(lastNavigationDirection === 1 ? 'slide-in-right' : 'slide-in-left');
+                    setTimeout(() => {
+                        card.classList.remove('slide-in-right', 'slide-in-left');
+                    }, 400);
+                }
+            }, 0);
         }
         
         async function loadGameweek(gw, silentUpdate = false) {
@@ -1913,6 +1965,17 @@
             }
             
             content.innerHTML = html || '<div class="loading">No matchups available</div>';
+            
+            // Apply slide animation
+            setTimeout(() => {
+                const card = document.querySelector('.card');
+                if (card && lastNavigationDirection !== 0) {
+                    card.classList.add(lastNavigationDirection === 1 ? 'slide-in-right' : 'slide-in-left');
+                    setTimeout(() => {
+                        card.classList.remove('slide-in-right', 'slide-in-left');
+                    }, 400);
+                }
+            }, 0);
         }
         
         function toggleRecord(id) {
