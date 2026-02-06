@@ -952,7 +952,73 @@
         let lastNavigationDirection = 0; // Track swipe direction for animation
         let cachedLiveData = null; // Cache live data for instant switching
         let cachedFixtures = []; // Cache fixtures for instant switching
+        let liveScoresCache = null; // Cache live match minutes from external API
+        let lastLiveScoresFetch = 0; // Timestamp of last fetch
         const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
+        
+        // Map FPL team names to common names used by football APIs
+        const teamNameMap = {
+            'Arsenal': ['Arsenal', 'Arsenal FC'],
+            'Aston Villa': ['Aston Villa', 'Aston Villa FC'],
+            'Bournemouth': ['Bournemouth', 'AFC Bournemouth'],
+            'Brentford': ['Brentford', 'Brentford FC'],
+            'Brighton': ['Brighton', 'Brighton & Hove Albion', 'Brighton and Hove Albion FC'],
+            'Chelsea': ['Chelsea', 'Chelsea FC'],
+            'Crystal Palace': ['Crystal Palace', 'Crystal Palace FC'],
+            'Everton': ['Everton', 'Everton FC'],
+            'Fulham': ['Fulham', 'Fulham FC'],
+            'Ipswich': ['Ipswich', 'Ipswich Town', 'Ipswich Town FC'],
+            'Leicester': ['Leicester', 'Leicester City', 'Leicester City FC'],
+            'Liverpool': ['Liverpool', 'Liverpool FC'],
+            'Man City': ['Man City', 'Manchester City', 'Manchester City FC'],
+            'Man Utd': ['Man Utd', 'Manchester United', 'Manchester United FC'],
+            'Newcastle': ['Newcastle', 'Newcastle United', 'Newcastle United FC'],
+            'Nott\'m Forest': ['Nottingham Forest', 'Nott\'m Forest', 'Nottingham Forest FC'],
+            'Southampton': ['Southampton', 'Southampton FC'],
+            'Spurs': ['Spurs', 'Tottenham', 'Tottenham Hotspur', 'Tottenham Hotspur FC'],
+            'West Ham': ['West Ham', 'West Ham United', 'West Ham United FC'],
+            'Wolves': ['Wolves', 'Wolverhampton', 'Wolverhampton Wanderers', 'Wolverhampton Wanderers FC']
+        };
+        
+        async function fetchLiveScores() {
+            const now = Date.now();
+            // Only fetch if cache is older than 30 seconds
+            if (liveScoresCache && (now - lastLiveScoresFetch) < 30000) {
+                return liveScoresCache;
+            }
+            
+            try {
+                const response = await fetch('/api/livescores');
+                if (response.ok) {
+                    const data = await response.json();
+                    liveScoresCache = data.matches || [];
+                    lastLiveScoresFetch = now;
+                    return liveScoresCache;
+                }
+            } catch (error) {
+                console.error('Error fetching live scores:', error);
+            }
+            
+            return liveScoresCache || [];
+        }
+        
+        function getMatchMinute(teamName) {
+            if (!liveScoresCache) return 0;
+            
+            // Find matching live match
+            for (const match of liveScoresCache) {
+                // Check all possible name variations
+                const possibleNames = teamNameMap[teamName] || [teamName];
+                const isHome = possibleNames.some(name => match.homeTeam?.includes(name) || name.includes(match.homeTeam));
+                const isAway = possibleNames.some(name => match.awayTeam?.includes(name) || name.includes(match.awayTeam));
+                
+                if (isHome || isAway) {
+                    return match.minute || 0;
+                }
+            }
+            
+            return 0;
+        }
         
         // Populate gameweek dropdown
         function populateGWDropdown() {
@@ -1776,21 +1842,44 @@
             
             const isPlayerLive = (player) => {
                 if (!player) return null;
+                
+                // Get live match minutes from external API cache
+                const teamName = teamMap[player.team];
+                const externalMinute = getMatchMinute(teamName);
+                
+                // Check FPL fixture data
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix && fix.started && !fix.finished) {
-                    // FPL API stores minutes in stats array
-                    let minutes = 0;
-                    if (fix.stats && fix.stats.length > 0) {
-                        // Stats is an array of stat objects, find minutes
-                        const minuteStat = fix.stats.find(s => s.identifier === 'minutes');
-                        if (minuteStat && minuteStat.a && minuteStat.a.length > 0) {
-                            minutes = minuteStat.a[0].value || 0;
+                    // Use external API minute if available, otherwise fallback to FPL data
+                    let minutes = externalMinute;
+                    
+                    if (!minutes) {
+                        // Try FPL API methods as fallback
+                        if (fix.stats && Array.isArray(fix.stats)) {
+                            const minuteStat = fix.stats.find(s => s && s.identifier === 'minutes');
+                            if (minuteStat && minuteStat.a && minuteStat.a.length > 0) {
+                                minutes = minuteStat.a[0].value || 0;
+                            }
+                            if (!minutes && minuteStat && minuteStat.h && minuteStat.h.length > 0) {
+                                minutes = minuteStat.h[0].value || 0;
+                            }
+                        }
+                        
+                        if (!minutes) {
+                            minutes = fix.minutes || fix.event_minutes || fix.minute || 0;
+                        }
+                        
+                        // Calculate from kickoff as last resort
+                        if (!minutes && fix.kickoff_time) {
+                            const kickoff = new Date(fix.kickoff_time);
+                            const now = new Date();
+                            const diff = Math.floor((now - kickoff) / 60000);
+                            if (diff > 0 && diff < 120) {
+                                minutes = diff;
+                            }
                         }
                     }
-                    // Fallback to other possible locations
-                    if (!minutes) {
-                        minutes = fix.minutes || fix.event_minutes || 0;
-                    }
+                    
                     return { minutes: minutes };
                 }
                 return null;
@@ -1803,6 +1892,9 @@
             }
             
             if (silentUpdate && content.querySelector('.card')) {
+                // Fetch fresh live scores for match minutes
+                await fetchLiveScores();
+                
                 // Fetch fresh live data to get updated fixture times
                 const freshLiveData = await fetchData(`event/${gw}/live`);
                 cachedLiveData = freshLiveData;
@@ -1842,20 +1934,43 @@
                         // Function to check if player is live and update indicator
                         const updateLiveIndicator = (row, player, side) => {
                             if (!player) return;
+                            
+                            // Get live match minutes from external API cache
+                            const teamName = teamMap[player.team];
+                            const externalMinute = getMatchMinute(teamName);
+                            
                             const fix = cachedFixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                             const liveIndicator = row.querySelector(`.p-${side} .live-indicator`);
                             
                             if (fix && fix.started && !fix.finished) {
-                                // Extract minutes from fixture stats
-                                let minutes = 0;
-                                if (fix.stats && fix.stats.length > 0) {
-                                    const minuteStat = fix.stats.find(s => s.identifier === 'minutes');
-                                    if (minuteStat && minuteStat.a && minuteStat.a.length > 0) {
-                                        minutes = minuteStat.a[0].value || 0;
-                                    }
-                                }
+                                // Use external API minute if available
+                                let minutes = externalMinute;
+                                
+                                // Fallback to FPL API methods
                                 if (!minutes) {
-                                    minutes = fix.minutes || fix.event_minutes || 0;
+                                    if (fix.stats && Array.isArray(fix.stats)) {
+                                        const minuteStat = fix.stats.find(s => s && s.identifier === 'minutes');
+                                        if (minuteStat && minuteStat.a && minuteStat.a.length > 0) {
+                                            minutes = minuteStat.a[0].value || 0;
+                                        }
+                                        if (!minutes && minuteStat && minuteStat.h && minuteStat.h.length > 0) {
+                                            minutes = minuteStat.h[0].value || 0;
+                                        }
+                                    }
+                                    
+                                    if (!minutes) {
+                                        minutes = fix.minutes || fix.event_minutes || fix.minute || 0;
+                                    }
+                                    
+                                    // Calculate from kickoff as last resort
+                                    if (!minutes && fix.kickoff_time) {
+                                        const kickoff = new Date(fix.kickoff_time);
+                                        const now = new Date();
+                                        const diff = Math.floor((now - kickoff) / 60000);
+                                        if (diff > 0 && diff < 120) {
+                                            minutes = diff;
+                                        }
+                                    }
                                 }
                                 
                                 if (liveIndicator) {
@@ -1893,14 +2008,17 @@
                                 const p1Decreased = previousScores[p1Key] !== undefined && pts1 < previousScores[p1Key];
                                 previousScores[p1Key] = pts1;
                                 
-                                if (p1Increased) {
-                                    row.classList.remove('score-decreased');
-                                    row.classList.add('score-increased');
-                                    setTimeout(() => row.classList.remove('score-increased'), 2000);
-                                } else if (p1Decreased) {
-                                    row.classList.remove('score-increased');
-                                    row.classList.add('score-decreased');
-                                    setTimeout(() => row.classList.remove('score-decreased'), 2000);
+                                const pLeft = row.querySelector('.p-left');
+                                if (pLeft) {
+                                    if (p1Increased) {
+                                        pLeft.classList.remove('score-decreased');
+                                        pLeft.classList.add('score-increased');
+                                        setTimeout(() => pLeft.classList.remove('score-increased'), 2000);
+                                    } else if (p1Decreased) {
+                                        pLeft.classList.remove('score-increased');
+                                        pLeft.classList.add('score-decreased');
+                                        setTimeout(() => pLeft.classList.remove('score-decreased'), 2000);
+                                    }
                                 }
                             }
                             
@@ -1915,14 +2033,17 @@
                                 const p2Decreased = previousScores[p2Key] !== undefined && pts2 < previousScores[p2Key];
                                 previousScores[p2Key] = pts2;
                                 
-                                if (p2Increased && !row.classList.contains('score-increased')) {
-                                    row.classList.remove('score-decreased');
-                                    row.classList.add('score-increased');
-                                    setTimeout(() => row.classList.remove('score-increased'), 2000);
-                                } else if (p2Decreased && !row.classList.contains('score-decreased')) {
-                                    row.classList.remove('score-increased');
-                                    row.classList.add('score-decreased');
-                                    setTimeout(() => row.classList.remove('score-decreased'), 2000);
+                                const pRight = row.querySelector('.p-right');
+                                if (pRight) {
+                                    if (p2Increased && !pRight.classList.contains('score-increased')) {
+                                        pRight.classList.remove('score-decreased');
+                                        pRight.classList.add('score-increased');
+                                        setTimeout(() => pRight.classList.remove('score-increased'), 2000);
+                                    } else if (p2Decreased && !pRight.classList.contains('score-decreased')) {
+                                        pRight.classList.remove('score-increased');
+                                        pRight.classList.add('score-decreased');
+                                        setTimeout(() => pRight.classList.remove('score-decreased'), 2000);
+                                    }
                                 }
                             }
                         });
@@ -1952,6 +2073,9 @@
 
             if (match) {
                 try {
+                    // Fetch live match minutes from external API
+                    await fetchLiveScores();
+                    
                     const t1 = entryMap[match.league_entry_1];
                     const t2 = entryMap[match.league_entry_2];
                     
@@ -2071,17 +2195,20 @@
                         if (p1Key) previousScores[p1Key] = pts1;
                         if (p2Key) previousScores[p2Key] = pts2;
                         
-                        // Determine animation class
-                        let animClass = '';
-                        if (p1Increased || p2Increased) animClass = 'score-increased';
-                        else if (p1Decreased || p2Decreased) animClass = 'score-decreased';
+                        // Determine animation classes for each player
+                        let p1AnimClass = '';
+                        let p2AnimClass = '';
+                        if (p1Increased) p1AnimClass = 'score-increased';
+                        else if (p1Decreased) p1AnimClass = 'score-decreased';
+                        if (p2Increased) p2AnimClass = 'score-increased';
+                        else if (p2Decreased) p2AnimClass = 'score-decreased';
 
-                        return `<div class="row ${isBench ? 'bench' : ''} ${animClass}" data-p1="${p1 ? p1.element : ''}" data-p2="${p2 ? p2.element : ''}">
-                            <div class="p-left">${leftName}</div>
+                        return `<div class="row ${isBench ? 'bench' : ''}" data-p1="${p1 ? p1.element : ''}" data-p2="${p2 ? p2.element : ''}">
+                            <div class="p-left ${p1AnimClass}">${leftName}</div>
                             <div class="p-score p-score-left">${player1 ? pts1 : ''}</div>
                             <div class="divider"></div>
                             <div class="p-score p-score-right">${player2 ? pts2 : ''}</div>
-                            <div class="p-right">${rightName}</div>
+                            <div class="p-right ${p2AnimClass}">${rightName}</div>
                         </div>`;
                     };
 
