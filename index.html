@@ -107,6 +107,29 @@
             gap: 10px;
         }
         
+        .dot-arrow {
+            background: none;
+            border: none;
+            color: #2ecc71;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.3s;
+            opacity: 0.8;
+        }
+        
+        .dot-arrow:hover:not(:disabled) {
+            opacity: 1;
+            transform: scale(1.2);
+            color: #27ae60;
+        }
+        
+        .dot-arrow:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+            color: #7f8c8d;
+        }
+        
         .match-dot {
             width: 12px;
             height: 12px;
@@ -528,6 +551,11 @@
             .match-indicator {
                 gap: 8px;
                 margin-bottom: 10px;
+            }
+            
+            .dot-arrow {
+                font-size: 1rem;
+                padding: 3px;
             }
             
             .match-dot {
@@ -1463,11 +1491,13 @@
             if (currentMatchIndex >= totalMatches) currentMatchIndex = 0;
             if (currentMatchIndex < 0) currentMatchIndex = totalMatches - 1;
             
-            // Add pagination dots indicator
+            // Add pagination dots indicator with arrows
             html += '<div class="match-indicator">';
+            html += `<button class="dot-arrow" onclick="navigateMatch(-1)" ${currentMatchIndex === 0 ? 'disabled' : ''}>◀</button>`;
             for (let i = 0; i < totalMatches; i++) {
                 html += `<div class="match-dot ${i === currentMatchIndex ? 'active' : ''}" onclick="jumpToMatch(${i})"></div>`;
             }
+            html += `<button class="dot-arrow" onclick="navigateMatch(1)" ${currentMatchIndex === totalMatches - 1 ? 'disabled' : ''}>▶</button>`;
             html += '</div>';
             
             // Only show the current match
