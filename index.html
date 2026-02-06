@@ -874,6 +874,8 @@
         let currentMatchIndex = 0; // Track which match is being viewed
         let totalMatches = 0; // Total matches in gameweek
         let lastNavigationDirection = 0; // Track swipe direction for animation
+        let cachedLiveData = null; // Cache live data for instant switching
+        let cachedFixtures = []; // Cache fixtures for instant switching
         const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
         
         // Populate gameweek dropdown
@@ -1110,7 +1112,9 @@
             
             // Set animation direction (1 for right, -1 for left)
             lastNavigationDirection = currentMatchIndex > prevIndex ? 1 : -1;
-            loadGameweek(currentGW);
+            
+            // Instant refresh without reloading data
+            refreshCurrentMatch();
         }
         
         function jumpToMatch(index) {
@@ -1119,7 +1123,18 @@
             
             // Set animation direction based on jump
             lastNavigationDirection = index > prevIndex ? 1 : -1;
-            loadGameweek(currentGW);
+            
+            // Instant refresh without reloading data
+            refreshCurrentMatch();
+        }
+        
+        async function refreshCurrentMatch() {
+            // Instant refresh by reloading gameweek but skipping loading screen
+            // Use silentUpdate=false but we'll suppress the loading message
+            const content = document.getElementById('content');
+            
+            // Don't show loading screen for match navigation
+            await loadGameweek(currentGW, false, true); // third param = skipLoadingScreen
         }
 
         function getPlayerStats(elementId, liveData) {
@@ -1598,17 +1613,25 @@
             }, 0);
         }
         
-        async function loadGameweek(gw, silentUpdate = false) {
+        async function loadGameweek(gw, silentUpdate = false, skipLoadingScreen = false) {
             const content = document.getElementById('content');
-            if (!silentUpdate) {
+            if (!silentUpdate && !skipLoadingScreen) {
                 content.innerHTML = '<div class="loading">Loading gameweek ' + gw + '...</div>';
-                currentGW = gw;
-                
-                // Update dropdown selection
+            }
+            
+            // Clear cache if gameweek changed
+            if (gw !== currentGW) {
+                cachedLiveData = null;
+                cachedFixtures = [];
+            }
+            
+            currentGW = gw;
+            
+            // Always update dropdown selection
+            if (!silentUpdate) {
                 const select = document.getElementById('gw-select');
                 if (select) select.value = gw;
             }
-            currentGW = gw;
 
             if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
 
@@ -1644,8 +1667,21 @@
                 return;
             }
             
-            const liveData = await fetchData(`event/${gw}/live`);
-            const fixtures = liveData.fixtures || [];
+            // Use cached data if available and navigating within same gameweek
+            let liveData, fixtures;
+            if (skipLoadingScreen && cachedLiveData && cachedFixtures.length > 0) {
+                // Use cached data for instant switching
+                liveData = cachedLiveData;
+                fixtures = cachedFixtures;
+            } else {
+                // Fetch fresh data
+                liveData = await fetchData(`event/${gw}/live`);
+                fixtures = liveData.fixtures || [];
+                
+                // Cache the data for instant match switching
+                cachedLiveData = liveData;
+                cachedFixtures = fixtures;
+            }
 
             const getFixtureStr = (player) => {
                 if (!player) return '';
