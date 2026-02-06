@@ -57,8 +57,8 @@
             margin-bottom: 18px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1), 
-                        opacity 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            transition: transform 0.25s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                        opacity 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -539,11 +539,11 @@
         }
         
         .slide-in-right {
-            animation: slideInFromRight 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            animation: slideInFromRight 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
         
         .slide-in-left {
-            animation: slideInFromLeft 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            animation: slideInFromLeft 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
         }
         
         /* Mobile Responsive Styles */
@@ -911,20 +911,18 @@
                     }).format(price);
                     
                     const btcElement = document.getElementById('btc-price');
-                    btcElement.textContent = `₿ ${formattedPrice}`;
-                    
-                    // Add pulse animation
-                    btcElement.classList.add('btc-updated');
-                    setTimeout(() => btcElement.classList.remove('btc-updated'), 500);
+                    if (btcElement) {
+                        btcElement.textContent = `₿ ${formattedPrice}`;
+                        
+                        // Add pulse animation
+                        btcElement.classList.add('btc-updated');
+                        setTimeout(() => btcElement.classList.remove('btc-updated'), 500);
+                    }
                 }
             } catch (e) {
                 console.error('Failed to fetch BTC price:', e);
             }
         }
-        
-        // Update BTC price every 60 seconds
-        updateBTCPrice();
-        setInterval(updateBTCPrice, 60000);
 
         async function fetchData(endpoint) {
             const res = await fetch(`/api/fpl/${endpoint}`);
@@ -1057,7 +1055,7 @@
                         // Only translate if it's a horizontal swipe
                         if (Math.abs(diffX) > 10 && diffY < 50) {
                             e.preventDefault(); // Prevent scrolling
-                            const translateAmount = diffX * 0.3; // Dampen the movement
+                            const translateAmount = diffX * 0.5; // Follow finger more closely
                             card.style.transform = `translateX(${translateAmount}px)`;
                             card.style.opacity = 1 - (Math.abs(diffX) / 1000);
                         }
@@ -1101,6 +1099,10 @@
                     }
                 }
             }
+            
+            // Update BTC price immediately and every 60 seconds
+            updateBTCPrice();
+            setInterval(updateBTCPrice, 60000);
         }
         
         function navigateMatch(direction) {
@@ -1607,7 +1609,7 @@
                     card.classList.add(lastNavigationDirection === 1 ? 'slide-in-right' : 'slide-in-left');
                     setTimeout(() => {
                         card.classList.remove('slide-in-right', 'slide-in-left');
-                    }, 400);
+                    }, 250);
                 }
             }, 0);
         }
@@ -2008,7 +2010,7 @@
                     card.classList.add(lastNavigationDirection === 1 ? 'slide-in-right' : 'slide-in-left');
                     setTimeout(() => {
                         card.classList.remove('slide-in-right', 'slide-in-left');
-                    }, 400);
+                    }, 250);
                 }
             }, 0);
         }
