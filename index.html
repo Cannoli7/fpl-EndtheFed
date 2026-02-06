@@ -110,18 +110,18 @@
         .dot-arrow {
             background: none;
             border: none;
-            color: #2ecc71;
+            color: #ecf0f1;
             font-size: 1.2rem;
             cursor: pointer;
             padding: 5px;
             transition: all 0.3s;
-            opacity: 0.8;
+            opacity: 0.7;
         }
         
         .dot-arrow:hover:not(:disabled) {
             opacity: 1;
             transform: scale(1.2);
-            color: #27ae60;
+            color: #fff;
         }
         
         .dot-arrow:disabled {
@@ -1640,8 +1640,6 @@
                     const matchId = `match-${match.league_entry_1}-${match.league_entry_2}-${gw}`;
                     
                     html += `<div class="card">
-                        <button class="match-nav match-nav-prev" onclick="navigateMatch(-1)" ${currentMatchIndex === 0 ? 'disabled' : ''}>◀</button>
-                        <button class="match-nav match-nav-next" onclick="navigateMatch(1)" ${currentMatchIndex === totalMatches - 1 ? 'disabled' : ''}>▶</button>
                         <div class="header">
                             <div class="header-team">
                                 <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
