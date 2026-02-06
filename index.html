@@ -57,6 +57,11 @@
             margin-bottom: 18px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         
         .match-nav {
@@ -987,6 +992,81 @@
                     }
                 }
             });
+            
+            // Add touch swipe navigation for mobile
+            let touchStartX = 0;
+            let touchEndX = 0;
+            let touchStartY = 0;
+            let touchEndY = 0;
+            let isSwiping = false;
+            
+            document.addEventListener('touchstart', (e) => {
+                if (currentView === 'matchups') {
+                    const card = document.querySelector('.card');
+                    if (card && e.target.closest('.card')) {
+                        touchStartX = e.changedTouches[0].screenX;
+                        touchStartY = e.changedTouches[0].screenY;
+                        isSwiping = true;
+                    }
+                }
+            }, false);
+            
+            document.addEventListener('touchmove', (e) => {
+                if (currentView === 'matchups' && isSwiping) {
+                    const card = document.querySelector('.card');
+                    if (card) {
+                        const currentX = e.changedTouches[0].screenX;
+                        const currentY = e.changedTouches[0].screenY;
+                        const diffX = currentX - touchStartX;
+                        const diffY = Math.abs(currentY - touchStartY);
+                        
+                        // Only translate if it's a horizontal swipe
+                        if (Math.abs(diffX) > 10 && diffY < 50) {
+                            e.preventDefault(); // Prevent scrolling
+                            const translateAmount = diffX * 0.3; // Dampen the movement
+                            card.style.transform = `translateX(${translateAmount}px)`;
+                            card.style.opacity = 1 - (Math.abs(diffX) / 1000);
+                        }
+                    }
+                }
+            }, { passive: false });
+            
+            document.addEventListener('touchend', (e) => {
+                if (currentView === 'matchups' && isSwiping) {
+                    touchEndX = e.changedTouches[0].screenX;
+                    touchEndY = e.changedTouches[0].screenY;
+                    
+                    const card = document.querySelector('.card');
+                    if (card) {
+                        card.style.transform = '';
+                        card.style.opacity = '';
+                    }
+                    
+                    handleSwipe();
+                    isSwiping = false;
+                }
+            }, false);
+            
+            function handleSwipe() {
+                const swipeThreshold = 50; // Minimum distance for swipe
+                const swipeDistanceX = touchEndX - touchStartX;
+                const swipeDistanceY = Math.abs(touchEndY - touchStartY);
+                
+                // Only register as horizontal swipe if vertical movement is minimal
+                if (swipeDistanceY < 50 && Math.abs(swipeDistanceX) > swipeThreshold) {
+                    if (swipeDistanceX > 0) {
+                        // Swiped right - go to previous match
+                        if (currentMatchIndex > 0) {
+                            navigateMatch(-1);
+                        }
+                    } else {
+                        // Swiped left - go to next match
+                        if (currentMatchIndex < totalMatches - 1) {
+                            navigateMatch(1);
+                        }
+                    }
+                }
+            }
         }
         
         function navigateMatch(direction) {
