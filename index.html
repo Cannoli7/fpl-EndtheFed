@@ -386,8 +386,15 @@
         }
         .row:nth-child(even) { background: rgba(255,255,255,0.03); }
         
-        .p-left { display: flex; align-items: center; gap: 8px; justify-content: flex-start; position: relative; }
-        .p-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; position: relative; }
+        .p-left { display: flex; align-items: flex-start; gap: 8px; justify-content: flex-start; position: relative; }
+        .p-right { display: flex; align-items: flex-start; gap: 8px; justify-content: flex-end; position: relative; }
+        
+        .p-jersey-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
         
         .p-jersey { width: 28px; height: 35px; object-fit: contain; flex-shrink: 0; }
         
@@ -423,16 +430,16 @@
         .pos-M { background: #1e88e5 !important; color: #fff !important; }
         .pos-F { background: #e53935 !important; color: #fff !important; }
         
-        .p-fixture { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; margin-bottom: 4px; }
+        .p-fixture { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; }
         
         .p-stats { 
             display: flex; 
-            gap: 5px; 
+            gap: 4px; 
             align-items: center;
-            margin-top: 4px;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 120px;
         }
-        .p-left .p-stats { justify-content: flex-start; }
-        .p-right .p-stats { justify-content: flex-end; }
         
         .stat-mp { font-size: 0.9rem !important; font-weight: 700 !important; color: #bbb !important; }
         .stat-cs { font-size: 1.4rem !important; }
@@ -675,7 +682,12 @@
                 flex-direction: row-reverse;
             }
             
-            .p-right .p-jersey {
+            .p-jersey-container {
+                order: 1;
+                gap: 2px;
+            }
+            
+            .p-right .p-jersey-container {
                 order: 1;
             }
             
@@ -709,11 +721,15 @@
                 height: 4px;
             }
             
+            .p-jersey-container {
+                gap: 2px;
+                align-items: center;
+            }
+            
             .p-jersey { 
                 width: 20px;
                 height: 25px;
                 flex-shrink: 0;
-                align-self: flex-start;
             }
             
             .p-info-wrap { 
@@ -748,20 +764,12 @@
                 width: 100%;
             }
             
-            /* Stats go on their own line below - full width */
+            /* Stats centered below jersey */
             .p-stats { 
                 gap: 3px;
-                width: 100%;
-                flex-direction: row !important;
-                flex-basis: 100%;
-            }
-            
-            .p-left .p-stats {
-                justify-content: flex-start !important;
-            }
-            
-            .p-right .p-stats {
-                justify-content: flex-end !important;
+                justify-content: center !important;
+                flex-wrap: wrap;
+                max-width: 90px;
             }
             
             .stat-mp { font-size: 0.7rem !important; }
@@ -1770,7 +1778,20 @@
                 if (!player) return null;
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix && fix.started && !fix.finished) {
-                    return { minutes: fix.minutes || 0 };
+                    // FPL API stores minutes in stats array
+                    let minutes = 0;
+                    if (fix.stats && fix.stats.length > 0) {
+                        // Stats is an array of stat objects, find minutes
+                        const minuteStat = fix.stats.find(s => s.identifier === 'minutes');
+                        if (minuteStat && minuteStat.a && minuteStat.a.length > 0) {
+                            minutes = minuteStat.a[0].value || 0;
+                        }
+                    }
+                    // Fallback to other possible locations
+                    if (!minutes) {
+                        minutes = fix.minutes || fix.event_minutes || 0;
+                    }
+                    return { minutes: minutes };
                 }
                 return null;
             };
@@ -1825,7 +1846,18 @@
                             const liveIndicator = row.querySelector(`.p-${side} .live-indicator`);
                             
                             if (fix && fix.started && !fix.finished) {
-                                const minutes = fix.minutes || 0;
+                                // Extract minutes from fixture stats
+                                let minutes = 0;
+                                if (fix.stats && fix.stats.length > 0) {
+                                    const minuteStat = fix.stats.find(s => s.identifier === 'minutes');
+                                    if (minuteStat && minuteStat.a && minuteStat.a.length > 0) {
+                                        minutes = minuteStat.a[0].value || 0;
+                                    }
+                                }
+                                if (!minutes) {
+                                    minutes = fix.minutes || fix.event_minutes || 0;
+                                }
+                                
                                 if (liveIndicator) {
                                     // Update existing indicator
                                     liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
@@ -1999,26 +2031,30 @@
 
                         const leftName = player1
                             ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes}'</div>` : ''}
-                               <img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
+                               <div class="p-jersey-container">
+                                   <img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
+                                   <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>
+                               </div>
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player1.name}</span>
                                        <span class="pos-badge pos-${player1.pos}">${player1.pos}</span>
                                    </div>
                                    <span class="p-fixture">${getFixtureStr(player1)}</span>
-                                   <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>
                                </div>`
                             : '';
 
                         const rightName = player2
                             ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes}'</div>` : ''}
-                               <img src="${getJerseyUrl(player2.team, player2.pos)}" class="p-jersey">
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player2.name}</span>
                                        <span class="pos-badge pos-${player2.pos}">${player2.pos}</span>
                                    </div>
                                    <span class="p-fixture">${getFixtureStr(player2)}</span>
+                               </div>
+                               <div class="p-jersey-container">
+                                   <img src="${getJerseyUrl(player2.team, player2.pos)}" class="p-jersey">
                                    <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
                                </div>`
                             : '';
