@@ -951,6 +951,32 @@
                 }
             }, 60000);
             
+            // Check deadline every 30 seconds to auto-refresh when it passes
+            setInterval(async () => {
+                if (currentView === 'matchups') {
+                    try {
+                        const response = await fetch('/api/deadline');
+                        if (response.ok) {
+                            const data = await response.json();
+                            const gwEvent = data.events.find(e => e.id === currentGW);
+                            if (gwEvent && gwEvent.deadline_time) {
+                                const deadline = new Date(gwEvent.deadline_time);
+                                const now = new Date();
+                                const justPassed = now >= deadline;
+                                
+                                // If deadline just passed and we're showing simple matchups, reload
+                                if (justPassed && document.querySelector('.card') && 
+                                    document.querySelector('.card').textContent.includes('Lineups Lock In')) {
+                                    loadGameweek(currentGW, false); // Full reload to show players
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Deadline check error:', e);
+                    }
+                }
+            }, 30000); // Check every 30 seconds
+            
             // Add keyboard navigation for matches
             document.addEventListener('keydown', (e) => {
                 if (currentView === 'matchups') {
@@ -1362,6 +1388,84 @@
             content.innerHTML = html;
         }
 
+        async function showSimpleMatchups(matches, entryMap, gw, content) {
+            // Set total matches and ensure currentMatchIndex is valid
+            totalMatches = matches.length;
+            if (currentMatchIndex >= totalMatches) currentMatchIndex = 0;
+            if (currentMatchIndex < 0) currentMatchIndex = totalMatches - 1;
+            
+            // Get deadline time for display
+            let deadlineStr = '';
+            try {
+                const response = await fetch('/api/deadline');
+                if (response.ok) {
+                    const data = await response.json();
+                    const gwEvent = data.events.find(e => e.id === gw);
+                    if (gwEvent && gwEvent.deadline_time) {
+                        const deadline = new Date(gwEvent.deadline_time);
+                        deadlineStr = deadline.toLocaleString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('Could not fetch deadline:', e);
+            }
+            
+            let html = '';
+            
+            // Add pagination dots with arrows
+            html += '<div class="match-indicator">';
+            html += `<button class="dot-arrow" onclick="navigateMatch(-1)" ${currentMatchIndex === 0 ? 'disabled' : ''}>◀</button>`;
+            for (let i = 0; i < totalMatches; i++) {
+                html += `<div class="match-dot ${i === currentMatchIndex ? 'active' : ''}" onclick="jumpToMatch(${i})"></div>`;
+            }
+            html += `<button class="dot-arrow" onclick="navigateMatch(1)" ${currentMatchIndex === totalMatches - 1 ? 'disabled' : ''}>▶</button>`;
+            html += '</div>';
+            
+            // Get the current match
+            const match = matches[currentMatchIndex];
+            
+            if (match) {
+                const t1 = entryMap[match.league_entry_1];
+                const t2 = entryMap[match.league_entry_2];
+                
+                // Get standings rank for each team
+                const standings = leagueData.standings || [];
+                const t1Standing = standings.find(s => s.league_entry === match.league_entry_1);
+                const t2Standing = standings.find(s => s.league_entry === match.league_entry_2);
+                const t1Rank = t1Standing ? t1Standing.rank : '?';
+                const t2Rank = t2Standing ? t2Standing.rank : '?';
+                
+                html += `<div class="card">
+                    <div class="header">
+                        <div class="header-team">
+                            <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
+                            <div class="owner-name">${t1.owner}</div>
+                        </div>
+                        <div class="header-vs">VS</div>
+                        <div class="header-team">
+                            <div class="team-name">${t2.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t2Rank})</span></div>
+                            <div class="owner-name">${t2.owner}</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;padding:60px 20px;color:#7f8c8d;font-size:1rem;">
+                        <div style="font-size:3rem;margin-bottom:20px;opacity:0.5;">⏰</div>
+                        <div style="font-size:1.1rem;color:#ecf0f1;margin-bottom:15px;font-weight:600;">Lineups Lock In:</div>
+                        ${deadlineStr ? `<div style="color:#2ecc71;font-size:1.2rem;margin-bottom:20px;">${deadlineStr}</div>` : ''}
+                        <div style="font-size:0.9rem;opacity:0.7;">Player details will appear after the deadline</div>
+                    </div>
+                </div>`;
+            }
+            
+            content.innerHTML = html || '<div class="loading">No matchups available</div>';
+        }
+        
         async function loadGameweek(gw, silentUpdate = false) {
             const content = document.getElementById('content');
             if (!silentUpdate) {
@@ -1382,6 +1486,32 @@
             });
 
             const matches = leagueData.matches.filter(m => m.event === gw);
+            
+            // Check if deadline has passed for this gameweek
+            let deadlinePassed = false;
+            try {
+                const response = await fetch('/api/deadline');
+                if (response.ok) {
+                    const data = await response.json();
+                    const gwEvent = data.events.find(e => e.id === gw);
+                    if (gwEvent && gwEvent.deadline_time) {
+                        const deadline = new Date(gwEvent.deadline_time);
+                        const now = new Date();
+                        deadlinePassed = now >= deadline;
+                    }
+                }
+            } catch (e) {
+                console.error('Could not check deadline:', e);
+                // Default to showing players if we can't check
+                deadlinePassed = true;
+            }
+            
+            // If deadline hasn't passed, show simple matchups without players
+            if (!deadlinePassed) {
+                await showSimpleMatchups(matches, entryMap, gw, content);
+                return;
+            }
+            
             const liveData = await fetchData(`event/${gw}/live`);
             const fixtures = liveData.fixtures || [];
 
@@ -1399,6 +1529,11 @@
             };
 
             // Silent update: update existing elements instead of rebuilding
+            // Don't do silent updates for pre-deadline matchups
+            if (silentUpdate && !deadlinePassed) {
+                return;
+            }
+            
             if (silentUpdate && content.querySelector('.card')) {
                 const card = content.querySelector('.card');
                 const match = matches[currentMatchIndex];
