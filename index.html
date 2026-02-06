@@ -57,50 +57,75 @@
             margin-bottom: 18px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            position: relative;
         }
         
         .match-nav {
-            position: absolute;
+            position: fixed;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(27, 94, 32, 0.8);
-            border: none;
+            background: rgba(27, 94, 32, 0.9);
+            border: 2px solid rgba(46, 204, 113, 0.6);
             color: #fff;
-            font-size: 1.5rem;
-            width: 40px;
-            height: 40px;
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 5;
-            transition: background 0.3s;
+            z-index: 1000;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
         
         .match-nav:hover {
-            background: rgba(27, 94, 32, 1);
+            background: rgba(46, 204, 113, 1);
+            transform: translateY(-50%) scale(1.1);
         }
         
         .match-nav:disabled {
-            opacity: 0.3;
+            opacity: 0.2;
             cursor: not-allowed;
+            background: rgba(127, 140, 141, 0.5);
         }
         
         .match-nav-prev {
-            left: -50px;
+            left: 10px;
         }
         
         .match-nav-next {
-            right: -50px;
+            right: 10px;
         }
         
         .match-indicator {
             text-align: center;
-            color: #7f8c8d;
-            font-size: 0.85rem;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .match-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(127, 140, 141, 0.3);
+            border: 2px solid rgba(127, 140, 141, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .match-dot:hover {
+            background: rgba(127, 140, 141, 0.6);
+            transform: scale(1.2);
+        }
+        
+        .match-dot.active {
+            background: #2ecc71;
+            border-color: #2ecc71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
         }
         
         .header {
@@ -487,8 +512,29 @@
             .nav select { padding: 6px 12px; font-size: 0.8rem; }
             .nav label { font-size: 0.8rem; margin-right: 5px; }
             
-            .match-nav { display: none; }
-            .match-indicator { font-size: 0.75rem; margin-bottom: 5px; }
+            .match-nav { 
+                width: 40px;
+                height: 40px;
+                font-size: 1.5rem;
+            }
+            .match-nav { 
+                width: 35px; 
+                height: 35px; 
+                font-size: 1.3rem;
+            }
+            .match-nav-prev { left: 5px; }
+            .match-nav-next { right: 5px; }
+            
+            .match-indicator {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+            
+            .match-dot {
+                width: 10px;
+                height: 10px;
+                border: 1px solid rgba(127, 140, 141, 0.5);
+            }
             
             .container { padding: 0; max-width: 100%; margin: 0; }
             .card { margin: 0 0 8px 0; border-radius: 0; }
@@ -893,6 +939,11 @@
             currentMatchIndex += direction;
             if (currentMatchIndex < 0) currentMatchIndex = 0;
             if (currentMatchIndex >= totalMatches) currentMatchIndex = totalMatches - 1;
+            loadGameweek(currentGW);
+        }
+        
+        function jumpToMatch(index) {
+            currentMatchIndex = index;
             loadGameweek(currentGW);
         }
 
@@ -1412,8 +1463,12 @@
             if (currentMatchIndex >= totalMatches) currentMatchIndex = 0;
             if (currentMatchIndex < 0) currentMatchIndex = totalMatches - 1;
             
-            // Add match indicator
-            html += `<div class="match-indicator">Match ${currentMatchIndex + 1} of ${totalMatches}</div>`;
+            // Add pagination dots indicator
+            html += '<div class="match-indicator">';
+            for (let i = 0; i < totalMatches; i++) {
+                html += `<div class="match-dot ${i === currentMatchIndex ? 'active' : ''}" onclick="jumpToMatch(${i})"></div>`;
+            }
+            html += '</div>';
             
             // Only show the current match
             const match = matches[currentMatchIndex];
