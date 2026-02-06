@@ -378,56 +378,58 @@
         
         .row {
             display: grid;
-            grid-template-columns: 1fr auto 20px auto 1fr;
+            grid-template-columns: minmax(200px, 1fr) auto 20px auto minmax(200px, 1fr);
             align-items: center;
-            padding: 10px 12px;
+            padding: 12px 15px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
-            min-height: 50px;
+            min-height: 60px;
+            gap: 10px;
         }
         .row:nth-child(even) { background: rgba(255,255,255,0.03); }
         
-        .p-left { display: flex; align-items: center; gap: 8px; justify-content: flex-start; position: relative; }
-        .p-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; position: relative; }
+        .p-left { display: flex; align-items: center; gap: 10px; justify-content: flex-start; position: relative; }
+        .p-right { display: flex; align-items: center; gap: 10px; justify-content: flex-end; position: relative; }
         
         .p-jersey-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             flex-shrink: 0;
+            min-width: 50px;
         }
         
-        .p-jersey { width: 28px; height: 35px; object-fit: contain; flex-shrink: 0; }
+        .p-jersey { width: 30px; height: 38px; object-fit: contain; flex-shrink: 0; }
         
         .p-info-wrap { 
             display: flex; 
             flex-direction: column; 
             min-width: 0; 
-            gap: 3px;
+            gap: 4px;
             flex: 1;
+            max-width: 250px;
         }
         .p-left .p-info-wrap { text-align: left; }
         .p-right .p-info-wrap { text-align: right; }
         
-        .p-name-row { display: flex; align-items: center; gap: 3px; }
+        .p-name-row { display: flex; align-items: center; gap: 5px; }
         .p-left .p-name-row { justify-content: flex-start; }
         .p-right .p-name-row { flex-direction: row-reverse; justify-content: flex-end; }
         
         .p-name {
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 600;
             color: #ecf0f1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 200px;
         }
         
         .pos-badge {
-            font-size: 0.9rem !important;
+            font-size: 0.85rem !important;
             font-weight: 700 !important;
-            padding: 1px 3px !important;
-            border-radius: 2px !important;
+            padding: 2px 4px !important;
+            border-radius: 3px !important;
             flex-shrink: 0 !important;
             line-height: 1 !important;
             display: inline-block !important;
@@ -437,15 +439,21 @@
         .pos-M { background: #1e88e5 !important; color: #fff !important; }
         .pos-F { background: #e53935 !important; color: #fff !important; }
         
-        .p-fixture { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; }
+        .p-fixture { 
+            font-size: 0.8rem; 
+            color: #95a5a6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         
         .p-stats { 
             display: flex; 
-            gap: 4px; 
+            gap: 5px; 
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
-            max-width: 150px;
+            max-width: 160px;
         }
         
         .stat-mp { font-size: 0.9rem !important; font-weight: 700 !important; color: #bbb !important; }
@@ -671,16 +679,16 @@
             .header-vs { font-size: 0.85rem; }
             
             .row {
-                grid-template-columns: 1fr auto 4px auto 1fr;
-                padding: 6px 4px;
-                min-height: auto;
-                gap: 0;
+                grid-template-columns: 1fr auto 3px auto 1fr;
+                padding: 8px 6px;
+                min-height: 50px;
+                gap: 6px;
             }
             
             .p-left, .p-right { 
                 flex-direction: row;
                 align-items: center;
-                gap: 4px;
+                gap: 5px;
                 flex-wrap: nowrap;
             }
             
@@ -692,10 +700,11 @@
                 gap: 2px;
                 align-items: center;
                 flex-shrink: 0;
+                min-width: 35px;
             }
             
             .p-info-wrap { 
-                gap: 1px;
+                gap: 2px;
                 flex: 1;
                 min-width: 0;
                 display: flex;
@@ -732,27 +741,27 @@
             }
             
             .p-jersey { 
-                width: 20px;
-                height: 25px;
+                width: 22px;
+                height: 28px;
             }
             
             .p-name-row {
-                gap: 2px;
+                gap: 3px;
             }
             
             .p-name { 
-                font-size: 0.8rem;
-                max-width: 110px;
+                font-size: 0.85rem;
+                max-width: 120px;
             }
             
             .pos-badge { 
-                font-size: 0.65rem !important; 
-                padding: 1px 2px !important;
+                font-size: 0.7rem !important; 
+                padding: 1px 3px !important;
                 flex-shrink: 0;
             }
             
             .p-fixture { 
-                font-size: 0.65rem;
+                font-size: 0.7rem;
                 width: 100%;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -760,15 +769,15 @@
             
             /* Stats centered below jersey */
             .p-stats { 
-                gap: 2px;
+                gap: 3px;
                 justify-content: center !important;
                 flex-wrap: wrap;
-                max-width: 85px;
+                max-width: 90px;
             }
             
-            .stat-mp { font-size: 0.65rem !important; }
-            .stat-cs { font-size: 0.9rem !important; }
-            .stat-icon { font-size: 0.85rem; }
+            .stat-mp { font-size: 0.7rem !important; }
+            .stat-cs { font-size: 1rem !important; }
+            .stat-icon { font-size: 0.9rem; }
             
             .card-yellow, .card-red { width: 10px; height: 14px; }
             
@@ -1147,7 +1156,11 @@
                                     if (liveIndicator) {
                                         const teamName = teamMap[player1.team];
                                         const minutes = getMatchMinute(teamName);
-                                        if (minutes > 0) {
+                                        
+                                        // Check if halftime
+                                        if (minutes >= 45 && minutes <= 50) {
+                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                        } else if (minutes > 0) {
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
                                         }
                                     }
@@ -1159,7 +1172,11 @@
                                     if (liveIndicator) {
                                         const teamName = teamMap[player2.team];
                                         const minutes = getMatchMinute(teamName);
-                                        if (minutes > 0) {
+                                        
+                                        // Check if halftime
+                                        if (minutes >= 45 && minutes <= 50) {
+                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                        } else if (minutes > 0) {
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
                                         }
                                     }
@@ -1891,6 +1908,15 @@
                 // Check FPL fixture data
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix && fix.started && !fix.finished) {
+                    // Check if it's halftime
+                    const isHalftime = fix.finished_provisional || 
+                                       (externalMinute >= 45 && externalMinute <= 50) ||
+                                       (fix.stats && fix.stats.some(s => s.identifier === 'halftime'));
+                    
+                    if (isHalftime) {
+                        return { minutes: 'HT' };
+                    }
+                    
                     // Use external API minute if available, otherwise fallback to FPL data
                     let minutes = externalMinute;
                     
@@ -1919,6 +1945,11 @@
                                 minutes = diff;
                             }
                         }
+                    }
+                    
+                    // Check if it's likely halftime based on minutes
+                    if (minutes >= 45 && minutes <= 50) {
+                        return { minutes: 'HT' };
                     }
                     
                     return { minutes: minutes };
@@ -1984,6 +2015,16 @@
                             const liveIndicator = row.querySelector(`.p-${side} .live-indicator`);
                             
                             if (fix && fix.started && !fix.finished) {
+                                // Check if it's halftime
+                                const isHalftime = fix.finished_provisional || 
+                                                   (externalMinute >= 45 && externalMinute <= 50) ||
+                                                   (fix.stats && fix.stats.some(s => s.identifier === 'halftime'));
+                                
+                                if (isHalftime && liveIndicator) {
+                                    liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                    return;
+                                }
+                                
                                 // Use external API minute if available
                                 let minutes = externalMinute;
                                 
@@ -2014,8 +2055,13 @@
                                     }
                                 }
                                 
-                                if (liveIndicator) {
-                                    // Update existing indicator
+                                // Check if it's likely halftime based on minutes
+                                if (minutes >= 45 && minutes <= 50) {
+                                    if (liveIndicator) {
+                                        liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                    }
+                                } else if (liveIndicator) {
+                                    // Update existing indicator with minutes
                                     liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
                                 }
                             } else if (liveIndicator) {
@@ -2195,7 +2241,7 @@
                         const live2 = player2 ? isPlayerLive(player2) : null;
 
                         const leftName = player1
-                            ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes}'</div>` : ''}
+                            ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes}${live1.minutes === 'HT' ? '' : "'"}</div>` : ''}
                                <div class="p-jersey-container">
                                    <img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
                                    <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>
@@ -2210,7 +2256,7 @@
                             : '';
 
                         const rightName = player2
-                            ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes}'</div>` : ''}
+                            ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes}${live2.minutes === 'HT' ? '' : "'"}</div>` : ''}
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player2.name}</span>
