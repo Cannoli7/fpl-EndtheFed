@@ -3,1543 +3,592 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPL Draft Matchups</title>
+    <title>FPL Draft - Matchup Tracker</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #fff; overflow-x: hidden; }
-        
-        .topbar {
-            background: #2c3e50;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            position: relative;
-        }
-        .topbar h1 { 
-            font-size: 1.1rem; 
-            font-weight: 600;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        #menu-dropdown > div:hover {
-            background: rgba(255,255,255,0.1);
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
         
-        .nav {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #16213e;
-            padding: 12px;
-        }
-        .nav button {
-            background: #0f3460;
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            border-radius: 5px;
-        }
-        .nav button:hover { background: #1a5276; }
-        .nav h2 { color: #fff; margin: 0 20px; font-size: 1.3rem; font-weight: 700; }
-        
-        .container { max-width: 1000px; margin: 0 auto; padding: 15px; }
-        .card {
-            background: #16213e;
-            border-radius: 10px;
-            margin-bottom: 18px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
         
         .header {
-            display: flex;
-            align-items: center;
-            background: #0f3460;
-            padding: 20px 18px;
-        }
-        .header-team { flex: 1; text-align: center; }
-        .owner-name {
-            font-size: 0.75rem;
-            color: #7f8c8d;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .team-name { font-size: 1.4rem; font-weight: 700; color: #ecf0f1; margin-bottom: 6px; }
-        .team-score { font-size: 2.5rem; font-weight: 800; color: #2ecc71; }
-        .header-vs { font-size: 1.1rem; font-weight: 700; color: #7f8c8d; }
-        
-        .expand-btn {
-            background: none;
-            border: none;
-            color: #7f8c8d;
-            cursor: pointer;
-            font-size: 1.2rem;
-            padding: 5px;
-            margin-top: 5px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .expand-btn:hover { color: #fff; }
-        
-        .recent-record {
-            display: none;
-            margin-top: 0;
-            padding: 15px 20px;
-            background: rgba(0,0,0,0.2);
-        }
-        
-        .recent-record.show { 
-            display: block;
-        }
-        
-        .records-row {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 20px;
-        }
-        
-        .team-record {
-            flex: 1;
             text-align: center;
-        }
-        
-        .record-items {
-            display: flex;
-            gap: 3px;
-            justify-content: center;
-        }
-        
-        .record-item {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            line-height: 24px;
-            text-align: center;
-            border-radius: 3px;
-            font-weight: 700;
-            font-size: 0.8rem;
-        }
-        
-        .record-W { background: #2ecc71; color: #fff; }
-        .record-D { background: #95a5a6; color: #fff; }
-        .record-L { background: #e74c3c; color: #fff; }
-        
-        .h2h-section {
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 15px;
-            text-align: center;
-        }
-        
-        .h2h-title {
-            font-size: 0.85rem;
-            color: #bdc3c7;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .h2h-stats {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-        }
-        
-        .h2h-item {
-            text-align: center;
-        }
-        
-        .h2h-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 3px;
-        }
-        
-        .h2h-label {
-            color: #bdc3c7;
-            font-size: 0.7rem;
-        }
-        
-        /* Home Page Styles */
-        .home-section {
+            color: white;
             margin-bottom: 30px;
         }
         
-        .home-section-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #ecf0f1;
-            margin-bottom: 15px;
-            padding: 10px 15px;
-            background: rgba(52, 73, 94, 0.3);
-            border-left: 4px solid #7f8c8d;
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
         }
         
-        .home-match {
-            background: #0f3460;
-            padding: 15px;
-            margin-bottom: 10px;
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .config-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .config-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .error {
+            background: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+        
+        .success {
+            background: #28a745;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+        
+        .gameweek-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .matchup-grid {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .matchup-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .matchup-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
         }
         
-        .home-team {
-            flex: 1;
-            text-align: center;
-        }
-        
-        .home-team-name {
+        .team-name {
+            font-size: 1.3rem;
             font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 3px;
+            color: #333;
         }
         
-        .home-team-owner {
-            font-size: 0.8rem;
-            color: #7f8c8d;
-        }
-        
-        .home-score {
+        .team-score {
             font-size: 2rem;
             font-weight: 800;
-            color: #2ecc71;
-            min-width: 50px;
-            text-align: center;
+            color: #667eea;
         }
         
-        .home-vs {
-            font-size: 1rem;
-            color: #7f8c8d;
-            font-weight: 600;
-            padding: 0 15px;
-        }
-        
-        .home-winner {
-            color: #2ecc71;
-        }
-        
-        .home-highest {
-            color: #f1c40f;
-        }
-        
-        .home-loser {
-            color: #7f8c8d;
-            opacity: 0.6;
-        }
-        
-        .row {
+        .matchup-content {
             display: grid;
-            grid-template-columns: 1fr auto 20px auto 1fr;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+        }
+        
+        .team-lineup {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .player-row {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            min-height: 50px;
-        }
-        .row:nth-child(even) { background: rgba(255,255,255,0.03); }
-        
-        .p-left { display: flex; align-items: center; gap: 8px; justify-content: flex-start; }
-        .p-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
-        
-        .p-jersey { width: 28px; height: 35px; object-fit: contain; flex-shrink: 0; }
-        
-        .p-info-wrap { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
-        .p-left .p-info-wrap { text-align: left; }
-        .p-right .p-info-wrap { text-align: right; }
-        
-        .p-name-row { display: flex; align-items: center; gap: 3px; }
-        .p-right .p-name-row { flex-direction: row-reverse; }
-        
-        .p-name {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
             font-size: 0.95rem;
-            font-weight: 600;
-            color: #ecf0f1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px;
         }
         
-        .pos-badge {
-            font-size: 0.9rem !important;
-            font-weight: 700 !important;
-            padding: 1px 3px !important;
-            border-radius: 2px !important;
-            flex-shrink: 0 !important;
-            line-height: 1 !important;
-            display: inline-block !important;
-        }
-        .pos-GK { background: #e3a019 !important; color: #fff !important; }
-        .pos-D { background: #00a551 !important; color: #fff !important; }
-        .pos-M { background: #1e88e5 !important; color: #fff !important; }
-        .pos-F { background: #e53935 !important; color: #fff !important; }
-        
-        .p-fixture { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; }
-        
-        .p-stats { display: flex; gap: 5px; align-items: center; }
-        .p-right .p-stats { justify-content: flex-end; flex-direction: row-reverse; }
-        
-        .stat-mp { font-size: 0.9rem !important; font-weight: 700 !important; color: #bbb !important; }
-        .stat-cs { font-size: 1.4rem !important; }
-        .stat-icon { font-size: 1.2rem; }
-        
-        .card-yellow { display: inline-block; width: 14px; height: 20px; background: #f1c40f; border-radius: 2px; }
-        .card-red { display: inline-block; width: 14px; height: 20px; background: #e74c3c; border-radius: 2px; }
-        
-        .goal-conceded-icon {
-            display: inline-block;
-            width: 1.2em;
-            height: 1.2em;
-            vertical-align: middle;
-            position: relative;
+        .player-name {
+            font-weight: 500;
+            color: #333;
         }
         
-        .p-score { font-size: 1.2rem; font-weight: 800; color: #2ecc71; min-width: 30px; }
-        .p-score-left { text-align: right; padding-right: 6px; }
-        .p-score-right { text-align: left; padding-left: 6px; }
-        
-        .divider { width: 2px; height: 40px; background: rgba(255,255,255,0.15); justify-self: center; }
-        
-        .bench-label {
-            background: #0f3460;
-            color: #7f8c8d;
-            text-align: center;
-            font-size: 0.75rem;
-            padding: 6px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .player-score {
+            font-weight: 700;
+            color: #667eea;
+            min-width: 30px;
+            text-align: right;
         }
-        .bench .p-name { color: #7f8c8d; }
-        .bench .p-score { color: #7f8c8d; }
-        .bench .pos-badge { opacity: 0.7; }
-        .bench .p-jersey { opacity: 0.6; }
         
-        .loading { color: #fff; text-align: center; padding: 50px; font-size: 1.2rem; }
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ccc;
+        }
         
-        /* Standings Table */
+        .standings-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .standings-card h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
         .standings-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
         
         .standings-table th {
-            background: #0f3460;
+            background: #f8f9fa;
             padding: 12px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #1b5e20;
-        }
-        
-        .standings-table th.team-col {
             text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
         }
         
         .standings-table td {
-            padding: 14px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 1rem;
-            text-align: center;
-        }
-        
-        .standings-table td.team-col {
-            text-align: left;
-        }
-        
-        .standings-table tr:nth-child(even) {
-            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
         }
         
         .standings-table tr:hover {
-            background: rgba(255,255,255,0.08);
+            background: #f8f9fa;
         }
         
-        .rank-col { font-weight: 800; color: #fff; width: 60px; }
-        .team-col { font-weight: 600; }
-        .stat-col { width: 80px; }
-        
-        .rank-1 { color: #f1c40f; font-size: 1.2rem; }
-        .rank-2 { color: #bdc3c7; }
-        .rank-3 { color: #e67e22; }
-        
-        /* Hide mobile toggle on desktop */
-        .mobile-stats-toggle {
-            display: none;
+        .rank {
+            font-weight: 700;
+            color: #667eea;
         }
         
-        .standings-table-wrapper {
-            overflow-x: visible;
-        }
-        
-        /* Score increase animation */
-        @keyframes scoreIncrease {
-            0% { background-color: rgba(46, 204, 113, 0.6); }
-            100% { background-color: transparent; }
-        }
-        
-        .score-increased {
-            animation: scoreIncrease 2s ease-out;
-        }
-        
-        /* Score decrease animation */
-        @keyframes scoreDecrease {
-            0% { background-color: rgba(231, 76, 60, 0.6); }
-            100% { background-color: transparent; }
-        }
-        
-        .score-decreased {
-            animation: scoreDecrease 2s ease-out;
-        }
-        
-        /* BTC price pulse animation */
-        @keyframes btcPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-        
-        .btc-updated {
-            animation: btcPulse 0.5s ease-out;
-        }
-        
-        /* Mobile Responsive Styles */
         @media (max-width: 768px) {
-            * { margin: 0; padding: 0; }
-            body { overflow-x: hidden; }
-            
-            .topbar { padding: 10px 5px; }
-            .topbar h1 { 
-                font-size: 0.9rem;
-                position: absolute;
-                left: 50%;
-                transform: translateX(-50%);
+            .matchup-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
             }
             
-            #menu-btn { font-size: 1.5rem !important; }
-            
-            #btc-price { 
-                font-size: 0.7rem;
-                padding-right: 5px;
-            }
-            
-            .nav { padding: 8px 2px; flex-wrap: wrap; }
-            .nav button { padding: 6px 12px; font-size: 0.8rem; }
-            .nav h2 { margin: 0 10px; font-size: 1rem; }
-            
-            .container { padding: 0; max-width: 100%; margin: 0; }
-            .card { margin: 0 0 8px 0; border-radius: 0; }
-            
-            .header { padding: 12px 4px; flex-direction: row; gap: 4px; }
-            .header-team { flex: 1; text-align: center; }
-            .owner-name { font-size: 0.6rem; margin-bottom: 2px; }
-            .team-name { font-size: 0.9rem; margin-bottom: 3px; }
-            .team-score { font-size: 1.5rem; }
-            .header-vs { font-size: 0.85rem; }
-            
-            .row {
-                grid-template-columns: 1fr auto 4px auto 1fr;
-                padding: 8px 0;
-                min-height: auto;
-                gap: 0;
-            }
-            
-            .p-left, .p-right { 
-                flex-direction: row;
-                align-items: flex-start;
-                gap: 3px;
-                flex-wrap: wrap;
-            }
-            
-            .p-right {
-                justify-content: flex-end;
-                flex-direction: row-reverse;
-            }
-            
-            .p-right .p-jersey {
-                order: 1;
-            }
-            
-            .p-right .p-info-wrap {
-                text-align: right;
-                order: 2;
-            }
-            
-            .p-right .p-stats {
-                order: 3;
-                justify-content: flex-end !important;
-            }
-            
-            .p-right .p-name-row {
-                flex-direction: row-reverse;
-            }
-            
-            .p-jersey { 
-                width: 20px;
-                height: 25px;
-                flex-shrink: 0;
-                align-self: flex-start;
-            }
-            
-            .p-info-wrap { 
-                gap: 2px;
-                flex: 1;
-                min-width: 0;
-                display: flex;
-                flex-direction: column;
-            }
-            
-            .p-name-row {
-                display: flex;
-                align-items: center;
-                gap: 3px;
-                width: 100%;
-            }
-            
-            .p-name { 
-                font-size: 0.85rem;
-                max-width: none;
-                flex-shrink: 1;
-            }
-            
-            .pos-badge { 
-                font-size: 0.7rem !important; 
-                padding: 1px 3px !important;
-                flex-shrink: 0;
-            }
-            
-            .p-fixture { 
-                font-size: 0.7rem;
-                width: 100%;
-            }
-            
-            /* Stats go on their own line below - full width */
-            .p-stats { 
-                gap: 3px;
-                width: 100%;
-                justify-content: flex-start !important;
-                flex-direction: row !important;
-                flex-basis: 100%;
-            }
-            
-            .stat-mp { font-size: 0.7rem !important; }
-            .stat-cs { font-size: 1rem !important; }
-            .stat-icon { font-size: 0.95rem; }
-            
-            .card-yellow, .card-red { width: 10px; height: 14px; }
-            
-            .p-score { 
-                font-size: 1.1rem;
-                min-width: 24px;
-                padding: 0;
-            }
-            .p-score-left { padding-right: 0; }
-            .p-score-right { padding-left: 0; }
-            
-            .divider { width: 1px; height: 40px; }
-            
-            .bench-label { font-size: 0.65rem; padding: 5px 2px; }
-            
-            .loading { padding: 30px 10px; font-size: 1rem; }
-            
-            /* Mobile Standings */
-            .mobile-stats-toggle {
-                display: block;
-                width: calc(100% - 8px);
-                padding: 10px;
-                margin: 10px 4px;
-                background: #2ecc71;
-                border: none;
-                color: #fff;
-                border-radius: 5px;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 0.9rem;
-            }
-            
-            .standings-table-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            .standings-table.mobile-simple .hide-mobile {
+            .vs-divider {
                 display: none;
             }
             
-            .standings-table.mobile-simple .rank-col {
-                width: 40px;
-                padding: 14px 6px;
-            }
-            
-            .standings-table.mobile-full thead,
-            .standings-table.mobile-full tbody {
-                display: block;
-            }
-            
-            .standings-table.mobile-full tr {
-                display: flex;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
-            }
-            
-            .standings-table.mobile-full th,
-            .standings-table.mobile-full td {
-                flex-shrink: 0;
-                border-bottom: none;
-            }
-            
-            /* Sticky columns for rank and team */
-            .standings-table.mobile-full .rank-col {
-                position: sticky;
-                left: 0;
-                z-index: 2;
-                background: #1a1a2e;
-                width: 40px;
-                min-width: 40px;
-            }
-            
-            .standings-table.mobile-full .team-col {
-                position: sticky;
-                left: 40px;
-                z-index: 2;
-                background: #1a1a2e;
-                width: 140px;
-                min-width: 140px;
-            }
-            
-            .standings-table.mobile-full th.rank-col,
-            .standings-table.mobile-full th.team-col {
-                background: #0f3460;
-            }
-            
-            .standings-table.mobile-full .stat-col {
-                width: 60px;
-                min-width: 60px;
-                padding: 14px 8px;
-                font-size: 0.9rem;
-            }
-            
-            .standings-table .team-col strong {
-                font-size: 0.9rem;
-            }
-            
-            .standings-table .team-col span {
-                font-size: 0.75rem;
-            }
-            
-            /* Home Page Mobile */
-            .home-section {
-                margin-bottom: 20px;
-            }
-            
-            .home-section-title {
-                font-size: 1.1rem;
-                padding: 8px 10px;
-                margin-left: 4px;
-                margin-right: 4px;
-            }
-            
-            .home-match {
-                padding: 10px 6px;
-                margin-left: 4px;
-                margin-right: 4px;
-                gap: 5px;
-            }
-            
-            .home-team-name {
-                font-size: 0.85rem;
-            }
-            
-            .home-team-owner {
-                font-size: 0.7rem;
-            }
-            
-            .home-score {
-                font-size: 1.3rem;
-                min-width: 35px;
-            }
-            
-            .home-vs {
-                padding: 0 8px;
-                font-size: 0.75rem;
+            .header h1 {
+                font-size: 1.8rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="topbar">
-        <button id="menu-btn" style="background:none;border:none;color:#fff;font-size:1.9rem;cursor:pointer;padding:0;z-index:1;position:relative;">☰</button>
-        <h1>End the Fed</h1>
-        <span id="btc-price" style="font-size:0.9rem;color:#F7931A;font-weight:600;padding-right:10px;z-index:1;position:relative;">₿ --</span>
-    </div>
-    <div id="menu-dropdown" style="display:none;position:fixed;top:60px;left:10px;background:#0f3460;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;min-width:200px;">
-        <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
-        <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
-        <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;font-weight:600;">📊 Matchups</div>
-    </div>
-    <div class="nav">
-        <button id="btn-prev">◀ Prev</button>
-        <h2 id="gw-title">Gameweek 24</h2>
-        <button id="btn-next">Next ▶</button>
-    </div>
-    <div class="container">
-        <div id="content" class="loading">Loading matchups...</div>
-    </div>
-
-    <script>
-        const LEAGUE_ID = 8308; // CHANGE THIS TO YOUR LEAGUE ID
-        const CURRENT_GW = 24;
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
         
-        let currentGW = CURRENT_GW;
-        let leagueData = null;
-        let playerMap = {};
-        let teamMap = {};
-        let teamCodeMap = {};
-        let previousScores = {}; // Track previous scores for animation
-        let currentView = 'home'; // 'home', 'matchups', or 'standings'
-        const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
-        
-        // Fetch and update BTC price
-        async function updateBTCPrice() {
-            try {
-                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-                const data = await response.json();
-                const price = data.bitcoin?.usd;
+        const FPLDraftApp = () => {
+            const [leagueId, setLeagueId] = useState('8308'); // Your league ID
+            const [currentGameweek, setCurrentGameweek] = useState(null);
+            const [leagueData, setLeagueData] = useState(null);
+            const [matchups, setMatchups] = useState([]);
+            const [standings, setStandings] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [selectedGameweek, setSelectedGameweek] = useState(null);
+            
+            const testConnection = async () => {
+                setError(null);
+                setLoading(true);
                 
-                if (price) {
-                    const formattedPrice = new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD',
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0
-                    }).format(price);
-                    
-                    const btcElement = document.getElementById('btc-price');
-                    btcElement.textContent = `₿ ${formattedPrice}`;
-                    
-                    // Add pulse animation
-                    btcElement.classList.add('btc-updated');
-                    setTimeout(() => btcElement.classList.remove('btc-updated'), 500);
-                }
-            } catch (e) {
-                console.error('Failed to fetch BTC price:', e);
-            }
-        }
-        
-        // Update BTC price every 60 seconds
-        updateBTCPrice();
-        setInterval(updateBTCPrice, 60000);
-
-        async function fetchData(endpoint) {
-            const res = await fetch(`/api/fpl/${endpoint}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        }
-
-        async function init() {
-            const staticData = await fetchData('bootstrap-static');
-            staticData.elements.forEach(el => {
-                playerMap[el.id] = { name: el.web_name, pos: POS[el.element_type] || '?', team: el.team };
-            });
-            staticData.teams.forEach(t => {
-                teamMap[t.id] = t.short_name;
-                teamCodeMap[t.id] = t.code;
-            });
-            
-            await showHome(); // Start on home page
-            
-            document.getElementById('btn-prev').onclick = () => { if (currentGW > 1) loadGameweek(currentGW - 1); };
-            document.getElementById('btn-next').onclick = () => { if (currentGW < 38) loadGameweek(currentGW + 1); };
-            
-            // Menu toggle
-            const menuBtn = document.getElementById('menu-btn');
-            const menuDropdown = document.getElementById('menu-dropdown');
-            menuBtn.onclick = () => {
-                menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
-            };
-            
-            // Close menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!menuBtn.contains(e.target) && !menuDropdown.contains(e.target)) {
-                    menuDropdown.style.display = 'none';
-                }
-            });
-            
-            // Menu options
-            document.getElementById('menu-home').onclick = () => {
-                currentView = 'home';
-                showHome();
-                menuDropdown.style.display = 'none';
-            };
-            
-            document.getElementById('menu-matchups').onclick = () => {
-                currentView = 'matchups';
-                const nav = document.querySelector('.nav');
-                nav.style.display = 'flex';
-                loadGameweek(currentGW);
-                menuDropdown.style.display = 'none';
-            };
-            
-            document.getElementById('menu-standings').onclick = () => {
-                currentView = 'standings';
-                showStandings();
-                menuDropdown.style.display = 'none';
-            };
-            
-            // Auto-refresh every 60 seconds (only for matchups view)
-            setInterval(() => {
-                if (currentView === 'matchups') {
-                    loadGameweek(currentGW, true); // true = silent update
-                }
-            }, 60000);
-        }
-
-        function getPlayerStats(elementId, liveData) {
-            const el = liveData.elements[String(elementId)];
-            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0, saves: 0, own_goals: 0, goals_conceded: 0, penalties_missed: 0, penalties_saved: 0 };
-            return {
-                mp: el.stats.minutes || 0,
-                g: el.stats.goals_scored || 0,
-                a: el.stats.assists || 0,
-                cs: el.stats.clean_sheets || 0,
-                yc: el.stats.yellow_cards || 0,
-                rc: el.stats.red_cards || 0,
-                bonus: el.stats.bonus || 0,
-                saves: el.stats.saves || 0,
-                own_goals: el.stats.own_goals || 0,
-                goals_conceded: el.stats.goals_conceded || 0,
-                penalties_missed: el.stats.penalties_missed || 0,
-                penalties_saved: el.stats.penalties_saved || 0
-            };
-        }
-
-        function buildStatsHtml(stats, position) {
-            let html = '';
-            if (stats.mp > 0) html += `<span class="stat-mp">${stats.mp}'</span>`;
-            for (let i = 0; i < stats.g; i++) html += `<span class="stat-icon">⚽</span>`;
-            for (let i = 0; i < stats.own_goals; i++) html += `<span class="stat-icon">🔴</span>`;
-            for (let i = 0; i < stats.a; i++) html += `<span class="stat-icon">👟</span>`;
-            if (stats.cs > 0 && position !== 'F') html += `<span class="stat-cs">🛡️</span>`;
-            // Goalie gloves - one per 3 saves
-            if (position === 'GK' && stats.saves > 0) {
-                const gloves = Math.floor(stats.saves / 3);
-                for (let i = 0; i < gloves; i++) html += `<span class="stat-icon">🧤</span>`;
-            }
-            // Goals conceded penalty - custom SVG soccer ball with X (for GK and D only)
-            if ((position === 'GK' || position === 'D') && stats.goals_conceded > 0) {
-                const concededPenalties = Math.floor(stats.goals_conceded / 2);
-                const svgIcon = `<svg class="goal-conceded-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" fill="#fff" stroke="#000" stroke-width="1.5"/>
-                    <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12" stroke="#000" stroke-width="1"/>
-                    <path d="M6 6 L10 10 M14 14 L18 18 M6 18 L10 14 M14 10 L18 6" stroke="#000" stroke-width="1"/>
-                    <line x1="6" y1="6" x2="18" y2="18" stroke="#e74c3c" stroke-width="2.5"/>
-                    <line x1="18" y1="6" x2="6" y2="18" stroke="#e74c3c" stroke-width="2.5"/>
-                </svg>`;
-                for (let i = 0; i < concededPenalties; i++) html += svgIcon;
-            }
-            // Penalty saved by keeper
-            for (let i = 0; i < stats.penalties_saved; i++) html += `<span class="stat-icon">🦸</span>`;
-            // Penalty missed by any player
-            for (let i = 0; i < stats.penalties_missed; i++) html += `<span class="stat-icon">❌</span>`;
-            if (stats.bonus === 3) html += `<span class="stat-icon">🥇</span>`;
-            else if (stats.bonus === 2) html += `<span class="stat-icon">🥈</span>`;
-            else if (stats.bonus === 1) html += `<span class="stat-icon">🥉</span>`;
-            for (let i = 0; i < stats.yc; i++) html += `<span class="card-yellow"></span>`;
-            for (let i = 0; i < stats.rc; i++) html += `<span class="card-red"></span>`;
-            return html;
-        }
-
-        function getJerseyUrl(teamId, position) {
-            const teamCode = teamCodeMap[teamId];
-            if (position === 'GK') {
-                return `https://draft.premierleague.com/img/shirts/standard/shirt_${teamCode}_1-66.png`;
-            }
-            return `https://draft.premierleague.com/img/shirts/standard/shirt_${teamCode}-66.png`;
-        }
-        
-        async function showStandings() {
-            const content = document.getElementById('content');
-            const nav = document.querySelector('.nav');
-            nav.style.display = 'none'; // Hide gameweek navigation
-            
-            content.innerHTML = '<div class="loading">Loading standings...</div>';
-            
-            if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
-            
-            // Get standings from league data
-            const standings = leagueData.standings || [];
-            
-            // Create a map of league_entry_id to entry details
-            const entryMap = {};
-            leagueData.league_entries.forEach(e => {
-                entryMap[e.id] = { 
-                    entry_name: e.entry_name, 
-                    player_name: e.player_first_name + ' ' + e.player_last_name,
-                    entry_id: e.entry_id
-                };
-            });
-            
-            // Calculate High Score Weeks for each team
-            const hswCounts = {};
-            const bestWeekScores = {}; // Track best weekly score for each team
-            const matches = leagueData.matches || [];
-            
-            // Group matches by gameweek and only include finished matches
-            const matchesByGW = {};
-            matches.forEach(match => {
-                // Only include matches that have been played (both scores exist and are not null)
-                if (match.finished && match.league_entry_1_points !== null && match.league_entry_2_points !== null) {
-                    if (!matchesByGW[match.event]) matchesByGW[match.event] = [];
-                    matchesByGW[match.event].push(match);
-                    
-                    // Track best weekly scores
-                    const entry1 = match.league_entry_1;
-                    const entry2 = match.league_entry_2;
-                    const score1 = match.league_entry_1_points;
-                    const score2 = match.league_entry_2_points;
-                    
-                    if (!bestWeekScores[entry1] || score1 > bestWeekScores[entry1]) {
-                        bestWeekScores[entry1] = score1;
-                    }
-                    if (!bestWeekScores[entry2] || score2 > bestWeekScores[entry2]) {
-                        bestWeekScores[entry2] = score2;
-                    }
-                }
-            });
-            
-            // For each gameweek, find the highest scorer(s)
-            for (const gw in matchesByGW) {
-                let highestScore = 0;
-                const teamScores = {};
-                
-                // Collect all team scores for this gameweek
-                matchesByGW[gw].forEach(match => {
-                    teamScores[match.league_entry_1] = match.league_entry_1_points;
-                    teamScores[match.league_entry_2] = match.league_entry_2_points;
-                    
-                    if (match.league_entry_1_points > highestScore) {
-                        highestScore = match.league_entry_1_points;
-                    }
-                    if (match.league_entry_2_points > highestScore) {
-                        highestScore = match.league_entry_2_points;
-                    }
-                });
-                
-                // Skip this gameweek if no real scores (highest is 0 means not played yet)
-                if (highestScore === 0) continue;
-                
-                // Find all teams with the highest score
-                const highScorers = [];
-                for (const entryId in teamScores) {
-                    if (teamScores[entryId] === highestScore) {
-                        highScorers.push(entryId);
-                    }
-                }
-                
-                // Divide 1 point among all high scorers
-                if (highScorers.length > 0) {
-                    const pointsPerTeam = 1 / highScorers.length;
-                    highScorers.forEach(entryId => {
-                        hswCounts[entryId] = (hswCounts[entryId] || 0) + pointsPerTeam;
-                    });
-                }
-            }
-            
-            let html = '<button class="mobile-stats-toggle" onclick="toggleMobileStats()">Show Full Stats</button>';
-            html += '<div class="standings-table-wrapper">';
-            html += '<table class="standings-table mobile-simple" id="standings-table"><thead><tr>';
-            html += '<th class="rank-col">#</th>';
-            html += '<th class="team-col">Team</th>';
-            html += '<th class="stat-col">W</th>';
-            html += '<th class="stat-col">D</th>';
-            html += '<th class="stat-col">L</th>';
-            html += '<th class="stat-col hide-mobile">PF</th>';
-            html += '<th class="stat-col hide-mobile">PA</th>';
-            html += '<th class="stat-col hide-mobile">Best Week</th>';
-            html += '<th class="stat-col hide-mobile">HSW</th>';
-            html += '<th class="stat-col">P</th>';
-            html += '</tr></thead><tbody>';
-            
-            standings.forEach((team, index) => {
-                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
-                const entry = entryMap[team.league_entry] || { entry_name: 'Unknown', player_name: 'Unknown' };
-                const hsw = hswCounts[team.league_entry] || 0;
-                // Remove trailing zeros: 1.50 -> 1.5, 0.50 -> 0.5, 1.00 -> 1
-                const hswDisplay = hsw % 1 === 0 ? hsw : hsw.toString().replace(/\.?0+$/, '');
-                const bestWeek = bestWeekScores[team.league_entry] || 0;
-                
-                // Find medals for PF
-                const pfValues = standings.map(t => t.points_for || 0);
-                const sortedPF = [...pfValues].sort((a, b) => b - a);
-                const maxPF = sortedPF[0];
-                const secondPF = sortedPF[1];
-                let pfMedal = '';
-                if (team.points_for === maxPF) pfMedal = ' 🥇';
-                else if (team.points_for === secondPF) pfMedal = ' 🥈';
-                
-                // Find medal for Best Week
-                const bwValues = standings.map(t => bestWeekScores[t.league_entry] || 0);
-                const maxBW = Math.max(...bwValues);
-                let bwMedal = '';
-                if (bestWeek === maxBW) bwMedal = ' 🥇';
-                
-                html += '<tr>';
-                html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
-                html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
-                html += `<td class="stat-col">${team.matches_won || 0}</td>`;
-                html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
-                html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
-                html += `<td class="stat-col hide-mobile pf-${index}">${team.points_for || 0}${pfMedal}</td>`;
-                html += `<td class="stat-col hide-mobile pa-${index}">${team.points_against || 0}</td>`;
-                html += `<td class="stat-col hide-mobile bw-${index}"><strong>${bestWeek}${bwMedal}</strong></td>`;
-                html += `<td class="stat-col hide-mobile"><strong>${hswDisplay}</strong></td>`;
-                html += `<td class="stat-col"><strong>${team.total || 0}</strong></td>`;
-                html += '</tr>';
-            });
-            
-            html += '</tbody></table></div>';
-            content.innerHTML = html;
-            
-            // Apply color gradients after table is rendered
-            setTimeout(() => {
-                // Get all PF and PA values
-                const pfValues = standings.map(t => t.points_for || 0);
-                const paValues = standings.map(t => t.points_against || 0);
-                
-                const maxPF = Math.max(...pfValues);
-                const minPF = Math.min(...pfValues);
-                const maxPA = Math.max(...paValues);
-                const minPA = Math.min(...paValues);
-                
-                standings.forEach((team, index) => {
-                    // PF gradient: green (high) to white (low)
-                    const pfPercent = (team.points_for - minPF) / (maxPF - minPF);
-                    const pfGreen = Math.round(46 + (255 - 46) * (1 - pfPercent));
-                    const pfColor = `rgb(${pfGreen}, ${Math.round(204 + (255 - 204) * (1 - pfPercent))}, ${Math.round(113 + (255 - 113) * (1 - pfPercent))})`;
-                    
-                    // PA gradient: red (high) to white (low)
-                    const paPercent = (team.points_against - minPA) / (maxPA - minPA);
-                    const paRed = Math.round(231 * paPercent + 255 * (1 - paPercent));
-                    const paGreen = Math.round(76 * paPercent + 255 * (1 - paPercent));
-                    const paBlue = Math.round(60 * paPercent + 255 * (1 - paPercent));
-                    const paColor = `rgb(${paRed}, ${paGreen}, ${paBlue})`;
-                    
-                    const pfCell = document.querySelector(`.pf-${index}`);
-                    const paCell = document.querySelector(`.pa-${index}`);
-                    
-                    // Apply gradients
-                    if (pfCell) pfCell.style.color = pfColor;
-                    if (paCell) paCell.style.color = paColor;
-                });
-            }, 0);
-        }
-        
-        async function showHome() {
-            const content = document.getElementById('content');
-            const nav = document.querySelector('.nav');
-            nav.style.display = 'none'; // Hide gameweek navigation
-            
-            content.innerHTML = '<div class="loading">Loading home...</div>';
-            
-            if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
-            
-            const entryMap = {};
-            leagueData.league_entries.forEach(e => {
-                entryMap[e.id] = { entry_id: e.entry_id, name: e.entry_name, owner: e.player_first_name };
-            });
-            
-            // Get last week (most recent completed gameweek) and next week
-            const lastWeek = currentGW; // Just completed
-            const nextWeek = currentGW + 1; // Upcoming
-            
-            let html = '';
-            
-            // Last Week Results
-            if (lastWeek > 0) {
-                html += '<div class="home-section">';
-                html += `<div class="home-section-title">Gameweek ${lastWeek} Results</div>`;
-                
-                const lastWeekMatches = leagueData.matches.filter(m => m.event === lastWeek && m.finished);
-                const lastWeekLive = await fetchData(`event/${lastWeek}/live`);
-                
-                // Find the highest score of the week
-                let highestScore = 0;
-                lastWeekMatches.forEach(match => {
-                    const t1Score = match.league_entry_1_points || 0;
-                    const t2Score = match.league_entry_2_points || 0;
-                    if (t1Score > highestScore) highestScore = t1Score;
-                    if (t2Score > highestScore) highestScore = t2Score;
-                });
-                
-                for (const match of lastWeekMatches) {
-                    const t1 = entryMap[match.league_entry_1];
-                    const t2 = entryMap[match.league_entry_2];
-                    const t1Score = match.league_entry_1_points || 0;
-                    const t2Score = match.league_entry_2_points || 0;
-                    
-                    // Determine class: highest scorer gets gold, winner gets green, loser gets grey
-                    let t1Class = '';
-                    let t2Class = '';
-                    
-                    if (t1Score === highestScore) {
-                        t1Class = 'home-highest';
-                    } else if (t1Score > t2Score) {
-                        t1Class = 'home-winner';
-                    } else if (t1Score < t2Score) {
-                        t1Class = 'home-loser';
-                    }
-                    
-                    if (t2Score === highestScore) {
-                        t2Class = 'home-highest';
-                    } else if (t2Score > t1Score) {
-                        t2Class = 'home-winner';
-                    } else if (t2Score < t1Score) {
-                        t2Class = 'home-loser';
-                    }
-                    
-                    html += '<div class="home-match">';
-                    html += `<div class="home-team ${t1Class}">`;
-                    html += `<div class="home-team-name">${t1.name}</div>`;
-                    html += `<div class="home-team-owner">${t1.owner}</div>`;
-                    html += '</div>';
-                    html += `<div class="home-score ${t1Class}">${t1Score}</div>`;
-                    html += '<div class="home-vs">-</div>';
-                    html += `<div class="home-score ${t2Class}">${t2Score}</div>`;
-                    html += `<div class="home-team ${t2Class}">`;
-                    html += `<div class="home-team-name">${t2.name}</div>`;
-                    html += `<div class="home-team-owner">${t2.owner}</div>`;
-                    html += '</div>';
-                    html += '</div>';
-                }
-                
-                html += '</div>';
-            }
-            
-            // Next Week Matchups
-            html += '<div class="home-section">';
-            
-            // Fetch deadline from our serverless API
-            let deadlineStr = '';
-            try {
-                const response = await fetch('/api/deadline');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.events && Array.isArray(data.events)) {
-                        const gwEvent = data.events.find(e => e.id === nextWeek);
-                        if (gwEvent && gwEvent.deadline_time) {
-                            const deadline = new Date(gwEvent.deadline_time);
-                            deadlineStr = deadline.toLocaleString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric', 
-                                hour: 'numeric', 
-                                minute: '2-digit',
-                                hour12: true 
-                            });
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error('Failed to fetch deadline:', e);
-            }
-            
-            // Build section header with deadline if available
-            html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups`;
-            if (deadlineStr) {
-                html += `<div style="font-size:0.85rem;font-weight:normal;margin-top:5px;color:#bdc3c7;">Lineups Set: ${deadlineStr}</div>`;
-            }
-            html += `</div>`;
-            
-            const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
-            
-            for (const match of nextWeekMatches) {
-                const t1 = entryMap[match.league_entry_1];
-                const t2 = entryMap[match.league_entry_2];
-                
-                // Get standings rank for each team
-                const standings = leagueData.standings || [];
-                const t1Standing = standings.find(s => s.league_entry === match.league_entry_1);
-                const t2Standing = standings.find(s => s.league_entry === match.league_entry_2);
-                const t1Rank = t1Standing ? t1Standing.rank : '?';
-                const t2Rank = t2Standing ? t2Standing.rank : '?';
-                
-                html += '<div class="home-match">';
-                html += '<div class="home-team">';
-                html += `<div class="home-team-name">${t1.name} (${t1Rank})</div>`;
-                html += `<div class="home-team-owner">${t1.owner}</div>`;
-                html += '</div>';
-                html += '<div class="home-vs">VS</div>';
-                html += '<div class="home-team">';
-                html += `<div class="home-team-name">${t2.name} (${t2Rank})</div>`;
-                html += `<div class="home-team-owner">${t2.owner}</div>`;
-                html += '</div>';
-                html += '</div>';
-            }
-            
-            html += '</div>';
-            
-            content.innerHTML = html;
-        }
-
-        async function loadGameweek(gw, silentUpdate = false) {
-            const content = document.getElementById('content');
-            if (!silentUpdate) {
-                content.innerHTML = '<div class="loading">Loading gameweek ' + gw + '...</div>';
-            }
-            currentGW = gw;
-            document.getElementById('gw-title').textContent = `Gameweek ${gw}`;
-
-            if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
-
-            const entryMap = {};
-            leagueData.league_entries.forEach(e => {
-                entryMap[e.id] = { entry_id: e.entry_id, name: e.entry_name, owner: e.player_first_name };
-            });
-
-            const matches = leagueData.matches.filter(m => m.event === gw);
-            const liveData = await fetchData(`event/${gw}/live`);
-            const fixtures = liveData.fixtures || [];
-
-            const getFixtureStr = (player) => {
-                if (!player) return '';
-                const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
-                if (fix) {
-                    const isHome = fix.team_h === player.team;
-                    const opp = teamMap[isHome ? fix.team_a : fix.team_h] || '';
-                    const vs = isHome ? 'vs' : '@';
-                    const scoreStr = (fix.team_h_score !== null) ? ` ${fix.team_h_score}-${fix.team_a_score}` : '';
-                    return `${teamMap[player.team] || ''} ${vs} ${opp}${scoreStr}`;
-                }
-                return teamMap[player.team] || '';
-            };
-
-            // Silent update: update existing elements instead of rebuilding
-            if (silentUpdate && content.querySelector('.card')) {
-                const cards = content.querySelectorAll('.card');
-                let cardIndex = 0;
-                
-                for (const match of matches) {
-                    try {
-                        const t1 = entryMap[match.league_entry_1];
-                        const t2 = entryMap[match.league_entry_2];
-                        const entry1 = await fetchData(`entry/${t1.entry_id}/event/${gw}`);
-                        const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
-
-                        const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
-                            return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
-                        }, 0);
-
-                        const t1Score = getScore(entry1.picks);
-                        const t2Score = getScore(entry2.picks);
-
-                        const card = cards[cardIndex];
-                        if (card) {
-                            // Update team scores
-                            const scoreElements = card.querySelectorAll('.team-score');
-                            if (scoreElements[0]) scoreElements[0].textContent = t1Score;
-                            if (scoreElements[1]) scoreElements[1].textContent = t2Score;
-
-                            // Update player scores and stats
-                            const rows = card.querySelectorAll('.row');
-                            const starters1 = entry1.picks.filter(p => p.position <= 11);
-                            const starters2 = entry2.picks.filter(p => p.position <= 11);
-                            const bench1 = entry1.picks.filter(p => p.position > 11);
-                            const bench2 = entry2.picks.filter(p => p.position > 11);
-                            const allPicks1 = [...starters1, ...bench1];
-                            const allPicks2 = [...starters2, ...bench2];
-
-                            rows.forEach((row, i) => {
-                                const p1 = allPicks1[i];
-                                const p2 = allPicks2[i];
-                                
-                                if (p1) {
-                                    const pts1 = liveData.elements[String(p1.element)]?.stats?.total_points || 0;
-                                    const scoreLeft = row.querySelector('.p-score-left');
-                                    if (scoreLeft) scoreLeft.textContent = pts1;
-                                    
-                                    // Check for score changes and animate
-                                    const p1Key = `${gw}-${p1.element}`;
-                                    const p1Increased = previousScores[p1Key] !== undefined && pts1 > previousScores[p1Key];
-                                    const p1Decreased = previousScores[p1Key] !== undefined && pts1 < previousScores[p1Key];
-                                    previousScores[p1Key] = pts1;
-                                    
-                                    if (p1Increased) {
-                                        row.classList.remove('score-decreased');
-                                        row.classList.add('score-increased');
-                                        setTimeout(() => row.classList.remove('score-increased'), 2000);
-                                    } else if (p1Decreased) {
-                                        row.classList.remove('score-increased');
-                                        row.classList.add('score-decreased');
-                                        setTimeout(() => row.classList.remove('score-decreased'), 2000);
-                                    }
-                                }
-                                
-                                if (p2) {
-                                    const pts2 = liveData.elements[String(p2.element)]?.stats?.total_points || 0;
-                                    const scoreRight = row.querySelector('.p-score-right');
-                                    if (scoreRight) scoreRight.textContent = pts2;
-                                    
-                                    // Check for score changes and animate
-                                    const p2Key = `${gw}-${p2.element}`;
-                                    const p2Increased = previousScores[p2Key] !== undefined && pts2 > previousScores[p2Key];
-                                    const p2Decreased = previousScores[p2Key] !== undefined && pts2 < previousScores[p2Key];
-                                    previousScores[p2Key] = pts2;
-                                    
-                                    if (p2Increased && !row.classList.contains('score-increased')) {
-                                        row.classList.remove('score-decreased');
-                                        row.classList.add('score-increased');
-                                        setTimeout(() => row.classList.remove('score-increased'), 2000);
-                                    } else if (p2Decreased && !row.classList.contains('score-decreased')) {
-                                        row.classList.remove('score-increased');
-                                        row.classList.add('score-decreased');
-                                        setTimeout(() => row.classList.remove('score-decreased'), 2000);
-                                    }
-                                }
-                            });
-                        }
-                        cardIndex++;
-                    } catch(e) { console.error('Error:', e); }
-                }
-                return; // Exit early, don't rebuild HTML
-            }
-
-            let html = '';
-
-            for (const match of matches) {
                 try {
-                    const t1 = entryMap[match.league_entry_1];
-                    const t2 = entryMap[match.league_entry_2];
+                    console.log('Testing API connection...');
+                    console.log('League ID:', leagueId);
                     
-                    // Get current standings rank for each team
-                    const standings = leagueData.standings || [];
-                    const t1Standing = standings.find(s => s.league_entry === match.league_entry_1);
-                    const t2Standing = standings.find(s => s.league_entry === match.league_entry_2);
-                    const t1Rank = t1Standing ? t1Standing.rank : '?';
-                    const t2Rank = t2Standing ? t2Standing.rank : '?';
+                    // Test 1: Public endpoint through proxy
+                    console.log('Test 1: Trying bootstrap endpoint through proxy...');
+                    console.log('Fetching: /api/bootstrap-static');
+                    const bootstrapResponse = await fetch('/api/bootstrap-static');
+                    console.log('Bootstrap response status:', bootstrapResponse.status);
                     
-                    // Get last 5 games for each team (before current gameweek)
-                    const getLastFiveGames = (leagueEntryId) => {
-                        const teamMatches = leagueData.matches.filter(m => 
-                            m.finished && 
-                            m.event < gw && 
-                            (m.league_entry_1 === leagueEntryId || m.league_entry_2 === leagueEntryId)
-                        ).sort((a, b) => b.event - a.event).slice(0, 5);
-                        
-                        return teamMatches.map(m => {
-                            const isTeam1 = m.league_entry_1 === leagueEntryId;
-                            const teamScore = isTeam1 ? m.league_entry_1_points : m.league_entry_2_points;
-                            const oppScore = isTeam1 ? m.league_entry_2_points : m.league_entry_1_points;
+                    if (!bootstrapResponse.ok) {
+                        const errorText = await bootstrapResponse.text();
+                        console.log('Bootstrap error response:', errorText);
+                        throw new Error('Public API failed - Status: ' + bootstrapResponse.status + ' - ' + errorText);
+                    }
+                    
+                    const bootstrapData = await bootstrapResponse.json();
+                    console.log('✅ Proxy and public API work!');
+                    console.log('Bootstrap data received:', Object.keys(bootstrapData));
+                    
+                    // Test 2: League endpoint through proxy
+                    console.log('Test 2: Trying league endpoint through proxy...');
+                    console.log('Fetching: /api/league/' + leagueId + '/details');
+                    const leagueResponse = await fetch(`/api/league/${leagueId}/details`);
+                    
+                    console.log('League response status:', leagueResponse.status);
+                    
+                    if (!leagueResponse.ok) {
+                        const errorText = await leagueResponse.text();
+                        console.log('League error response:', errorText);
+                        if (leagueResponse.status === 404) {
+                            throw new Error('❌ League not found! Check your League ID (currently: ' + leagueId + ')');
+                        } else if (leagueResponse.status === 403 || leagueResponse.status === 401) {
+                            throw new Error('❌ League is private and requires authentication. Unfortunately, the proxy cannot access private leagues.');
+                        }
+                        throw new Error('API returned status: ' + leagueResponse.status + ' - ' + errorText);
+                    }
+                    
+                    const leagueData = await leagueResponse.json();
+                    console.log('✅ League data accessible! Everything works.');
+                    console.log('League name:', leagueData.league?.name);
+                    setError('✅ Connection test passed! You can now click "Load League"');
+                    
+                } catch (err) {
+                    console.error('Connection test failed:', err);
+                    if (err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+                        setError('❌ Network error! Make sure:\n1. The server is running (check the command window)\n2. The URL is http://localhost:8000');
+                    } else {
+                        setError(err.message);
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const fetchLeagueData = async () => {
+                if (!leagueId) {
+                    setError('Please enter a league ID');
+                    return;
+                }
+                
+                setLoading(true);
+                setError(null);
+                
+                try {
+                    console.log('Fetching league data for league:', leagueId);
+                    
+                    // Fetch league details through proxy
+                    const leagueResponse = await fetch(`/api/league/${leagueId}/details`);
+                    
+                    console.log('League response status:', leagueResponse.status);
+                    
+                    if (!leagueResponse.ok) {
+                        if (leagueResponse.status === 404) {
+                            throw new Error('League not found. Please check your League ID.');
+                        } else if (leagueResponse.status === 403 || leagueResponse.status === 401) {
+                            throw new Error('This league appears to be private. The app can only access public league data through the proxy.');
+                        }
+                        throw new Error(`Failed to fetch league data (Status: ${leagueResponse.status})`);
+                    }
+                    
+                    const leagueInfo = await leagueResponse.json();
+                    console.log('League data loaded successfully:', leagueInfo);
+                    setLeagueData(leagueInfo);
+                    
+                    // Get current gameweek through proxy
+                    const bootstrapResponse = await fetch('/api/bootstrap-static');
+                    const bootstrapData = await bootstrapResponse.json();
+                    const currentGW = bootstrapData.events.find(e => e.is_current)?.id || 1;
+                    console.log('Current gameweek:', currentGW);
+                    setCurrentGameweek(currentGW);
+                    setSelectedGameweek(currentGW);
+                    
+                    // Fetch standings
+                    setStandings(leagueInfo.standings);
+                    
+                    // Fetch matchups for current gameweek
+                    await fetchGameweekMatchups(leagueId, currentGW, leagueInfo);
+                    
+                } catch (err) {
+                    console.error('Error loading league:', err);
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            const fetchGameweekMatchups = async (lgId, gameweek, lgData) => {
+                try {
+                    console.log('Fetching matchups for gameweek:', gameweek);
+                    
+                    const response = await fetch(`/api/league/${lgId}/details`);
+                    const data = await response.json();
+                    
+                    // Get matches for the gameweek
+                    const matches = data.matches.filter(m => m.event === gameweek);
+                    console.log('Found matches:', matches.length);
+                    
+                    // Fetch live scores through proxy
+                    const liveResponse = await fetch(`/api/event/${gameweek}/live`);
+                    const liveData = await liveResponse.json();
+                    console.log('Live data loaded');
+                    
+                    // Fetch all entry details for this gameweek
+                    const matchupsWithDetails = await Promise.all(
+                        matches.map(async (match) => {
+                            const entry1Response = await fetch(`/api/entry/${match.league_entry_1}/event/${gameweek}`);
+                            const entry2Response = await fetch(`/api/entry/${match.league_entry_2}/event/${gameweek}`);
                             
-                            if (teamScore > oppScore) return 'W';
-                            if (teamScore < oppScore) return 'L';
-                            return 'D';
-                        }).reverse(); // Reverse to show oldest to newest
-                    };
-                    
-                    const t1Record = getLastFiveGames(match.league_entry_1);
-                    const t2Record = getLastFiveGames(match.league_entry_2);
-                    
-                    // Calculate head-to-head record
-                    const h2hMatches = leagueData.matches.filter(m => 
-                        m.finished && 
-                        m.event < gw &&
-                        ((m.league_entry_1 === match.league_entry_1 && m.league_entry_2 === match.league_entry_2) ||
-                         (m.league_entry_1 === match.league_entry_2 && m.league_entry_2 === match.league_entry_1))
+                            const entry1Data = await entry1Response.json();
+                            const entry2Data = await entry2Response.json();
+                            
+                            return {
+                                match,
+                                entry1: entry1Data,
+                                entry2: entry2Data,
+                                liveData
+                            };
+                        })
                     );
                     
-                    let t1H2HWins = 0, t1H2HLosses = 0, h2hDraws = 0;
-                    h2hMatches.forEach(m => {
-                        const isT1First = m.league_entry_1 === match.league_entry_1;
-                        const t1Score = isT1First ? m.league_entry_1_points : m.league_entry_2_points;
-                        const t2Score = isT1First ? m.league_entry_2_points : m.league_entry_1_points;
-                        
-                        if (t1Score > t2Score) t1H2HWins++;
-                        else if (t1Score < t2Score) t1H2HLosses++;
-                        else h2hDraws++;
-                    });
-                    
-                    const entry1 = await fetchData(`entry/${t1.entry_id}/event/${gw}`);
-                    const entry2 = await fetchData(`entry/${t2.entry_id}/event/${gw}`);
-
-                    const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
-                        return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
-                    }, 0);
-
-                    const t1Score = getScore(entry1.picks);
-                    const t2Score = getScore(entry2.picks);
-
-                    const starters1 = entry1.picks.filter(p => p.position <= 11);
-                    const bench1 = entry1.picks.filter(p => p.position > 11);
-                    const starters2 = entry2.picks.filter(p => p.position <= 11);
-                    const bench2 = entry2.picks.filter(p => p.position > 11);
-
-                    const makeRow = (p1, p2, isBench) => {
-                        const player1 = p1 ? playerMap[p1.element] || {name:'?', pos:'?', team:0} : null;
-                        const player2 = p2 ? playerMap[p2.element] || {name:'?', pos:'?', team:0} : null;
-                        const pts1 = p1 ? (liveData.elements[String(p1.element)]?.stats?.total_points || 0) : 0;
-                        const pts2 = p2 ? (liveData.elements[String(p2.element)]?.stats?.total_points || 0) : 0;
-                        const stats1 = p1 ? getPlayerStats(p1.element, liveData) : null;
-                        const stats2 = p2 ? getPlayerStats(p2.element, liveData) : null;
-
-                        const leftName = player1
-                            ? `<img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
-                               <div class="p-info-wrap">
-                                   <div class="p-name-row">
-                                       <span class="p-name">${player1.name}</span>
-                                       <span class="pos-badge pos-${player1.pos}">${player1.pos}</span>
-                                   </div>
-                                   <span class="p-fixture">${getFixtureStr(player1)}</span>
-                               </div>
-                               <div class="p-stats">${buildStatsHtml(stats1, player1.pos)}</div>`
-                            : '';
-
-                        const rightName = player2
-                            ? `<div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
-                               <div class="p-info-wrap">
-                                   <div class="p-name-row">
-                                       <span class="p-name">${player2.name}</span>
-                                       <span class="pos-badge pos-${player2.pos}">${player2.pos}</span>
-                                   </div>
-                                   <span class="p-fixture">${getFixtureStr(player2)}</span>
-                               </div>
-                               <img src="${getJerseyUrl(player2.team, player2.pos)}" class="p-jersey">`
-                            : '';
-
-                        // Check if scores changed for animation
-                        const p1Key = p1 ? `${gw}-${p1.element}` : null;
-                        const p2Key = p2 ? `${gw}-${p2.element}` : null;
-                        const p1Increased = p1Key && previousScores[p1Key] !== undefined && pts1 > previousScores[p1Key];
-                        const p2Increased = p2Key && previousScores[p2Key] !== undefined && pts2 > previousScores[p2Key];
-                        const p1Decreased = p1Key && previousScores[p1Key] !== undefined && pts1 < previousScores[p1Key];
-                        const p2Decreased = p2Key && previousScores[p2Key] !== undefined && pts2 < previousScores[p2Key];
-                        
-                        // Update tracked scores
-                        if (p1Key) previousScores[p1Key] = pts1;
-                        if (p2Key) previousScores[p2Key] = pts2;
-                        
-                        // Determine animation class
-                        let animClass = '';
-                        if (p1Increased || p2Increased) animClass = 'score-increased';
-                        else if (p1Decreased || p2Decreased) animClass = 'score-decreased';
-
-                        return `<div class="row ${isBench ? 'bench' : ''} ${animClass}" data-p1="${p1 ? p1.element : ''}" data-p2="${p2 ? p2.element : ''}">
-                            <div class="p-left">${leftName}</div>
-                            <div class="p-score p-score-left">${player1 ? pts1 : ''}</div>
-                            <div class="divider"></div>
-                            <div class="p-score p-score-right">${player2 ? pts2 : ''}</div>
-                            <div class="p-right">${rightName}</div>
-                        </div>`;
-                    };
-
-                    let rows = '';
-                    for (let i = 0; i < 11; i++) rows += makeRow(starters1[i], starters2[i], false);
-
-                    let benchRows = '';
-                    for (let i = 0; i < Math.max(bench1.length, bench2.length); i++) {
-                        benchRows += makeRow(bench1[i], bench2[i], true);
-                    }
-
-                    const matchId = `match-${match.league_entry_1}-${match.league_entry_2}-${gw}`;
-                    
-                    html += `<div class="card">
-                        <div class="header">
-                            <div class="header-team">
-                                <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
-                                <div class="owner-name">${t1.owner}</div>
-                                <div class="team-score">${t1Score}</div>
-                            </div>
-                            <div class="header-vs">
-                                VS
-                                <button class="expand-btn" onclick="toggleRecord('${matchId}')">▼</button>
-                            </div>
-                            <div class="header-team">
-                                <div class="team-name">${t2.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t2Rank})</span></div>
-                                <div class="owner-name">${t2.owner}</div>
-                                <div class="team-score">${t2Score}</div>
-                            </div>
-                        </div>
-                        <div id="${matchId}" class="recent-record">
-                            <div class="records-row">
-                                <div class="team-record">
-                                    <div class="record-items">
-                                        ${t1Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
-                                    </div>
-                                </div>
-                                <div class="team-record">
-                                    <div class="record-items">
-                                        ${t2Record.map(r => `<span class="record-item record-${r}">${r}</span>`).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="h2h-section">
-                                <div class="h2h-title">Head-to-Head</div>
-                                <div class="h2h-stats">
-                                    <div class="h2h-item">
-                                        <div class="h2h-value">${t1H2HWins}</div>
-                                        <div class="h2h-label">${t1.name}</div>
-                                    </div>
-                                    <div class="h2h-item">
-                                        <div class="h2h-value">${h2hDraws}</div>
-                                        <div class="h2h-label">Draws</div>
-                                    </div>
-                                    <div class="h2h-item">
-                                        <div class="h2h-value">${t1H2HLosses}</div>
-                                        <div class="h2h-label">${t2.name}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        ${rows}
-                        <div class="bench-label">─── Bench ───</div>
-                        ${benchRows}
-                    </div>`;
-                } catch(e) { console.error('Error:', e); }
-            }
+                    console.log('All matchup details loaded');
+                    setMatchups(matchupsWithDetails);
+                } catch (err) {
+                    console.error('Error fetching matchups:', err);
+                    setError('Error loading matchup details: ' + err.message);
+                }
+            };
             
-            content.innerHTML = html || '<div class="loading">No matchups loaded</div>';
-        }
-        
-        function toggleRecord(id) {
-            const element = document.getElementById(id);
-            const btn = event.target;
-            if (element.classList.contains('show')) {
-                element.classList.remove('show');
-                btn.textContent = '▼';
-            } else {
-                element.classList.add('show');
-                btn.textContent = '▲';
-            }
-        }
-        
-        function toggleMobileStats() {
-            const table = document.getElementById('standings-table');
-            const btn = event.target;
+            const changeGameweek = (direction) => {
+                const newGW = selectedGameweek + direction;
+                if (newGW >= 1 && newGW <= 38) {
+                    setSelectedGameweek(newGW);
+                    fetchGameweekMatchups(leagueId, newGW, leagueData);
+                }
+            };
             
-            if (table.classList.contains('mobile-simple')) {
-                table.classList.remove('mobile-simple');
-                table.classList.add('mobile-full');
-                btn.textContent = 'Hide Full Stats';
-            } else {
-                table.classList.remove('mobile-full');
-                table.classList.add('mobile-simple');
-                btn.textContent = 'Show Full Stats';
-            }
-        }
-
-        init();
+            const getPlayerScore = (playerId, liveData) => {
+                const playerStats = liveData.elements?.[playerId];
+                return playerStats?.stats?.total_points || 0;
+            };
+            
+            const calculateTeamScore = (picks, liveData) => {
+                return picks.reduce((total, pick) => {
+                    const score = getPlayerScore(pick.element, liveData);
+                    return total + (score * pick.multiplier);
+                }, 0);
+            };
+            
+            const getTeamName = (entryId) => {
+                const standing = standings.find(s => s.league_entry === entryId);
+                return standing?.entry_name || 'Unknown Team';
+            };
+            
+            const getPlayerName = (playerId, liveData) => {
+                const player = liveData.elements?.[playerId];
+                return player ? `${player.web_name}` : 'Unknown Player';
+            };
+            
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <h1>⚽ FPL Draft Matchup Tracker</h1>
+                        <p>Side-by-side matchup view for your Fantasy Premier League Draft</p>
+                    </div>
+                    
+                    <div className="config-section">
+                        <h2>League Configuration</h2>
+                        <div className="input-group">
+                            <input 
+                                type="text" 
+                                placeholder="Enter League ID (e.g., 8308)"
+                                value={leagueId}
+                                onChange={(e) => setLeagueId(e.target.value)}
+                            />
+                            <button onClick={fetchLeagueData} disabled={loading}>
+                                {loading ? 'Loading...' : 'Load League'}
+                            </button>
+                        </div>
+                        <p style={{fontSize: '0.9rem', color: '#666', marginBottom: '10px'}}>
+                            ℹ️ Note: This app uses a local proxy server to avoid authentication issues!
+                        </p>
+                        <button onClick={testConnection} style={{marginTop: '10px', background: '#28a745'}}>
+                            Test API Connection
+                        </button>
+                    </div>
+                    
+                    {error && <div className={error.includes('✅') ? 'success' : 'error'}>{error}</div>}
+                    
+                    {loading && <div className="loading">Loading league data...</div>}
+                    
+                    {leagueData && !loading && (
+                        <>
+                            <div className="config-section">
+                                <div className="gameweek-selector">
+                                    <button onClick={() => changeGameweek(-1)} disabled={selectedGameweek <= 1}>
+                                        ← Previous
+                                    </button>
+                                    <h2>Gameweek {selectedGameweek}</h2>
+                                    <button onClick={() => changeGameweek(1)} disabled={selectedGameweek >= 38}>
+                                        Next →
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="matchup-grid">
+                                {matchups.map((matchup, idx) => {
+                                    const team1Score = calculateTeamScore(matchup.entry1.picks, matchup.liveData);
+                                    const team2Score = calculateTeamScore(matchup.entry2.picks, matchup.liveData);
+                                    
+                                    return (
+                                        <div key={idx} className="matchup-card">
+                                            <div className="matchup-header">
+                                                <div>
+                                                    <div className="team-name">{getTeamName(matchup.match.league_entry_1)}</div>
+                                                    <div className="team-score">{team1Score}</div>
+                                                </div>
+                                                <div style={{fontSize: '2rem', color: '#ccc'}}>VS</div>
+                                                <div style={{textAlign: 'right'}}>
+                                                    <div className="team-name">{getTeamName(matchup.match.league_entry_2)}</div>
+                                                    <div className="team-score">{team2Score}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="matchup-content">
+                                                <div className="team-lineup">
+                                                    {matchup.entry1.picks.map((pick, i) => (
+                                                        <div key={i} className="player-row">
+                                                            <span className="player-name">
+                                                                {getPlayerName(pick.element, matchup.liveData)}
+                                                                {pick.multiplier > 1 && ' (C)'}
+                                                            </span>
+                                                            <span className="player-score">
+                                                                {getPlayerScore(pick.element, matchup.liveData) * pick.multiplier}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                
+                                                <div className="vs-divider">VS</div>
+                                                
+                                                <div className="team-lineup">
+                                                    {matchup.entry2.picks.map((pick, i) => (
+                                                        <div key={i} className="player-row">
+                                                            <span className="player-name">
+                                                                {getPlayerName(pick.element, matchup.liveData)}
+                                                                {pick.multiplier > 1 && ' (C)'}
+                                                            </span>
+                                                            <span className="player-score">
+                                                                {getPlayerScore(pick.element, matchup.liveData) * pick.multiplier}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="standings-card">
+                                <h2>League Standings</h2>
+                                <table className="standings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Team</th>
+                                            <th>Manager</th>
+                                            <th>Points</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {standings.map((team, idx) => (
+                                            <tr key={idx}>
+                                                <td className="rank">{team.rank}</td>
+                                                <td>{team.entry_name}</td>
+                                                <td>{team.player_name}</td>
+                                                <td><strong>{team.total}</strong></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        };
+        
+        ReactDOM.render(<FPLDraftApp />, document.getElementById('root'));
     </script>
 </body>
 </html>
