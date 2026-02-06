@@ -157,6 +157,45 @@
             box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
         }
         
+        .live-indicator {
+            position: absolute;
+            background: #e74c3c;
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 0.5px;
+        }
+        
+        .p-left .live-indicator {
+            top: 2px;
+            right: 2px;
+        }
+        
+        .p-right .live-indicator {
+            top: 2px;
+            left: 2px;
+        }
+        
+        .live-pulse {
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
         .header {
             display: flex;
             align-items: center;
@@ -347,8 +386,8 @@
         }
         .row:nth-child(even) { background: rgba(255,255,255,0.03); }
         
-        .p-left { display: flex; align-items: center; gap: 8px; justify-content: flex-start; }
-        .p-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+        .p-left { display: flex; align-items: center; gap: 8px; justify-content: flex-start; position: relative; }
+        .p-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; position: relative; }
         
         .p-jersey { width: 28px; height: 35px; object-fit: contain; flex-shrink: 0; }
         
@@ -645,6 +684,27 @@
             
             .p-right .p-name-row {
                 flex-direction: row-reverse;
+            }
+            
+            .live-indicator {
+                font-size: 0.5rem;
+                padding: 1px 3px;
+                gap: 2px;
+            }
+            
+            .p-left .live-indicator {
+                top: 1px;
+                right: 1px;
+            }
+            
+            .p-right .live-indicator {
+                top: 1px;
+                left: 1px;
+            }
+            
+            .live-pulse {
+                width: 4px;
+                height: 4px;
             }
             
             .p-jersey { 
@@ -1696,6 +1756,15 @@
                 }
                 return teamMap[player.team] || '';
             };
+            
+            const isPlayerLive = (player) => {
+                if (!player) return null;
+                const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
+                if (fix && fix.started && !fix.finished) {
+                    return { minutes: fix.minutes || 0 };
+                }
+                return null;
+            };
 
             // Silent update: update existing elements instead of rebuilding
             // Don't do silent updates for pre-deadline matchups
@@ -1882,9 +1951,13 @@
                         const pts2 = p2 ? (liveData.elements[String(p2.element)]?.stats?.total_points || 0) : 0;
                         const stats1 = p1 ? getPlayerStats(p1.element, liveData) : null;
                         const stats2 = p2 ? getPlayerStats(p2.element, liveData) : null;
+                        
+                        const live1 = player1 ? isPlayerLive(player1) : null;
+                        const live2 = player2 ? isPlayerLive(player2) : null;
 
                         const leftName = player1
-                            ? `<img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
+                            ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes}'</div>` : ''}
+                               <img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player1.name}</span>
@@ -1896,7 +1969,8 @@
                             : '';
 
                         const rightName = player2
-                            ? `<div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
+                            ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes}'</div>` : ''}
+                               <div class="p-stats">${buildStatsHtml(stats2, player2.pos)}</div>
                                <div class="p-info-wrap">
                                    <div class="p-name-row">
                                        <span class="p-name">${player2.name}</span>
