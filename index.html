@@ -584,8 +584,27 @@
         .rank-3 { color: #e67e22; }
         
         /* Hide mobile toggle on desktop */
+        .standings-toggle-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
         .mobile-stats-toggle {
-            display: none;
+            padding: 10px 20px;
+            background: #2ecc71;
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background 0.3s;
+        }
+        
+        .mobile-stats-toggle:hover {
+            opacity: 0.9;
         }
         
         .standings-table-wrapper {
@@ -862,18 +881,17 @@
             .loading { padding: 30px 10px; font-size: 1rem; }
             
             /* Mobile Standings */
-            .mobile-stats-toggle {
-                display: block;
-                width: calc(100% - 8px);
-                padding: 10px;
+            .standings-toggle-buttons {
+                flex-direction: column;
+                gap: 8px;
                 margin: 10px 4px;
-                background: #2ecc71;
-                border: none;
-                color: #fff;
-                border-radius: 5px;
-                font-weight: 600;
-                cursor: pointer;
+            }
+            
+            .mobile-stats-toggle {
+                width: 100%;
+                padding: 12px;
                 font-size: 0.9rem;
+                margin: 0;
             }
             
             .standings-table-wrapper {
@@ -1712,14 +1730,15 @@
                 }
             }
             
-            let html = '<div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">';
+            let html = '<div class="standings-toggle-buttons">';
             html += '<button class="mobile-stats-toggle" onclick="toggleMobileStats()">Show Full Stats</button>';
-            html += `<button class="mobile-stats-toggle" onclick="toggleLiveTable()" style="background: ${showLiveTable ? '#e74c3c' : '#27ae60'};">${showLiveTable ? '🔴 Live Table' : 'Regular Table'}</button>`;
+            html += `<button class="mobile-stats-toggle" onclick="toggleLiveTable()" style="background: ${showLiveTable ? '#e74c3c' : '#27ae60'};">${showLiveTable ? '🔴 Live Standings' : '📊 Live Standings'}</button>`;
             html += '</div>';
             
             // Calculate live standings if enabled
             let displayStandings = standings;
             if (showLiveTable) {
+                content.innerHTML = html + '<div class="loading">Calculating live standings...</div>';
                 displayStandings = await calculateLiveStandings(standings, entryMap);
             }
             
