@@ -752,13 +752,18 @@
                 font-size: 0.5rem;
                 padding: 2px 4px;
                 gap: 2px;
-                align-self: flex-end;
-                width: fit-content;
+                width: 100%;
                 order: -1;  /* Move to top of column */
+                display: flex;
+                align-items: center;
+            }
+            
+            .p-left .live-indicator {
+                justify-content: flex-start;
             }
             
             .p-right .live-indicator {
-                align-self: flex-start;  /* Top-left for right column */
+                justify-content: flex-end;
             }
             
             .live-pulse {
