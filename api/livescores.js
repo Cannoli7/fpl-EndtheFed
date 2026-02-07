@@ -1,6 +1,11 @@
 // Serverless function to fetch live match data from API-Football
 // Free tier: 100 requests/day - Direct API (no RapidAPI needed)
 
+// Server-side cache (persists for function instance lifetime)
+let cachedData = null;
+let cacheTime = 0;
+const CACHE_DURATION = 30000; // 30 seconds
+
 export default async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,6 +19,15 @@ export default async function handler(req, res) {
     }
 
     try {
+        const now = Date.now();
+        
+        // Return cached data if still fresh
+        if (cachedData && (now - cacheTime) < CACHE_DURATION) {
+            console.log('Returning cached data');
+            res.status(200).json(cachedData);
+            return;
+        }
+        
         // Direct API-Football: Get live Premier League matches (league ID: 39)
         const response = await fetch('https://v3.football.api-sports.io/fixtures?league=39&live=all', {
             headers: {
@@ -37,7 +51,14 @@ export default async function handler(req, res) {
             status: item.fixture?.status?.short || ''
         }));
 
-        res.status(200).json({ matches });
+        const result = { matches };
+        
+        // Update cache
+        cachedData = result;
+        cacheTime = now;
+        console.log(`API called - cached ${matches.length} matches`);
+        
+        res.status(200).json(result);
 
     } catch (error) {
         console.error('Error:', error);
