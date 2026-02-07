@@ -1057,7 +1057,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.31</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.33</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1294,8 +1294,12 @@
             setInterval(async () => {
                 if (currentView === 'matchups') {
                     try {
-                        // Fetch API-Football live data
-                        await fetchLiveMatchData();
+                        // Fetch API-Football live data (may fail if no API key)
+                        try {
+                            await fetchLiveMatchData();
+                        } catch (apiError) {
+                            console.log('API fetch failed:', apiError);
+                        }
                         
                         // Fetch fresh live data for stats
                         const liveData = await fetchData(`event/${currentGW}/live`);
@@ -2115,8 +2119,12 @@
         }
 
         async function showSimpleMatchups(matches, entryMap, gw, content) {
-            // Fetch initial live data
-            await fetchLiveMatchData();
+            // Try to fetch initial live data (don't break if it fails)
+            try {
+                await fetchLiveMatchData();
+            } catch (e) {
+                console.log('Live data fetch failed, continuing without it:', e);
+            }
             
             // Set total matches and ensure currentMatchIndex is valid
             totalMatches = matches.length;
@@ -2322,8 +2330,12 @@
             }
             
             if (silentUpdate && content.querySelector('.card')) {
-                // Fetch fresh live scores for match minutes
-                await fetchLiveScores();
+                // Fetch fresh live data for match minutes
+                try {
+                    await fetchLiveMatchData();
+                } catch (e) {
+                    console.log('API fetch failed:', e);
+                }
                 
                 // Fetch fresh live data to get updated fixture times
                 const freshLiveData = await fetchData(`event/${gw}/live`);
@@ -2568,7 +2580,11 @@
             if (match) {
                 try {
                     // Fetch live match minutes from external API
-                    await fetchLiveScores();
+                    try {
+                        await fetchLiveMatchData();
+                    } catch (apiError) {
+                        console.log('API fetch failed:', apiError);
+                    }
                     
                     const t1 = entryMap[match.league_entry_1];
                     const t2 = entryMap[match.league_entry_2];
