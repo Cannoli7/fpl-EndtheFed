@@ -1054,7 +1054,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.17</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.18-debug</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1122,6 +1122,7 @@
                     const data = await response.json();
                     liveScoresCache = data.matches || [];
                     lastLiveScoresFetch = now;
+                    console.log('FotMob live scores fetched:', liveScoresCache);
                     return liveScoresCache;
                 }
             } catch (error) {
@@ -1132,7 +1133,12 @@
         }
         
         function getMatchMinute(teamName) {
-            if (!liveScoresCache) return 0;
+            if (!liveScoresCache || liveScoresCache.length === 0) {
+                console.log('No live scores cache available');
+                return 0;
+            }
+            
+            console.log('Looking for team:', teamName, 'in cache:', liveScoresCache);
             
             // Find matching live match
             for (const match of liveScoresCache) {
@@ -1142,10 +1148,12 @@
                 const isAway = possibleNames.some(name => match.awayTeam?.includes(name) || name.includes(match.awayTeam));
                 
                 if (isHome || isAway) {
+                    console.log('Found match:', match.homeTeam, 'vs', match.awayTeam, 'minute:', match.minute);
                     return match.minute || 0;
                 }
             }
             
+            console.log('No match found for team:', teamName);
             return 0;
         }
         
@@ -2276,6 +2284,8 @@
                 const teamName = teamMap[player.team];
                 const apiMinute = getMatchMinute(teamName);
                 
+                console.log('isPlayerLive:', player.name, 'team:', teamName, 'minute:', apiMinute);
+                
                 // Check FPL fixture data for match status
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix && fix.started && !fix.finished) {
@@ -2284,12 +2294,7 @@
                         return { minutes: 'HT' };
                     }
                     
-                    // Use API minute directly - it's the actual match time
-                    if (apiMinute > 0) {
-                        return { minutes: apiMinute };
-                    }
-                    
-                    // If API returns 0, might be starting or just kicked off
+                    // Use API minute directly
                     return { minutes: apiMinute };
                 }
                 return null;
