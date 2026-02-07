@@ -14,14 +14,10 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Get today's date in YYYYMMDD format
-        const today = new Date();
-        const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
-        
-        // FotMob's matches endpoint - gets all matches for today
-        const response = await fetch(`https://www.fotmob.com/api/matches?date=${dateStr}`, {
+        // Fetch Premier League directly (ID: 47)
+        const response = await fetch('https://www.fotmob.com/api/leagues?id=47&tab=overview&type=league&timeZone=America/New_York', {
             headers: {
-                'User-Agent': 'Mozilla/5.0'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
         });
 
@@ -32,31 +28,29 @@ export default async function handler(req, res) {
         }
 
         const data = await response.json();
+        console.log('FotMob response keys:', Object.keys(data));
         
-        // Get live Premier League matches
+        // Get live matches
         const liveMatches = [];
         
-        // FotMob returns leagues array, find Premier League (ccode: ENG, id: 47)
-        if (data.leagues) {
-            const premierLeague = data.leagues.find(league => 
-                league.ccode === 'ENG' && league.name?.includes('Premier League')
-            );
-            
-            if (premierLeague && premierLeague.matches) {
-                premierLeague.matches.forEach(match => {
-                    // Only include live matches
-                    if (match.status && match.status.started && !match.status.finished) {
-                        liveMatches.push({
-                            homeTeam: match.home?.name || '',
-                            awayTeam: match.away?.name || '',
-                            minute: match.status?.liveTime?.minute || 0,
-                            status: match.status?.liveTime?.short || match.status?.reason?.short || ''
-                        });
-                    }
+        // Check different possible structures
+        const matchesArray = data.matches?.allMatches || data.overview?.liveMatches || data.liveMatches || [];
+        
+        console.log('Matches found:', matchesArray.length);
+        
+        matchesArray.forEach(match => {
+            // Only include live matches
+            if (match.status && match.status.started && !match.status.finished) {
+                liveMatches.push({
+                    homeTeam: match.home?.name || '',
+                    awayTeam: match.away?.name || '',
+                    minute: match.status?.liveTime?.minute || 0,
+                    status: match.status?.liveTime?.short || match.status?.reason?.short || ''
                 });
             }
-        }
+        });
 
+        console.log('Live matches:', liveMatches);
         res.status(200).json({ matches: liveMatches });
 
     } catch (error) {
