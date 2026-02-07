@@ -1,11 +1,12 @@
-// Serverless function to fetch live match data from football-data.org
-// This provides CORS-free access to live match minutes
+// Serverless function to fetch live match data from FotMob
+// FotMob has accurate live minutes and doesn't require API key
 
 export default async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Cache-Control', 's-maxage=30'); // Cache for 30 seconds
     
     if (req.method === 'OPTIONS') {
         res.status(200).end();
@@ -13,52 +14,43 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Fetch from football-data.org API (free tier, no auth needed for basic data)
-        // Get Premier League matches (competition code: PL)
-        const response = await fetch('https://api.football-data.org/v4/competitions/PL/matches?status=LIVE,IN_PLAY', {
+        // FotMob's unofficial API - Premier League ID is 47
+        const response = await fetch('https://www.fotmob.com/api/leagues?id=47', {
             headers: {
-                'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY || '' // Optional, works without for basic requests
+                'User-Agent': 'Mozilla/5.0'
             }
         });
 
         if (!response.ok) {
-            // Fallback: try alternative free API
-            const altResponse = await fetch('https://api.sportmonks.com/v3/football/livescores/inplay?api_token=' + (process.env.SPORTMONKS_API_KEY || ''));
-            
-            if (!altResponse.ok) {
-                // If both fail, return empty array (no live matches)
-                res.status(200).json({ matches: [] });
-                return;
-            }
-            
-            const altData = await altResponse.json();
-            // Transform sportmonks data to our format
-            const matches = (altData.data || []).map(match => ({
-                homeTeam: match.participants?.[0]?.name,
-                awayTeam: match.participants?.[1]?.name,
-                minute: match.state?.minute || 0,
-                status: match.state?.state
-            }));
-            
-            res.status(200).json({ matches });
+            console.error('FotMob API failed:', response.status);
+            res.status(200).json({ matches: [] });
             return;
         }
 
         const data = await response.json();
         
-        // Transform to simple format with team names and minutes
-        const matches = (data.matches || []).map(match => ({
-            homeTeam: match.homeTeam?.name,
-            awayTeam: match.awayTeam?.name,
-            minute: match.minute || 0,
-            status: match.status
-        }));
+        // Get live matches
+        const liveMatches = [];
+        
+        // Check matches array for live games
+        if (data.matches && data.matches.allMatches) {
+            data.matches.allMatches.forEach(match => {
+                // Only include live matches
+                if (match.status && match.status.started && !match.status.finished) {
+                    liveMatches.push({
+                        homeTeam: match.home?.name || '',
+                        awayTeam: match.away?.name || '',
+                        minute: match.status?.liveTime?.minute || 0,  // Actual match minute from FotMob
+                        status: match.status?.liveTime?.short || match.status?.reason?.short || ''
+                    });
+                }
+            });
+        }
 
-        res.status(200).json({ matches });
+        res.status(200).json({ matches: liveMatches });
 
     } catch (error) {
-        console.error('Error fetching live scores:', error);
-        // Return empty array on error rather than failing
+        console.error('Error fetching from FotMob:', error);
         res.status(200).json({ matches: [] });
     }
 }
