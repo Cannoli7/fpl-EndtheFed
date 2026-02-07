@@ -613,22 +613,36 @@
         
         /* Score increase animation */
         @keyframes scoreIncrease {
-            0% { background-color: rgba(46, 204, 113, 0.6); }
-            100% { background-color: transparent; }
+            0% { 
+                background-color: rgba(46, 204, 113, 0.25);
+                box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.4);
+            }
+            100% { 
+                background-color: transparent;
+                box-shadow: none;
+            }
         }
         
         .score-increased {
             animation: scoreIncrease 2s ease-out;
+            border-radius: 6px;
         }
         
         /* Score decrease animation */
         @keyframes scoreDecrease {
-            0% { background-color: rgba(231, 76, 60, 0.6); }
-            100% { background-color: transparent; }
+            0% { 
+                background-color: rgba(231, 76, 60, 0.25);
+                box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.4);
+            }
+            100% { 
+                background-color: transparent;
+                box-shadow: none;
+            }
         }
         
         .score-decreased {
             animation: scoreDecrease 2s ease-out;
+            border-radius: 6px;
         }
         
         /* BTC price pulse animation */
@@ -998,6 +1012,34 @@
             .home-vs {
                 padding: 0 8px;
                 font-size: 0.75rem;
+            }
+            
+            /* Mobile score animations */
+            .score-increased,
+            .score-decreased {
+                border-radius: 4px;
+            }
+            
+            @keyframes scoreIncrease {
+                0% { 
+                    background-color: rgba(46, 204, 113, 0.3);
+                    box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.5);
+                }
+                100% { 
+                    background-color: transparent;
+                    box-shadow: none;
+                }
+            }
+            
+            @keyframes scoreDecrease {
+                0% { 
+                    background-color: rgba(231, 76, 60, 0.3);
+                    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.5);
+                }
+                100% { 
+                    background-color: transparent;
+                    box-shadow: none;
+                }
             }
         }
     </style>
