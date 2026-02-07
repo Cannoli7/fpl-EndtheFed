@@ -1054,7 +1054,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.14</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.17</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1304,14 +1304,17 @@
                                     const player1 = playerMap[p1Id];
                                     const liveIndicator = row.querySelector('.p-left .live-indicator');
                                     if (liveIndicator) {
-                                        // Use FPL fixtures to get match minute
+                                        // Get minute from API
+                                        const teamName = teamMap[player1.team];
+                                        const minutes = getMatchMinute(teamName);
+                                        
+                                        // Check if match is live
                                         const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
                                         
                                         if (fix && fix.started && !fix.finished) {
                                             if (fix.finished_provisional) {
                                                 liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else {
-                                                const minutes = fix.minutes || 0;
+                                            } else if (minutes > 0) {
                                                 liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
                                             }
                                         }
@@ -1330,14 +1333,17 @@
                                     const player2 = playerMap[p2Id];
                                     const liveIndicator = row.querySelector('.p-right .live-indicator');
                                     if (liveIndicator) {
-                                        // Use FPL fixtures to get match minute
+                                        // Get minute from API
+                                        const teamName = teamMap[player2.team];
+                                        const minutes = getMatchMinute(teamName);
+                                        
+                                        // Check if match is live
                                         const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
                                         
                                         if (fix && fix.started && !fix.finished) {
                                             if (fix.finished_provisional) {
                                                 liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else {
-                                                const minutes = fix.minutes || 0;
+                                            } else if (minutes > 0) {
                                                 liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
                                             }
                                         }
@@ -2266,7 +2272,11 @@
             const isPlayerLive = (player) => {
                 if (!player) return null;
                 
-                // Check FPL fixture data - it already has the match minute
+                // Get match minute from live scores API
+                const teamName = teamMap[player.team];
+                const apiMinute = getMatchMinute(teamName);
+                
+                // Check FPL fixture data for match status
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix && fix.started && !fix.finished) {
                     // Check if it's halftime
@@ -2274,9 +2284,13 @@
                         return { minutes: 'HT' };
                     }
                     
-                    // Use FPL's minute data directly
-                    const minutes = fix.minutes || 0;
-                    return { minutes: minutes };
+                    // Use API minute directly - it's the actual match time
+                    if (apiMinute > 0) {
+                        return { minutes: apiMinute };
+                    }
+                    
+                    // If API returns 0, might be starting or just kicked off
+                    return { minutes: apiMinute };
                 }
                 return null;
             };
