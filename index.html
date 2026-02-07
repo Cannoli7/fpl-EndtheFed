@@ -1054,7 +1054,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.4</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.5</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1068,9 +1068,8 @@
 
     <script>
         const LEAGUE_ID = 8308; // CHANGE THIS TO YOUR LEAGUE ID
-        const CURRENT_GW = 24;
         
-        let currentGW = CURRENT_GW;
+        let currentGW = 24; // Default - will be updated from bootstrap-static API
         let leagueData = null;
         let playerMap = {};
         let teamMap = {};
@@ -1212,6 +1211,12 @@
                 teamMap[t.id] = t.short_name;
                 teamCodeMap[t.id] = t.code;
             });
+            
+            // Find the current gameweek from events
+            const currentEvent = staticData.events.find(e => e.is_current);
+            if (currentEvent) {
+                currentGW = currentEvent.id;
+            }
             
             // Populate gameweek dropdown
             populateGWDropdown();
@@ -1906,26 +1911,31 @@
                 entryMap[e.id] = { entry_id: e.entry_id, name: e.entry_name, owner: e.player_first_name };
             });
             
-            // Get current gameweek and next gameweek
-            const currentWeek = currentGW; // Current gameweek (in progress or just finished)
-            const nextWeek = currentGW + 1; // Next gameweek (upcoming)
+            // Fetch bootstrap to determine true current gameweek
+            const bootstrap = await fetchData('bootstrap-static');
+            const currentEvent = bootstrap.events.find(e => e.is_current);
+            const currentEventId = currentEvent ? currentEvent.id : currentGW;
+            
+            // Top section: Show the current gameweek (lineups are locked)
+            // Bottom section: Show the next gameweek (upcoming)
+            const topWeek = currentEventId;
+            const bottomWeek = currentEventId + 1;
             
             let html = '';
             
-            // Current Week Results/Scores
-            if (currentWeek > 0) {
+            // Top Section: Current Gameweek
+            if (topWeek > 0) {
                 html += '<div class="home-section">';
-                html += `<div class="home-section-title">Gameweek ${currentWeek}</div>`;
+                html += `<div class="home-section-title">Gameweek ${topWeek}</div>`;
                 
-                const currentWeekMatches = leagueData.matches.filter(m => m.event === currentWeek);
-                const currentWeekLive = await fetchData(`event/${currentWeek}/live`);
+                const topWeekMatches = leagueData.matches.filter(m => m.event === topWeek);
                 
                 // Check if any matches are finished
-                const hasFinishedMatches = currentWeekMatches.some(m => m.finished);
+                const hasFinishedMatches = topWeekMatches.some(m => m.finished);
                 
                 if (hasFinishedMatches) {
                     // Show results for finished matches
-                    const finishedMatches = currentWeekMatches.filter(m => m.finished);
+                    const finishedMatches = topWeekMatches.filter(m => m.finished);
                     
                     // Find the highest score of the week
                     let highestScore = 0;
@@ -2019,7 +2029,7 @@
                 html += '</div>';
             }
             
-            // Next Week Matchups
+            // Bottom Section: Next Gameweek
             html += '<div class="home-section">';
             
             // Fetch deadline from our serverless API
@@ -2029,7 +2039,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.events && Array.isArray(data.events)) {
-                        const gwEvent = data.events.find(e => e.id === nextWeek);
+                        const gwEvent = data.events.find(e => e.id === bottomWeek);
                         if (gwEvent && gwEvent.deadline_time) {
                             const deadline = new Date(gwEvent.deadline_time);
                             deadlineStr = deadline.toLocaleString('en-US', { 
@@ -2048,13 +2058,13 @@
             }
             
             // Build section header with deadline if available
-            html += `<div class="home-section-title">Gameweek ${nextWeek} Matchups`;
+            html += `<div class="home-section-title">Gameweek ${bottomWeek} Matchups`;
             if (deadlineStr) {
                 html += `<div style="font-size:0.85rem;font-weight:normal;margin-top:5px;color:#bdc3c7;">Lineups Set: ${deadlineStr}</div>`;
             }
             html += `</div>`;
             
-            const nextWeekMatches = leagueData.matches.filter(m => m.event === nextWeek);
+            const nextWeekMatches = leagueData.matches.filter(m => m.event === bottomWeek);
             
             for (const match of nextWeekMatches) {
                 const t1 = entryMap[match.league_entry_1];
