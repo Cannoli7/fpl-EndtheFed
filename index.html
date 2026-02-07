@@ -511,12 +511,10 @@
             position: relative;
         }
         
-        .p-score { font-size: 1.2rem; font-weight: 800; color: #2ecc71; min-width: 30px; }
-        .p-score.match-finished { 
-            background-color: rgba(46, 204, 113, 0.15); 
-            border-radius: 4px;
-            padding: 2px 6px;
-        }
+        .p-score { font-size: 1.2rem; font-weight: 800; min-width: 30px; }
+        .p-score.match-not-started { color: rgba(255, 255, 255, 0.3); }
+        .p-score.match-live { color: #ffffff; }
+        .p-score.match-finished { color: #2ecc71; }
         .p-score-left { text-align: right; padding-right: 6px; }
         .p-score-right { text-align: left; padding-left: 6px; }
         
@@ -533,7 +531,7 @@
             letter-spacing: 1px;
         }
         .bench .p-name { color: #7f8c8d; }
-        .bench .p-score { color: #7f8c8d; }
+
         .bench .pos-badge { opacity: 0.7; }
         .bench .p-jersey { opacity: 0.6; }
         
@@ -1059,7 +1057,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.21</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.22</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2492,14 +2490,21 @@
                                 if (scoreLeft) {
                                     scoreLeft.textContent = pts1;
                                     
-                                    // Check if match is finished and add faded green
+                                    // Update match status color
                                     const player1 = playerMap[p1.element];
                                     if (player1) {
                                         const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
+                                        
+                                        // Remove all status classes
+                                        scoreLeft.classList.remove('match-not-started', 'match-live', 'match-finished');
+                                        
+                                        // Add correct status class
                                         if (fix && fix.finished) {
                                             scoreLeft.classList.add('match-finished');
+                                        } else if (fix && fix.started) {
+                                            scoreLeft.classList.add('match-live');
                                         } else {
-                                            scoreLeft.classList.remove('match-finished');
+                                            scoreLeft.classList.add('match-not-started');
                                         }
                                     }
                                 }
@@ -2530,14 +2535,21 @@
                                 if (scoreRight) {
                                     scoreRight.textContent = pts2;
                                     
-                                    // Check if match is finished and add faded green
+                                    // Update match status color
                                     const player2 = playerMap[p2.element];
                                     if (player2) {
                                         const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
+                                        
+                                        // Remove all status classes
+                                        scoreRight.classList.remove('match-not-started', 'match-live', 'match-finished');
+                                        
+                                        // Add correct status class
                                         if (fix && fix.finished) {
                                             scoreRight.classList.add('match-finished');
+                                        } else if (fix && fix.started) {
+                                            scoreRight.classList.add('match-live');
                                         } else {
-                                            scoreRight.classList.remove('match-finished');
+                                            scoreRight.classList.add('match-not-started');
                                         }
                                     }
                                 }
@@ -2668,9 +2680,18 @@
                         const live1 = player1 ? isPlayerLive(player1) : null;
                         const live2 = player2 ? isPlayerLive(player2) : null;
                         
-                        // Check if player's match is finished
-                        const isFinished1 = player1 ? (fixtures.find(f => f.team_h === player1.team || f.team_a === player1.team)?.finished || false) : false;
-                        const isFinished2 = player2 ? (fixtures.find(f => f.team_h === player2.team || f.team_a === player2.team)?.finished || false) : false;
+                        // Check match status for each player
+                        const getMatchStatus = (player) => {
+                            if (!player) return 'not-started';
+                            const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
+                            if (!fix) return 'not-started';
+                            if (fix.finished) return 'finished';
+                            if (fix.started) return 'live';
+                            return 'not-started';
+                        };
+                        
+                        const status1 = player1 ? getMatchStatus(player1) : 'not-started';
+                        const status2 = player2 ? getMatchStatus(player2) : 'not-started';
 
                         const leftName = player1
                             ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes === 'HT' ? 'HT' : live1.minutes + "'"}</div>` : ''}
@@ -2728,9 +2749,9 @@
 
                         return `<div class="row ${isBench ? 'bench' : ''}" data-p1="${p1 ? p1.element : ''}" data-p2="${p2 ? p2.element : ''}">
                             <div class="p-left ${p1AnimClass}">${leftName}</div>
-                            <div class="p-score p-score-left ${isFinished1 ? 'match-finished' : ''}">${player1 ? pts1 : ''}</div>
+                            <div class="p-score p-score-left match-${status1}">${player1 ? pts1 : ''}</div>
                             <div class="divider"></div>
-                            <div class="p-score p-score-right ${isFinished2 ? 'match-finished' : ''}">${player2 ? pts2 : ''}</div>
+                            <div class="p-score p-score-right match-${status2}">${player2 ? pts2 : ''}</div>
                             <div class="p-right ${p2AnimClass}">${rightName}</div>
                         </div>`;
                     };
