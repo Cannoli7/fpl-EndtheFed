@@ -1057,7 +1057,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.28</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.29</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1154,6 +1154,13 @@
             const kickoff = new Date(fixture.kickoff_time);
             const now = new Date();
             const elapsedMinutes = Math.floor((now - kickoff) / 60000);
+            
+            console.log('Match time calc:', {
+                kickoff: kickoff.toLocaleTimeString(),
+                now: now.toLocaleTimeString(),
+                elapsed: elapsedMinutes,
+                fixture: fixture.team_h + ' vs ' + fixture.team_a
+            });
             
             // Before kickoff
             if (elapsedMinutes < 0) return 0;
@@ -1376,20 +1383,20 @@
                                         // Use smart calculation for match minute
                                         const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
                                         
-                                        if (fix && fix.started && !fix.finished) {
-                                            if (fix.finished_provisional) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else {
-                                                const minutes = getSmartMatchMinute(fix);
-                                                if (minutes === 'HT') {
-                                                    liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                                } else if (minutes > 0) {
-                                                    liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
-                                                }
-                                            }
-                                        } else {
-                                            // Remove LIVE indicator if match ended
+                                        // CRITICAL: Remove indicator if match is finished
+                                        if (!fix || !fix.started || fix.finished) {
                                             liveIndicator.remove();
+                                        } else if (fix.finished_provisional) {
+                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                        } else {
+                                            const minutes = getSmartMatchMinute(fix);
+                                            if (minutes === 'HT') {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else if (minutes > 0) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                            } else {
+                                                liveIndicator.remove();
+                                            }
                                         }
                                     }
                                     
@@ -1409,20 +1416,20 @@
                                         // Use smart calculation for match minute
                                         const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
                                         
-                                        if (fix && fix.started && !fix.finished) {
-                                            if (fix.finished_provisional) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else {
-                                                const minutes = getSmartMatchMinute(fix);
-                                                if (minutes === 'HT') {
-                                                    liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                                } else if (minutes > 0) {
-                                                    liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
-                                                }
-                                            }
-                                        } else {
-                                            // Remove LIVE indicator if match ended
+                                        // CRITICAL: Remove indicator if match is finished
+                                        if (!fix || !fix.started || fix.finished) {
                                             liveIndicator.remove();
+                                        } else if (fix.finished_provisional) {
+                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                        } else {
+                                            const minutes = getSmartMatchMinute(fix);
+                                            if (minutes === 'HT') {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else if (minutes > 0) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                            } else {
+                                                liveIndicator.remove();
+                                            }
                                         }
                                     }
                                     
@@ -2349,16 +2356,22 @@
             const isPlayerLive = (player) => {
                 if (!player) return null;
                 
-                // Check FPL fixture data for match status
+                // Get the fixture
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
-                if (fix && fix.started && !fix.finished) {
-                    // Check if it's halftime
-                    if (fix.finished_provisional) {
-                        return { minutes: 'HT' };
-                    }
-                    
-                    // Use smart calculation - minimal API calls
-                    const minute = getSmartMatchMinute(fix);
+                
+                // CRITICAL: Don't show anything if match is finished
+                if (!fix || !fix.started || fix.finished) {
+                    return null;
+                }
+                
+                // Check if halftime (FPL sets finished_provisional to true at HT)
+                if (fix.finished_provisional) {
+                    return { minutes: 'HT' };
+                }
+                
+                // Match is live - calculate minute
+                const minute = getSmartMatchMinute(fix);
+                if (minute > 0) {
                     return { minutes: minute };
                 }
                 
