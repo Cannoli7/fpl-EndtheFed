@@ -1057,7 +1057,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.29</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.31</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1112,120 +1112,50 @@
             'Wolves': ['Wolves', 'Wolverhampton', 'Wolverhampton Wanderers', 'Wolverhampton Wanderers FC']
         };
         
-        // Track stoppage time for each match (cached across refreshes)
-        const stoppageTimeCache = {};
+        // Cache for API-Football live data
+        let liveMatchData = [];
+        let lastApiFetch = 0;
         
-        // Fetch live scores from API (called only at key moments)
-        async function fetchLiveScores() {
+        // Fetch live match data from API-Football
+        async function fetchLiveMatchData() {
+            const now = Date.now();
+            // Cache for 30 seconds
+            if (now - lastApiFetch < 30000 && liveMatchData.length > 0) {
+                return liveMatchData;
+            }
+            
             try {
                 const response = await fetch('/api/livescores');
                 if (response.ok) {
                     const data = await response.json();
-                    liveScoresCache = data.matches || [];
-                    lastLiveScoresFetch = Date.now();
-                    return liveScoresCache;
+                    liveMatchData = data.matches || [];
+                    lastApiFetch = now;
+                    console.log('API-Football data:', liveMatchData);
                 }
             } catch (error) {
-                console.error('Error fetching live scores:', error);
+                console.error('API fetch error:', error);
             }
-            return liveScoresCache || [];
+            
+            return liveMatchData;
         }
         
-        // Get minute from API response
-        function getMatchMinute(teamName) {
-            if (!liveScoresCache || liveScoresCache.length === 0) return 0;
+        // Get live minute for a team
+        function getLiveMinute(teamId) {
+            const teamName = teamMap[teamId];
+            if (!teamName || !liveMatchData.length) return null;
             
-            for (const match of liveScoresCache) {
-                const possibleNames = teamNameMap[teamName] || [teamName];
-                const isHome = possibleNames.some(name => match.homeTeam?.includes(name) || name.includes(match.homeTeam));
-                const isAway = possibleNames.some(name => match.awayTeam?.includes(name) || name.includes(match.awayTeam));
+            // Find match in API data
+            for (const match of liveMatchData) {
+                const homeMatch = match.homeTeam && match.homeTeam.includes(teamName.split(' ')[0]);
+                const awayMatch = match.awayTeam && match.awayTeam.includes(teamName.split(' ')[0]);
                 
-                if (isHome || isAway) {
-                    return match.minute || 0;
+                if (homeMatch || awayMatch) {
+                    console.log(`Found match for ${teamName}:`, match);
+                    return match.minute;
                 }
             }
-            return 0;
-        }
-        
-        // Smart function to get match minute - only calls API at key moments
-        function getSmartMatchMinute(fixture) {
-            if (!fixture || !fixture.kickoff_time) return 0;
             
-            const kickoff = new Date(fixture.kickoff_time);
-            const now = new Date();
-            const elapsedMinutes = Math.floor((now - kickoff) / 60000);
-            
-            console.log('Match time calc:', {
-                kickoff: kickoff.toLocaleTimeString(),
-                now: now.toLocaleTimeString(),
-                elapsed: elapsedMinutes,
-                fixture: fixture.team_h + ' vs ' + fixture.team_a
-            });
-            
-            // Before kickoff
-            if (elapsedMinutes < 0) return 0;
-            
-            // First half (0-44)
-            if (elapsedMinutes >= 0 && elapsedMinutes < 45) {
-                return elapsedMinutes;
-            }
-            
-            // Around 45' - trigger API call in background to get stoppage time
-            if (elapsedMinutes >= 45 && elapsedMinutes < 50) {
-                const fixtureId = `${fixture.team_h}-${fixture.team_a}`;
-                
-                // Trigger API call once (in background)
-                if (!stoppageTimeCache[fixtureId]?.firstHalfChecked) {
-                    stoppageTimeCache[fixtureId] = { ...stoppageTimeCache[fixtureId], firstHalfChecked: true };
-                    
-                    fetchLiveScores().then(() => {
-                        const teamName = teamMap[fixture.team_h];
-                        const apiMinute = getMatchMinute(teamName);
-                        if (apiMinute > 45 && apiMinute < 50) {
-                            stoppageTimeCache[fixtureId].firstHalfStoppage = apiMinute - 45;
-                        }
-                    });
-                }
-                
-                // Return calculated time
-                const stoppage = stoppageTimeCache[fixtureId]?.firstHalfStoppage || 0;
-                return 45 + Math.min(stoppage, elapsedMinutes - 45);
-            }
-            
-            // Halftime (50-62 elapsed minutes)
-            if (elapsedMinutes >= 50 && elapsedMinutes < 62) {
-                return 'HT';
-            }
-            
-            // Second half (62-107 elapsed = 46-92 game time)
-            if (elapsedMinutes >= 62 && elapsedMinutes < 107) {
-                return elapsedMinutes - 15; // Subtract 15 min halftime
-            }
-            
-            // Around 90' - trigger API call for second half stoppage
-            if (elapsedMinutes >= 107 && elapsedMinutes < 112) {
-                const fixtureId = `${fixture.team_h}-${fixture.team_a}`;
-                
-                // Trigger API call once (in background)
-                if (!stoppageTimeCache[fixtureId]?.secondHalfChecked) {
-                    stoppageTimeCache[fixtureId] = { ...stoppageTimeCache[fixtureId], secondHalfChecked: true };
-                    
-                    fetchLiveScores().then(() => {
-                        const teamName = teamMap[fixture.team_h];
-                        const apiMinute = getMatchMinute(teamName);
-                        if (apiMinute > 90) {
-                            stoppageTimeCache[fixtureId].secondHalfStoppage = apiMinute - 90;
-                        }
-                    });
-                }
-                
-                // Return calculated time
-                const stoppage = stoppageTimeCache[fixtureId]?.secondHalfStoppage || 0;
-                return 90 + Math.min(stoppage, elapsedMinutes - 107);
-            }
-            
-            // Full time
-            return 90;
+            return null;
         }
         
         // Populate gameweek dropdown
@@ -1364,7 +1294,10 @@
             setInterval(async () => {
                 if (currentView === 'matchups') {
                     try {
-                        // Fetch fresh live data for stats (NOT for minutes - getSmartMatchMinute handles that)
+                        // Fetch API-Football live data
+                        await fetchLiveMatchData();
+                        
+                        // Fetch fresh live data for stats
                         const liveData = await fetchData(`event/${currentGW}/live`);
                         
                         // Update all live indicators on the page
@@ -1380,20 +1313,20 @@
                                     const player1 = playerMap[p1Id];
                                     const liveIndicator = row.querySelector('.p-left .live-indicator');
                                     if (liveIndicator) {
-                                        // Use smart calculation for match minute
                                         const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
                                         
-                                        // CRITICAL: Remove indicator if match is finished
                                         if (!fix || !fix.started || fix.finished) {
                                             liveIndicator.remove();
-                                        } else if (fix.finished_provisional) {
-                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
                                         } else {
-                                            const minutes = getSmartMatchMinute(fix);
-                                            if (minutes === 'HT') {
+                                            // Get minute from API
+                                            const minute = getLiveMinute(player1.team);
+                                            
+                                            if (minute === 'HT' || fix.finished_provisional) {
                                                 liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else if (minutes > 0) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                            } else if (minute && minute > 0) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minute}'`;
+                                            } else if (fix.started) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE`;
                                             } else {
                                                 liveIndicator.remove();
                                             }
@@ -1413,20 +1346,20 @@
                                     const player2 = playerMap[p2Id];
                                     const liveIndicator = row.querySelector('.p-right .live-indicator');
                                     if (liveIndicator) {
-                                        // Use smart calculation for match minute
                                         const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
                                         
-                                        // CRITICAL: Remove indicator if match is finished
                                         if (!fix || !fix.started || fix.finished) {
                                             liveIndicator.remove();
-                                        } else if (fix.finished_provisional) {
-                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
                                         } else {
-                                            const minutes = getSmartMatchMinute(fix);
-                                            if (minutes === 'HT') {
+                                            // Get minute from API
+                                            const minute = getLiveMinute(player2.team);
+                                            
+                                            if (minute === 'HT' || fix.finished_provisional) {
                                                 liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else if (minutes > 0) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                            } else if (minute && minute > 0) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minute}'`;
+                                            } else if (fix.started) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE`;
                                             } else {
                                                 liveIndicator.remove();
                                             }
@@ -2182,6 +2115,9 @@
         }
 
         async function showSimpleMatchups(matches, entryMap, gw, content) {
+            // Fetch initial live data
+            await fetchLiveMatchData();
+            
             // Set total matches and ensure currentMatchIndex is valid
             totalMatches = matches.length;
             if (currentMatchIndex >= totalMatches) currentMatchIndex = 0;
@@ -2356,26 +2292,27 @@
             const isPlayerLive = (player) => {
                 if (!player) return null;
                 
-                // Get the fixture
+                // Get fixture
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 
-                // CRITICAL: Don't show anything if match is finished
+                // Only show if match has started and not finished
                 if (!fix || !fix.started || fix.finished) {
                     return null;
                 }
                 
-                // Check if halftime (FPL sets finished_provisional to true at HT)
-                if (fix.finished_provisional) {
+                // Get live minute from API
+                const minute = getLiveMinute(player.team);
+                
+                if (minute === 'HT' || fix.finished_provisional) {
                     return { minutes: 'HT' };
                 }
                 
-                // Match is live - calculate minute
-                const minute = getSmartMatchMinute(fix);
-                if (minute > 0) {
+                if (minute && minute > 0) {
                     return { minutes: minute };
                 }
                 
-                return null;
+                // Match started but no API data yet - just show LIVE
+                return { minutes: 'LIVE' };
             };
 
             // Silent update: update existing elements instead of rebuilding
@@ -2724,7 +2661,7 @@
                         const status2 = player2 ? getMatchStatus(player2) : 'not-started';
 
                         const leftName = player1
-                            ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes === 'HT' ? 'HT' : live1.minutes + "'"}</div>` : ''}
+                            ? `${live1 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live1.minutes === 'HT' ? 'HT' : live1.minutes === 'LIVE' ? '' : live1.minutes + "'"}</div>` : ''}
                                <div class="p-top-row">
                                    <div class="p-jersey-container">
                                        <img src="${getJerseyUrl(player1.team, player1.pos)}" class="p-jersey">
@@ -2741,7 +2678,7 @@
                             : '';
 
                         const rightName = player2
-                            ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes === 'HT' ? 'HT' : live2.minutes + "'"}</div>` : ''}
+                            ? `${live2 ? `<div class="live-indicator"><div class="live-pulse"></div>LIVE ${live2.minutes === 'HT' ? 'HT' : live2.minutes === 'LIVE' ? '' : live2.minutes + "'"}</div>` : ''}
                                <div class="p-top-row">
                                    <div class="p-info-wrap">
                                        <div class="p-name-row">
