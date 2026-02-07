@@ -1054,7 +1054,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.9</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.1</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1272,10 +1272,12 @@
                 menuDropdown.style.display = 'none';
             };
             
-            // Auto-refresh every 60 seconds (only for matchups view)
+            // Auto-refresh every 60 seconds (for matchups and home views)
             setInterval(() => {
                 if (currentView === 'matchups') {
                     loadGameweek(currentGW, true); // true = silent update
+                } else if (currentView === 'home') {
+                    showHome(); // Refresh home page silently
                 }
             }, 60000);
             
@@ -1947,27 +1949,80 @@
                     
                     const topWeekMatches = leagueData.matches.filter(m => m.event === topWeek);
                     
+                    // Fetch live data to get current scores
+                    let liveData = null;
+                    try {
+                        liveData = await fetchData(`event/${topWeek}/live`);
+                    } catch (e) {
+                        console.error('Could not fetch live data for home page:', e);
+                    }
+                    
+                    // Calculate live scores for each match
+                    const liveScores = {};
+                    if (liveData && liveData.elements) {
+                        console.log('Calculating live scores for', topWeekMatches.length, 'matches');
+                        for (const match of topWeekMatches) {
+                            const entry1Id = match.league_entry_1;
+                            const entry2Id = match.league_entry_2;
+                            const entry1 = entryMap[entry1Id];
+                            const entry2 = entryMap[entry2Id];
+                            
+                            if (entry1 && entry2) {
+                                try {
+                                    // Fetch picks for both teams
+                                    const picks1 = await fetchData(`entry/${entry1.entry_id}/event/${topWeek}`);
+                                    const picks2 = await fetchData(`entry/${entry2.entry_id}/event/${topWeek}`);
+                                    
+                                    // Calculate current scores (starters only)
+                                    const score1 = picks1.picks.filter(p => p.position <= 11).reduce((sum, p) => {
+                                        return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
+                                    }, 0);
+                                    
+                                    const score2 = picks2.picks.filter(p => p.position <= 11).reduce((sum, p) => {
+                                        return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
+                                    }, 0);
+                                    
+                                    liveScores[entry1Id] = score1;
+                                    liveScores[entry2Id] = score2;
+                                    console.log(`Match: ${entry1.name} ${score1} - ${score2} ${entry2.name}`);
+                                } catch (e) {
+                                    console.error('Error calculating live scores for match:', e);
+                                }
+                            }
+                        }
+                        console.log('Live scores calculated:', liveScores);
+                    } else {
+                        console.log('No live data available');
+                    }
+                    
                     // Check if any matches are finished
                     const hasFinishedMatches = topWeekMatches.some(m => m.finished);
+                    const hasLiveScores = Object.keys(liveScores).length > 0;
                     
-                    if (hasFinishedMatches) {
-                        // Show results for finished matches
-                        const finishedMatches = topWeekMatches.filter(m => m.finished);
+                    if (hasFinishedMatches || hasLiveScores) {
+                        // Show results (finished) or live scores (in progress)
                         
-                        // Find the highest score of the week
+                        // Add live indicator if showing live scores
+                        if (hasLiveScores && !hasFinishedMatches) {
+                            html += '<div style="text-align:center;color:#e74c3c;font-size:0.85rem;margin-bottom:10px;font-weight:600;">🔴 LIVE SCORES</div>';
+                        }
+                        
+                        // Find the highest score (use live scores if available, otherwise finished scores)
                         let highestScore = 0;
-                        finishedMatches.forEach(match => {
-                            const t1Score = match.league_entry_1_points || 0;
-                            const t2Score = match.league_entry_2_points || 0;
+                        topWeekMatches.forEach(match => {
+                            const t1Score = liveScores[match.league_entry_1] ?? match.league_entry_1_points ?? 0;
+                            const t2Score = liveScores[match.league_entry_2] ?? match.league_entry_2_points ?? 0;
                             if (t1Score > highestScore) highestScore = t1Score;
                             if (t2Score > highestScore) highestScore = t2Score;
                         });
                         
-                        for (const match of finishedMatches) {
+                        for (const match of topWeekMatches) {
                     const t1 = entryMap[match.league_entry_1];
                     const t2 = entryMap[match.league_entry_2];
-                    const t1Score = match.league_entry_1_points || 0;
-                    const t2Score = match.league_entry_2_points || 0;
+                    
+                    // Use live scores if available, otherwise use finished scores
+                    const t1Score = liveScores[match.league_entry_1] ?? match.league_entry_1_points ?? 0;
+                    const t2Score = liveScores[match.league_entry_2] ?? match.league_entry_2_points ?? 0;
                     
                     // Determine class: highest scorer gets gold, winner gets green, loser gets grey
                     let t1Class = '';
@@ -2006,36 +2061,8 @@
                 
                 html += '</div>';
             } else {
-                // If no finished matches yet, show matches without highlighting
-                html += '<div style="opacity:0.8;">';
-                html += '<div style="text-align:center;color:#95a5a6;font-size:0.85rem;margin-bottom:10px;">Matches in progress or not yet started</div>';
-                
-                for (const match of topWeekMatches) {
-                    const t1 = entryMap[match.league_entry_1];
-                    const t2 = entryMap[match.league_entry_2];
-                    
-                    // Get scores if available
-                    const t1Score = match.league_entry_1_points || 0;
-                    const t2Score = match.league_entry_2_points || 0;
-                    
-                    html += '<div class="home-match">';
-                    html += `<div class="home-team">`;
-                    html += `<div class="home-team-name">${t1.name}</div>`;
-                    html += `<div class="home-team-owner">${t1.owner}</div>`;
-                    html += '</div>';
-                    html += `<div class="home-score">${t1Score}</div>`;
-                    html += '<div class="home-vs">-</div>';
-                    html += `<div class="home-score">${t2Score}</div>`;
-                    html += `<div class="home-team">`;
-                    html += `<div class="home-team-name">${t2.name}</div>`;
-                    html += `<div class="home-team-owner">${t2.owner}</div>`;
-                    html += '</div>';
-                    html += '</div>';
-                }
-                
-                html += '</div>';
-            }
-                
+                // No matches for this gameweek yet
+                html += '<div style="text-align:center;color:#95a5a6;padding:20px;">No matches scheduled</div>';
                 html += '</div>';
             }
             
