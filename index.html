@@ -1054,7 +1054,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.13</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.14</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1304,19 +1304,16 @@
                                     const player1 = playerMap[p1Id];
                                     const liveIndicator = row.querySelector('.p-left .live-indicator');
                                     if (liveIndicator) {
-                                        const teamName = teamMap[player1.team];
-                                        let minutes = getMatchMinute(teamName);
+                                        // Use FPL fixtures to get match minute
+                                        const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
                                         
-                                        // Adjust for halftime if external API returns elapsed time
-                                        if (minutes > 60 && minutes < 120) {
-                                            minutes = minutes - 15;
-                                        }
-                                        
-                                        // Check if halftime (45-60 mins)
-                                        if (minutes >= 45 && minutes <= 60) {
-                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                        } else if (minutes > 0) {
-                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                        if (fix && fix.started && !fix.finished) {
+                                            if (fix.finished_provisional) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else {
+                                                const minutes = fix.minutes || 0;
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                            }
                                         }
                                     }
                                     
@@ -1333,19 +1330,16 @@
                                     const player2 = playerMap[p2Id];
                                     const liveIndicator = row.querySelector('.p-right .live-indicator');
                                     if (liveIndicator) {
-                                        const teamName = teamMap[player2.team];
-                                        let minutes = getMatchMinute(teamName);
+                                        // Use FPL fixtures to get match minute
+                                        const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
                                         
-                                        // Adjust for halftime if external API returns elapsed time
-                                        if (minutes > 60 && minutes < 120) {
-                                            minutes = minutes - 15;
-                                        }
-                                        
-                                        // Check if halftime (45-60 mins)
-                                        if (minutes >= 45 && minutes <= 60) {
-                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                        } else if (minutes > 0) {
-                                            liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                        if (fix && fix.started && !fix.finished) {
+                                            if (fix.finished_provisional) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else {
+                                                const minutes = fix.minutes || 0;
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                            }
                                         }
                                     }
                                     
@@ -2272,39 +2266,16 @@
             const isPlayerLive = (player) => {
                 if (!player) return null;
                 
-                // Get live match minutes from external API - already cached and updated every 30 seconds
-                const teamName = teamMap[player.team];
-                const apiMinute = getMatchMinute(teamName);
-                
-                // Check FPL fixture data
+                // Check FPL fixture data - it already has the match minute
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix && fix.started && !fix.finished) {
-                    // Use API minute directly - it's already the correct game time
-                    let minutes = apiMinute;
-                    
-                    // Only use FPL fallbacks if API didn't return a minute
-                    if (!minutes) {
-                        // Try FPL API methods as fallback
-                        if (fix.stats && Array.isArray(fix.stats)) {
-                            const minuteStat = fix.stats.find(s => s && s.identifier === 'minutes');
-                            if (minuteStat && minuteStat.a && minuteStat.a.length > 0) {
-                                minutes = minuteStat.a[0].value || 0;
-                            }
-                            if (!minutes && minuteStat && minuteStat.h && minuteStat.h.length > 0) {
-                                minutes = minuteStat.h[0].value || 0;
-                            }
-                        }
-                        
-                        if (!minutes) {
-                            minutes = fix.minutes || fix.event_minutes || fix.minute || 0;
-                        }
-                    }
-                    
                     // Check if it's halftime
-                    if (fix.finished_provisional || (minutes >= 45 && minutes <= 46 && apiMinute === 0)) {
+                    if (fix.finished_provisional) {
                         return { minutes: 'HT' };
                     }
                     
+                    // Use FPL's minute data directly
+                    const minutes = fix.minutes || 0;
                     return { minutes: minutes };
                 }
                 return null;
