@@ -1057,7 +1057,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.37</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.38</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1117,8 +1117,58 @@
         let liveMatchData = [];
         let lastApiFetch = 0;
         
+        // Check if we should call the API based on match times
+        function shouldFetchLiveData() {
+            if (!cachedFixtures || cachedFixtures.length === 0) {
+                return false; // No fixtures loaded yet
+            }
+            
+            const now = new Date();
+            
+            // Find earliest kickoff and latest expected finish
+            let earliestKickoff = null;
+            let latestFinish = null;
+            
+            for (const fix of cachedFixtures) {
+                if (!fix.kickoff_time) continue;
+                
+                const kickoff = new Date(fix.kickoff_time);
+                
+                // Track earliest kickoff
+                if (!earliestKickoff || kickoff < earliestKickoff) {
+                    earliestKickoff = kickoff;
+                }
+                
+                // Latest finish = kickoff + 2 hours (for stoppage time, delays, etc.)
+                const finish = new Date(kickoff.getTime() + (120 * 60 * 1000));
+                if (!latestFinish || finish > latestFinish) {
+                    latestFinish = finish;
+                }
+            }
+            
+            if (!earliestKickoff || !latestFinish) {
+                return false; // No valid kickoff times
+            }
+            
+            // Start calling API 5 minutes before first match
+            const apiStartTime = new Date(earliestKickoff.getTime() - (5 * 60 * 1000));
+            
+            const shouldCall = now >= apiStartTime && now <= latestFinish;
+            
+            if (!shouldCall) {
+                console.log(`Not calling API - outside match window (${apiStartTime.toLocaleTimeString()} to ${latestFinish.toLocaleTimeString()})`);
+            }
+            
+            return shouldCall;
+        }
+        
         // Fetch live match data from API-Football
         async function fetchLiveMatchData() {
+            // Check if we should even call the API
+            if (!shouldFetchLiveData()) {
+                return liveMatchData; // Return cached data (or empty array)
+            }
+            
             const now = Date.now();
             // Cache for 30 seconds
             if (now - lastApiFetch < 30000 && liveMatchData.length > 0) {
@@ -2145,12 +2195,7 @@
         }
 
         async function showSimpleMatchups(matches, entryMap, gw, content) {
-            // Try to fetch initial live data (don't break if it fails)
-            try {
-                await fetchLiveMatchData();
-            } catch (e) {
-                console.log('Live data fetch failed, continuing without it:', e);
-            }
+            // No need to fetch here - the 30-second interval handles it
             
             // Set total matches and ensure currentMatchIndex is valid
             totalMatches = matches.length;
