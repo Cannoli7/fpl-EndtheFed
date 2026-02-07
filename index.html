@@ -1057,7 +1057,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.33</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.35</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1144,17 +1144,32 @@
             const teamName = teamMap[teamId];
             if (!teamName || !liveMatchData.length) return null;
             
-            // Find match in API data
+            console.log(`Looking for team ${teamName} (ID: ${teamId})`);
+            
+            // Find match in API data - match on partial team names
             for (const match of liveMatchData) {
-                const homeMatch = match.homeTeam && match.homeTeam.includes(teamName.split(' ')[0]);
-                const awayMatch = match.awayTeam && match.awayTeam.includes(teamName.split(' ')[0]);
+                // Extract first word of team name for matching
+                const teamFirstWord = teamName.split(' ')[0];
+                const homeFirstWord = match.homeTeam ? match.homeTeam.split(' ')[0] : '';
+                const awayFirstWord = match.awayTeam ? match.awayTeam.split(' ')[0] : '';
                 
-                if (homeMatch || awayMatch) {
-                    console.log(`Found match for ${teamName}:`, match);
-                    return match.minute;
+                if (homeFirstWord === teamFirstWord || awayFirstWord === teamFirstWord) {
+                    console.log(`FOUND: ${teamName} - Status: ${match.status}, Minute: ${match.minute}`);
+                    
+                    // If match is finished, return null (don't show anything)
+                    if (match.status === 'FT') {
+                        return null;
+                    }
+                    
+                    // Return the match data
+                    return {
+                        minute: match.minute,
+                        status: match.status
+                    };
                 }
             }
             
+            console.log(`NOT FOUND: ${teamName}`);
             return null;
         }
         
@@ -1319,20 +1334,24 @@
                                     if (liveIndicator) {
                                         const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
                                         
+                                        // Remove if match hasn't started or FPL says finished
                                         if (!fix || !fix.started || fix.finished) {
                                             liveIndicator.remove();
                                         } else {
-                                            // Get minute from API
-                                            const minute = getLiveMinute(player1.team);
+                                            // Get data from API
+                                            const apiData = getLiveMinute(player1.team);
                                             
-                                            if (minute === 'HT' || fix.finished_provisional) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else if (minute && minute > 0) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minute}'`;
-                                            } else if (fix.started) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE`;
-                                            } else {
+                                            // If API says finished (returns null), remove indicator
+                                            if (apiData === null && !fix.finished_provisional) {
                                                 liveIndicator.remove();
+                                            } else if (apiData && apiData.status === 'HT') {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else if (apiData && apiData.minute > 0) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${apiData.minute}'`;
+                                            } else if (fix.finished_provisional) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE`;
                                             }
                                         }
                                     }
@@ -1352,20 +1371,24 @@
                                     if (liveIndicator) {
                                         const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
                                         
+                                        // Remove if match hasn't started or FPL says finished
                                         if (!fix || !fix.started || fix.finished) {
                                             liveIndicator.remove();
                                         } else {
-                                            // Get minute from API
-                                            const minute = getLiveMinute(player2.team);
+                                            // Get data from API
+                                            const apiData = getLiveMinute(player2.team);
                                             
-                                            if (minute === 'HT' || fix.finished_provisional) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
-                                            } else if (minute && minute > 0) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minute}'`;
-                                            } else if (fix.started) {
-                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE`;
-                                            } else {
+                                            // If API says finished (returns null), remove indicator
+                                            if (apiData === null && !fix.finished_provisional) {
                                                 liveIndicator.remove();
+                                            } else if (apiData && apiData.status === 'HT') {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else if (apiData && apiData.minute > 0) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${apiData.minute}'`;
+                                            } else if (fix.finished_provisional) {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
+                                            } else {
+                                                liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE`;
                                             }
                                         }
                                     }
@@ -2303,23 +2326,35 @@
                 // Get fixture
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 
-                // Only show if match has started and not finished
+                // Don't show if match hasn't started or FPL says it's finished
                 if (!fix || !fix.started || fix.finished) {
                     return null;
                 }
                 
-                // Get live minute from API
-                const minute = getLiveMinute(player.team);
+                // Get live data from API
+                const apiData = getLiveMinute(player.team);
                 
-                if (minute === 'HT' || fix.finished_provisional) {
+                // If API says match is finished (status: FT), don't show anything
+                if (apiData === null) {
+                    return null;
+                }
+                
+                // If we have API data, use it
+                if (apiData && apiData.status) {
+                    if (apiData.status === 'HT') {
+                        return { minutes: 'HT' };
+                    }
+                    if (apiData.minute && apiData.minute > 0) {
+                        return { minutes: apiData.minute };
+                    }
+                }
+                
+                // Fallback: Check FPL's halftime flag
+                if (fix.finished_provisional) {
                     return { minutes: 'HT' };
                 }
                 
-                if (minute && minute > 0) {
-                    return { minutes: minute };
-                }
-                
-                // Match started but no API data yet - just show LIVE
+                // Match is started but no API data - show generic LIVE
                 return { minutes: 'LIVE' };
             };
 
