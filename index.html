@@ -1054,7 +1054,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.2</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.4</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1261,7 +1261,7 @@
                 }
             }, 60000);
             
-            // Update live match minutes every 30 seconds
+            // Update live match minutes and ALL stats every 30 seconds
             setInterval(async () => {
                 if (currentView === 'matchups') {
                     try {
@@ -1300,23 +1300,12 @@
                                         }
                                     }
                                     
-                                    // Update minutes played stat
+                                    // Update ALL stats for player 1
                                     const statsDiv = row.querySelector('.p-left .p-stats');
-                                    const statMp = statsDiv?.querySelector('.stat-mp');
-                                    if (liveData.elements && liveData.elements[p1Id]) {
-                                        const playerStats = liveData.elements[p1Id].stats;
-                                        const mp = playerStats.minutes || 0;
-                                        if (mp > 0) {
-                                            if (statMp) {
-                                                statMp.textContent = `${mp}'`;
-                                            } else if (statsDiv) {
-                                                // Add minutes stat if it doesn't exist
-                                                const mpSpan = document.createElement('span');
-                                                mpSpan.className = 'stat-mp';
-                                                mpSpan.textContent = `${mp}'`;
-                                                statsDiv.insertBefore(mpSpan, statsDiv.firstChild);
-                                            }
-                                        }
+                                    if (liveData.elements && liveData.elements[p1Id] && statsDiv) {
+                                        const stats = getPlayerStats(p1Id, liveData);
+                                        const position = player1.pos;
+                                        statsDiv.innerHTML = buildStatsHtml(stats, position);
                                     }
                                 }
                                 
@@ -1340,29 +1329,18 @@
                                         }
                                     }
                                     
-                                    // Update minutes played stat
+                                    // Update ALL stats for player 2
                                     const statsDiv = row.querySelector('.p-right .p-stats');
-                                    const statMp = statsDiv?.querySelector('.stat-mp');
-                                    if (liveData.elements && liveData.elements[p2Id]) {
-                                        const playerStats = liveData.elements[p2Id].stats;
-                                        const mp = playerStats.minutes || 0;
-                                        if (mp > 0) {
-                                            if (statMp) {
-                                                statMp.textContent = `${mp}'`;
-                                            } else if (statsDiv) {
-                                                // Add minutes stat if it doesn't exist
-                                                const mpSpan = document.createElement('span');
-                                                mpSpan.className = 'stat-mp';
-                                                mpSpan.textContent = `${mp}'`;
-                                                statsDiv.insertBefore(mpSpan, statsDiv.firstChild);
-                                            }
-                                        }
+                                    if (liveData.elements && liveData.elements[p2Id] && statsDiv) {
+                                        const stats = getPlayerStats(p2Id, liveData);
+                                        const position = player2.pos;
+                                        statsDiv.innerHTML = buildStatsHtml(stats, position);
                                     }
                                 }
                             });
                         }
                     } catch (e) {
-                        console.error('Live minute update error:', e);
+                        console.error('Live stats update error:', e);
                     }
                 }
             }, 30000); // Every 30 seconds
@@ -1928,30 +1906,37 @@
                 entryMap[e.id] = { entry_id: e.entry_id, name: e.entry_name, owner: e.player_first_name };
             });
             
-            // Get last week (most recent completed gameweek) and next week
-            const lastWeek = currentGW; // Just completed
-            const nextWeek = currentGW + 1; // Upcoming
+            // Get current gameweek and next gameweek
+            const currentWeek = currentGW; // Current gameweek (in progress or just finished)
+            const nextWeek = currentGW + 1; // Next gameweek (upcoming)
             
             let html = '';
             
-            // Last Week Results
-            if (lastWeek > 0) {
+            // Current Week Results/Scores
+            if (currentWeek > 0) {
                 html += '<div class="home-section">';
-                html += `<div class="home-section-title">Gameweek ${lastWeek} Results</div>`;
+                html += `<div class="home-section-title">Gameweek ${currentWeek}</div>`;
                 
-                const lastWeekMatches = leagueData.matches.filter(m => m.event === lastWeek && m.finished);
-                const lastWeekLive = await fetchData(`event/${lastWeek}/live`);
+                const currentWeekMatches = leagueData.matches.filter(m => m.event === currentWeek);
+                const currentWeekLive = await fetchData(`event/${currentWeek}/live`);
                 
-                // Find the highest score of the week
-                let highestScore = 0;
-                lastWeekMatches.forEach(match => {
-                    const t1Score = match.league_entry_1_points || 0;
-                    const t2Score = match.league_entry_2_points || 0;
-                    if (t1Score > highestScore) highestScore = t1Score;
-                    if (t2Score > highestScore) highestScore = t2Score;
-                });
+                // Check if any matches are finished
+                const hasFinishedMatches = currentWeekMatches.some(m => m.finished);
                 
-                for (const match of lastWeekMatches) {
+                if (hasFinishedMatches) {
+                    // Show results for finished matches
+                    const finishedMatches = currentWeekMatches.filter(m => m.finished);
+                    
+                    // Find the highest score of the week
+                    let highestScore = 0;
+                    finishedMatches.forEach(match => {
+                        const t1Score = match.league_entry_1_points || 0;
+                        const t2Score = match.league_entry_2_points || 0;
+                        if (t1Score > highestScore) highestScore = t1Score;
+                        if (t2Score > highestScore) highestScore = t2Score;
+                    });
+                    
+                    for (const match of finishedMatches) {
                     const t1 = entryMap[match.league_entry_1];
                     const t2 = entryMap[match.league_entry_2];
                     const t1Score = match.league_entry_1_points || 0;
@@ -1991,6 +1976,45 @@
                     html += '</div>';
                     html += '</div>';
                 }
+                
+                html += '</div>';
+            } else {
+                // If no finished matches yet, show live in-progress scores
+                html += '<div class="home-section" style="opacity:0.8;">';
+                html += '<div style="text-align:center;color:#95a5a6;font-size:0.85rem;margin-bottom:10px;">🔴 Matches in progress</div>';
+                
+                for (const match of currentWeekMatches) {
+                    const t1 = entryMap[match.league_entry_1];
+                    const t2 = entryMap[match.league_entry_2];
+                    
+                    // Get live scores if available
+                    let t1Score = 0;
+                    let t2Score = 0;
+                    
+                    if (currentWeekLive && currentWeekLive.elements) {
+                        // We'll show 0-0 for now as live scores require picks data
+                        // This section will show scores once matches finish
+                        t1Score = match.league_entry_1_points || 0;
+                        t2Score = match.league_entry_2_points || 0;
+                    }
+                    
+                    html += '<div class="home-match">';
+                    html += `<div class="home-team">`;
+                    html += `<div class="home-team-name">${t1.name}</div>`;
+                    html += `<div class="home-team-owner">${t1.owner}</div>`;
+                    html += '</div>';
+                    html += `<div class="home-score">${t1Score}</div>`;
+                    html += '<div class="home-vs">-</div>';
+                    html += `<div class="home-score">${t2Score}</div>`;
+                    html += `<div class="home-team">`;
+                    html += `<div class="home-team-name">${t2.name}</div>`;
+                    html += `<div class="home-team-owner">${t2.owner}</div>`;
+                    html += '</div>';
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            }
                 
                 html += '</div>';
             }
@@ -2404,23 +2428,12 @@
                                     liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
                                 }
                                 
-                                // Update minutes played stat
+                                // Update ALL stats for the player
                                 const statsDiv = row.querySelector(`.p-${side} .p-stats`);
-                                const statMp = statsDiv?.querySelector('.stat-mp');
-                                if (cachedLiveData && cachedLiveData.elements && cachedLiveData.elements[player.id]) {
-                                    const playerStats = cachedLiveData.elements[player.id].stats;
-                                    const mp = playerStats.minutes || 0;
-                                    if (mp > 0) {
-                                        if (statMp) {
-                                            statMp.textContent = `${mp}'`;
-                                        } else if (statsDiv) {
-                                            // Add minutes stat if it doesn't exist
-                                            const mpSpan = document.createElement('span');
-                                            mpSpan.className = 'stat-mp';
-                                            mpSpan.textContent = `${mp}'`;
-                                            statsDiv.insertBefore(mpSpan, statsDiv.firstChild);
-                                        }
-                                    }
+                                if (cachedLiveData && cachedLiveData.elements && cachedLiveData.elements[player.id] && statsDiv) {
+                                    const stats = getPlayerStats(player.id, cachedLiveData);
+                                    const position = player.pos;
+                                    statsDiv.innerHTML = buildStatsHtml(stats, position);
                                 }
                             } else if (liveIndicator) {
                                 // Remove indicator if match finished
