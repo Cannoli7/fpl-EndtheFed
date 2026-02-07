@@ -1057,7 +1057,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.36</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.37</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1075,7 +1075,8 @@
         let currentGW = 24; // Default - will be updated from bootstrap-static API
         let leagueData = null;
         let playerMap = {};
-        let teamMap = {};
+        let teamMap = {};  // Full team names for API matching
+        let shortNameMap = {};  // Short names (3-letter) for display
         let teamCodeMap = {};
         let previousScores = {}; // Track previous scores for animation
         let currentView = 'home'; // 'home', 'matchups', or 'standings'
@@ -1234,7 +1235,8 @@
                 playerMap[el.id] = { name: el.web_name, pos: POS[el.element_type] || '?', team: el.team };
             });
             staticData.teams.forEach(t => {
-                teamMap[t.id] = t.name;  // Use full name for API matching
+                teamMap[t.id] = t.name;  // Full name for API matching
+                shortNameMap[t.id] = t.short_name;  // Short name for display
                 teamCodeMap[t.id] = t.code;
             });
             
@@ -2313,12 +2315,12 @@
                 const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                 if (fix) {
                     const isHome = fix.team_h === player.team;
-                    const opp = teamMap[isHome ? fix.team_a : fix.team_h] || '';
+                    const opp = shortNameMap[isHome ? fix.team_a : fix.team_h] || '';
                     const vs = isHome ? 'vs' : '@';
                     const scoreStr = (fix.team_h_score !== null) ? ` ${fix.team_h_score}-${fix.team_a_score}` : '';
-                    return `${teamMap[player.team] || ''} ${vs} ${opp}${scoreStr}`;
+                    return `${shortNameMap[player.team] || ''} ${vs} ${opp}${scoreStr}`;
                 }
-                return teamMap[player.team] || '';
+                return shortNameMap[player.team] || '';
             };
             
             const isPlayerLive = (player) => {
