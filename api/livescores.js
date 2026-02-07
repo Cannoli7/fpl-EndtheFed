@@ -14,8 +14,8 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Fetch Premier League directly (ID: 47)
-        const response = await fetch('https://www.fotmob.com/api/leagues?id=47&tab=overview&type=league&timeZone=America/New_York', {
+        // Fetch Premier League fixtures (ID: 47)
+        const response = await fetch('https://www.fotmob.com/api/leagues?id=47&tab=fixtures&type=league&timeZone=America/New_York', {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             }
@@ -28,29 +28,33 @@ export default async function handler(req, res) {
         }
 
         const data = await response.json();
-        console.log('FotMob response keys:', Object.keys(data));
         
         // Get live matches
         const liveMatches = [];
         
-        // Check different possible structures
-        const matchesArray = data.matches?.allMatches || data.overview?.liveMatches || data.liveMatches || [];
-        
-        console.log('Matches found:', matchesArray.length);
-        
-        matchesArray.forEach(match => {
-            // Only include live matches
-            if (match.status && match.status.started && !match.status.finished) {
-                liveMatches.push({
-                    homeTeam: match.home?.name || '',
-                    awayTeam: match.away?.name || '',
-                    minute: match.status?.liveTime?.minute || 0,
-                    status: match.status?.liveTime?.short || match.status?.reason?.short || ''
-                });
-            }
-        });
+        // FotMob returns fixtures grouped by round
+        if (data.fixtures && data.fixtures.allFixtures) {
+            data.fixtures.allFixtures.forEach(fixture => {
+                // Only include live matches (started but not finished)
+                if (fixture.status && fixture.status.started && !fixture.status.finished) {
+                    // Parse minute from liveTime.short (e.g., "13'" -> 13)
+                    let minute = 0;
+                    if (fixture.status.liveTime && fixture.status.liveTime.short) {
+                        const minuteStr = fixture.status.liveTime.short.replace("'", "");
+                        minute = parseInt(minuteStr) || 0;
+                    }
+                    
+                    liveMatches.push({
+                        homeTeam: fixture.home?.name || '',
+                        awayTeam: fixture.away?.name || '',
+                        minute: minute,
+                        status: fixture.status?.liveTime?.short || ''
+                    });
+                }
+            });
+        }
 
-        console.log('Live matches:', liveMatches);
+        console.log('Live matches found:', liveMatches);
         res.status(200).json({ matches: liveMatches });
 
     } catch (error) {
