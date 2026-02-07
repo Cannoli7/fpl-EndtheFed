@@ -1225,6 +1225,9 @@
                         // Fetch fresh live scores
                         await fetchLiveScores();
                         
+                        // Fetch fresh live data for stats
+                        const liveData = await fetchData(`event/${currentGW}/live`);
+                        
                         // Update all live indicators on the page
                         const card = document.querySelector('.card');
                         if (card) {
@@ -1253,6 +1256,25 @@
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
                                         }
                                     }
+                                    
+                                    // Update minutes played stat
+                                    const statsDiv = row.querySelector('.p-left .p-stats');
+                                    const statMp = statsDiv?.querySelector('.stat-mp');
+                                    if (liveData.elements && liveData.elements[p1Id]) {
+                                        const playerStats = liveData.elements[p1Id].stats;
+                                        const mp = playerStats.minutes || 0;
+                                        if (mp > 0) {
+                                            if (statMp) {
+                                                statMp.textContent = `${mp}'`;
+                                            } else if (statsDiv) {
+                                                // Add minutes stat if it doesn't exist
+                                                const mpSpan = document.createElement('span');
+                                                mpSpan.className = 'stat-mp';
+                                                mpSpan.textContent = `${mp}'`;
+                                                statsDiv.insertBefore(mpSpan, statsDiv.firstChild);
+                                            }
+                                        }
+                                    }
                                 }
                                 
                                 if (p2Id && playerMap[p2Id]) {
@@ -1272,6 +1294,25 @@
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE HT`;
                                         } else if (minutes > 0) {
                                             liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                        }
+                                    }
+                                    
+                                    // Update minutes played stat
+                                    const statsDiv = row.querySelector('.p-right .p-stats');
+                                    const statMp = statsDiv?.querySelector('.stat-mp');
+                                    if (liveData.elements && liveData.elements[p2Id]) {
+                                        const playerStats = liveData.elements[p2Id].stats;
+                                        const mp = playerStats.minutes || 0;
+                                        if (mp > 0) {
+                                            if (statMp) {
+                                                statMp.textContent = `${mp}'`;
+                                            } else if (statsDiv) {
+                                                // Add minutes stat if it doesn't exist
+                                                const mpSpan = document.createElement('span');
+                                                mpSpan.className = 'stat-mp';
+                                                mpSpan.textContent = `${mp}'`;
+                                                statsDiv.insertBefore(mpSpan, statsDiv.firstChild);
+                                            }
                                         }
                                     }
                                 }
@@ -2318,6 +2359,25 @@
                                 } else if (liveIndicator) {
                                     // Update existing indicator with minutes
                                     liveIndicator.innerHTML = `<div class="live-pulse"></div>LIVE ${minutes}'`;
+                                }
+                                
+                                // Update minutes played stat
+                                const statsDiv = row.querySelector(`.p-${side} .p-stats`);
+                                const statMp = statsDiv?.querySelector('.stat-mp');
+                                if (cachedLiveData && cachedLiveData.elements && cachedLiveData.elements[player.id]) {
+                                    const playerStats = cachedLiveData.elements[player.id].stats;
+                                    const mp = playerStats.minutes || 0;
+                                    if (mp > 0) {
+                                        if (statMp) {
+                                            statMp.textContent = `${mp}'`;
+                                        } else if (statsDiv) {
+                                            // Add minutes stat if it doesn't exist
+                                            const mpSpan = document.createElement('span');
+                                            mpSpan.className = 'stat-mp';
+                                            mpSpan.textContent = `${mp}'`;
+                                            statsDiv.insertBefore(mpSpan, statsDiv.firstChild);
+                                        }
+                                    }
                                 }
                             } else if (liveIndicator) {
                                 // Remove indicator if match finished
