@@ -328,6 +328,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .home-match:hover {
+            background: #16527a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         
         .home-team {
@@ -1057,7 +1064,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.39</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.40</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1610,6 +1617,15 @@
             refreshCurrentMatch();
         }
         
+        function goToMatchup(index) {
+            // Set the match index
+            currentMatchIndex = index;
+            lastNavigationDirection = 0; // No animation from homepage
+            
+            // Navigate to matchups view
+            document.querySelector('[onclick*="loadMatchups"]').click();
+        }
+        
         async function refreshCurrentMatch() {
             // Instant refresh by reloading gameweek but skipping loading screen
             // Use silentUpdate=false but we'll suppress the loading message
@@ -2074,7 +2090,7 @@
                     });
                     
                     // Display matches with calculated scores
-                    for (const match of topWeekMatches) {
+                    topWeekMatches.forEach((match, matchIndex) => {
                         const t1 = entryMap[match.league_entry_1];
                         const t2 = entryMap[match.league_entry_2];
                         const t1Score = matchScores[match.league_entry_1];
@@ -2102,7 +2118,7 @@
                             }
                         }
                         
-                        html += '<div class="home-match">';
+                        html += `<div class="home-match" onclick="goToMatchup(${matchIndex})" style="cursor:pointer;">`;
                         html += `<div class="home-team ${t1Class}">`;
                         html += `<div class="home-team-name">${t1.name}</div>`;
                         html += `<div class="home-team-owner">${t1.owner}</div>`;
@@ -2115,7 +2131,7 @@
                         html += `<div class="home-team-owner">${t2.owner}</div>`;
                         html += '</div>';
                         html += '</div>';
-                    }
+                    });
                 
                 html += '</div>';
             } else {
