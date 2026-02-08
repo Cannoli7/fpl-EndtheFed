@@ -594,6 +594,76 @@
         .rank-3 { color: #e67e22; }
         
         /* Hide mobile toggle on desktop */
+        .standings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .live-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .live-toggle-label {
+            font-size: 0.8rem;
+            color: #2ecc71;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .live-toggle-label.active {
+            opacity: 1;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #34495e;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #2ecc71;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
         .standings-toggle-buttons {
             display: flex;
             gap: 10px;
@@ -907,15 +977,27 @@
             /* Mobile Standings */
             .standings-toggle-buttons {
                 flex-direction: column;
-                gap: 8px;
+            
+            .standings-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
                 margin: 10px 4px;
             }
             
             .mobile-stats-toggle {
-                width: 100%;
-                padding: 12px;
-                font-size: 0.9rem;
+                width: auto;
+                padding: 10px 16px;
+                font-size: 0.85rem;
                 margin: 0;
+            }
+            
+            .live-toggle-container {
+                gap: 6px;
+            }
+            
+            .live-toggle-label {
+                font-size: 0.75rem;
             }
             
             .standings-table-wrapper {
@@ -1064,7 +1146,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.41</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.42</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1935,9 +2017,15 @@
                 }
             }
             
-            let html = '<div class="standings-toggle-buttons">';
+            let html = '<div class="standings-header">';
             html += '<button class="mobile-stats-toggle" onclick="toggleMobileStats()">Show Full Stats</button>';
-            html += `<button class="mobile-stats-toggle" onclick="toggleLiveTable()" style="background: ${showLiveTable ? '#e74c3c' : '#27ae60'};">${showLiveTable ? '🔴 Live Standings' : '📊 Live Standings'}</button>`;
+            html += '<div class="live-toggle-container">';
+            html += `<span class="live-toggle-label ${showLiveTable ? 'active' : ''}">Live</span>`;
+            html += '<label class="toggle-switch">';
+            html += `<input type="checkbox" ${showLiveTable ? 'checked' : ''} onchange="toggleLiveTable()">`;
+            html += '<span class="toggle-slider"></span>';
+            html += '</label>';
+            html += '</div>';
             html += '</div>';
             
             // Calculate live standings if enabled
