@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.82</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.83</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1208,6 +1208,69 @@
         let liveScoresCache = null; // Cache live match minutes from external API
         let lastLiveScoresFetch = 0; // Timestamp of last fetch
         const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
+        
+        // Calculate standings up to and including a specific gameweek
+        function calculateStandingsUpToGW(gw) {
+            if (!leagueData || !leagueData.league_entries) return [];
+            
+            // Initialize standings for all teams
+            const standings = leagueData.league_entries.map(entry => ({
+                league_entry: entry.id,
+                matches_won: 0,
+                matches_drawn: 0,
+                matches_lost: 0,
+                points_for: 0,
+                points_against: 0,
+                total: 0
+            }));
+            
+            // Process all finished matches up to the specified gameweek
+            const matches = leagueData.matches || [];
+            matches.forEach(match => {
+                if (match.finished && match.event <= gw) {
+                    const team1 = standings.find(s => s.league_entry === match.league_entry_1);
+                    const team2 = standings.find(s => s.league_entry === match.league_entry_2);
+                    
+                    if (team1 && team2) {
+                        const score1 = match.league_entry_1_points;
+                        const score2 = match.league_entry_2_points;
+                        
+                        team1.points_for += score1;
+                        team1.points_against += score2;
+                        team2.points_for += score2;
+                        team2.points_against += score1;
+                        
+                        if (score1 > score2) {
+                            team1.matches_won++;
+                            team1.total += 3;
+                            team2.matches_lost++;
+                        } else if (score1 < score2) {
+                            team2.matches_won++;
+                            team2.total += 3;
+                            team1.matches_lost++;
+                        } else {
+                            team1.matches_drawn++;
+                            team2.matches_drawn++;
+                            team1.total += 1;
+                            team2.total += 1;
+                        }
+                    }
+                }
+            });
+            
+            // Sort by total points, then by points_for
+            standings.sort((a, b) => {
+                if (b.total !== a.total) return b.total - a.total;
+                return b.points_for - a.points_for;
+            });
+            
+            // Assign ranks
+            standings.forEach((team, index) => {
+                team.rank = index + 1;
+            });
+            
+            return standings;
+        }
         
         // Check if current gameweek is complete by checking league matches
         async function isGameweekComplete(gw) {
@@ -2084,8 +2147,19 @@
             
             // Calculate display standings
             let displayStandings = standings;
-            if (showLiveTable) {
+            const gwComplete = await isGameweekComplete(currentGW);
+            
+            if (showLiveTable && gwComplete !== true) {
                 displayStandings = await calculateLiveStandings(standings, entryMap);
+            } else if (gwComplete === true && currentGW > 1) {
+                // Gameweek is complete - compare to previous gameweek
+                const previousStandings = calculateStandingsUpToGW(currentGW - 1);
+                
+                // Attach previous rank to each team
+                displayStandings = standings.map(team => ({
+                    ...team,
+                    previousRank: previousStandings.find(p => p.league_entry === team.league_entry)?.rank || team.rank
+                }));
             }
             
             // Update table header
@@ -2093,7 +2167,7 @@
             if (thead) {
                 let headerHtml = '';
                 headerHtml += '<th class="rank-col">#</th>';
-                if (showLiveTable) {
+                if (showLiveTable || gwComplete === true) {
                     headerHtml += '<th class="indicator-col"></th>'; // Empty header for position indicators
                 }
                 headerHtml += '<th class="team-col">Team</th>';
@@ -2133,11 +2207,12 @@
                 let bwMedal = '';
                 if (bestWeek === maxBW) bwMedal = ' 🥇';
                 
-                // Position change indicator (only for live standings)
+                // Position change indicator for live standings OR completed gameweek
                 let positionIndicator = '';
-                if (showLiveTable && team.originalRank) {
+                if ((showLiveTable && team.originalRank) || (gwComplete === true && team.previousRank)) {
                     const currentRank = team.rank || (index + 1);
-                    const change = team.originalRank - currentRank; // Positive = moved up
+                    const prevRank = team.originalRank || team.previousRank;
+                    const change = prevRank - currentRank; // Positive = moved up
                     
                     if (change > 0) {
                         positionIndicator = '<span style="color:#2ecc71;">●</span>'; // Green dot for up
@@ -2150,7 +2225,7 @@
                 
                 html += '<tr>';
                 html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
-                if (showLiveTable) {
+                if (showLiveTable || gwComplete === true) {
                     html += `<td class="indicator-col">${positionIndicator}</td>`;
                 }
                 html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
@@ -2334,12 +2409,21 @@
             let displayStandings = standings;
             if (showLiveTable && gwComplete !== true) {
                 displayStandings = await calculateLiveStandings(standings, entryMap);
+            } else if (gwComplete === true && currentGW > 1) {
+                // Gameweek is complete - compare to previous gameweek
+                const previousStandings = calculateStandingsUpToGW(currentGW - 1);
+                
+                // Attach previous rank to each team
+                displayStandings = standings.map(team => ({
+                    ...team,
+                    previousRank: previousStandings.find(p => p.league_entry === team.league_entry)?.rank || team.rank
+                }));
             }
             
             html += '<div class="standings-table-wrapper">';
             html += '<table class="standings-table mobile-simple" id="standings-table"><thead><tr>';
             html += '<th class="rank-col">#</th>';
-            if (showLiveTable) {
+            if (showLiveTable || gwComplete === true) {
                 html += '<th class="indicator-col"></th>'; // Empty header for position indicators
             }
             html += '<th class="team-col">Team</th>';
@@ -2376,8 +2460,28 @@
                 let bwMedal = '';
                 if (bestWeek === maxBW) bwMedal = ' 🥇';
                 
+                // Position change indicator
+                let positionIndicator = '';
+                // Show for live standings OR completed gameweek
+                if ((showLiveTable && team.originalRank) || (gwComplete === true && team.previousRank)) {
+                    const currentRank = team.rank || (index + 1);
+                    const prevRank = team.originalRank || team.previousRank;
+                    const change = prevRank - currentRank; // Positive = moved up
+                    
+                    if (change > 0) {
+                        positionIndicator = '<span style="color:#2ecc71;">●</span>'; // Green dot for up
+                    } else if (change < 0) {
+                        positionIndicator = '<span style="color:#e74c3c;">●</span>'; // Red dot for down
+                    } else {
+                        positionIndicator = '<span style="color:#7f8c8d;">—</span>'; // Grey dash for same
+                    }
+                }
+                
                 html += '<tr>';
                 html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
+                if (showLiveTable || gwComplete === true) {
+                    html += `<td class="indicator-col">${positionIndicator}</td>`;
+                }
                 html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
                 html += `<td class="stat-col">${team.matches_won || 0}</td>`;
                 html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
