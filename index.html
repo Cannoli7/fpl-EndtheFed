@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.86</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.87</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2180,24 +2180,34 @@
             }
             
             // Update table header
-            const thead = document.querySelector('.standings-table thead tr');
+            const thead = document.querySelector('.standings-table thead');
             if (thead) {
                 let headerHtml = '';
-                headerHtml += '<th class="rank-col">#</th>';
+                
+                // First header row
+                headerHtml += '<tr>';
+                headerHtml += '<th class="rank-col" rowspan="2">#</th>';
                 if (showLiveTable || gwComplete === true) {
-                    headerHtml += '<th class="indicator-col"></th>'; // Empty header for position indicators
+                    headerHtml += '<th class="indicator-col" rowspan="2"></th>'; // Empty header for position indicators
                 }
-                headerHtml += '<th class="team-col">Team</th>';
-                headerHtml += '<th class="stat-col">W</th>';
-                headerHtml += '<th class="stat-col">D</th>';
-                headerHtml += '<th class="stat-col">L</th>';
-                headerHtml += '<th class="stat-col">P</th>';
-                headerHtml += '<th class="stat-col hide-mobile">PF</th>';
-                headerHtml += '<th class="stat-col hide-mobile">PA</th>';
-                headerHtml += '<th class="stat-col hide-mobile">Best Week</th>';
-                headerHtml += '<th class="stat-col hide-mobile">HSW</th>';
-                headerHtml += '<th class="stat-col hide-mobile">SATS</th>';
+                headerHtml += '<th class="team-col" rowspan="2">Team</th>';
+                headerHtml += '<th class="stat-col" rowspan="2">W</th>';
+                headerHtml += '<th class="stat-col" rowspan="2">D</th>';
+                headerHtml += '<th class="stat-col" rowspan="2">L</th>';
+                headerHtml += '<th class="stat-col" rowspan="2">P</th>';
+                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">PF</th>';
+                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">PA</th>';
+                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">Best Week</th>';
+                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">HSW</th>';
+                headerHtml += '<th class="stat-col hide-mobile" colspan="2" style="background-color:#90EE90;color:#000;font-weight:bold;">Running Payout</th>';
+                headerHtml += '</tr>';
+                
+                // Second header row (just SATS and USD)
+                headerHtml += '<tr>';
+                headerHtml += '<th class="stat-col hide-mobile" style="border-left:1px solid rgba(255,255,255,0.1);">SATS</th>';
                 headerHtml += '<th class="stat-col hide-mobile">USD</th>';
+                headerHtml += '</tr>';
+                
                 thead.innerHTML = headerHtml;
             }
             
@@ -2472,23 +2482,33 @@
             }
             
             html += '<div class="standings-table-wrapper">';
-            html += '<table class="standings-table mobile-simple" id="standings-table"><thead><tr>';
-            html += '<th class="rank-col">#</th>';
+            html += '<table class="standings-table mobile-simple" id="standings-table"><thead>';
+            
+            // First header row
+            html += '<tr>';
+            html += '<th class="rank-col" rowspan="2">#</th>';
             if (showLiveTable || gwComplete === true) {
-                html += '<th class="indicator-col"></th>'; // Empty header for position indicators
+                html += '<th class="indicator-col" rowspan="2"></th>'; // Empty header for position indicators
             }
-            html += '<th class="team-col">Team</th>';
-            html += '<th class="stat-col">W</th>';
-            html += '<th class="stat-col">D</th>';
-            html += '<th class="stat-col">L</th>';
-            html += '<th class="stat-col">P</th>';
-            html += '<th class="stat-col hide-mobile">PF</th>';
-            html += '<th class="stat-col hide-mobile">PA</th>';
-            html += '<th class="stat-col hide-mobile">Best Week</th>';
-            html += '<th class="stat-col hide-mobile">HSW</th>';
-            html += '<th class="stat-col hide-mobile">SATS</th>';
+            html += '<th class="team-col" rowspan="2">Team</th>';
+            html += '<th class="stat-col" rowspan="2">W</th>';
+            html += '<th class="stat-col" rowspan="2">D</th>';
+            html += '<th class="stat-col" rowspan="2">L</th>';
+            html += '<th class="stat-col" rowspan="2">P</th>';
+            html += '<th class="stat-col hide-mobile" rowspan="2">PF</th>';
+            html += '<th class="stat-col hide-mobile" rowspan="2">PA</th>';
+            html += '<th class="stat-col hide-mobile" rowspan="2">Best Week</th>';
+            html += '<th class="stat-col hide-mobile" rowspan="2">HSW</th>';
+            html += '<th class="stat-col hide-mobile" colspan="2" style="background-color:#90EE90;color:#000;font-weight:bold;">Running Payout</th>';
+            html += '</tr>';
+            
+            // Second header row (just SATS and USD)
+            html += '<tr>';
+            html += '<th class="stat-col hide-mobile" style="border-left:1px solid rgba(255,255,255,0.1);">SATS</th>';
             html += '<th class="stat-col hide-mobile">USD</th>';
-            html += '</tr></thead><tbody>';
+            html += '</tr>';
+            
+            html += '</thead><tbody>';
             
             displayStandings.forEach((team, index) => {
                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
