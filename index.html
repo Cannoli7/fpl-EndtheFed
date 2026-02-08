@@ -1171,7 +1171,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.70</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.71</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2398,6 +2398,8 @@
                 const topWeek = currentGW;
                 const bottomWeek = currentGW + 1;
                 
+                let html = ''; // Declare html at top level
+                
                 // Top Section: Current Gameweek
                 if (topWeek > 0) {
                     const topWeekMatches = leagueData.matches.filter(m => m.event === topWeek);
@@ -2482,38 +2484,8 @@
                     }
                     
                     // Otherwise, build full HTML (first load or non-silent update)
-                    let html = '';
                     html += '<div class="home-section">';
                     html += `<div class="home-section-title">Gameweek ${topWeek}</div>`;
-                    
-                    const topWeekMatches = leagueData.matches.filter(m => m.event === topWeek);
-                    
-                    // Fetch live data - SAME as scoreboard does
-                    const liveData = await fetchData(`event/${topWeek}/live`);
-                    
-                    // Calculate scores using EXACT same logic as scoreboard
-                    const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
-                        return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
-                    }, 0);
-                    
-                    // Calculate scores for all matches
-                    const matchScores = {};
-                    for (const match of topWeekMatches) {
-                        const t1 = entryMap[match.league_entry_1];
-                        const t2 = entryMap[match.league_entry_2];
-                        
-                        const entry1 = await fetchData(`entry/${t1.entry_id}/event/${topWeek}`);
-                        const entry2 = await fetchData(`entry/${t2.entry_id}/event/${topWeek}`);
-                        
-                        matchScores[match.league_entry_1] = getScore(entry1.picks);
-                        matchScores[match.league_entry_2] = getScore(entry2.picks);
-                    }
-                    
-                    // Find highest score for highlighting
-                    let highestScore = 0;
-                    Object.values(matchScores).forEach(score => {
-                        if (score > highestScore) highestScore = score;
-                    });
                     
                     // Display matches with calculated scores
                     topWeekMatches.forEach((match, matchIndex) => {
