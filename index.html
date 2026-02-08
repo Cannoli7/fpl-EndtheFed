@@ -1171,7 +1171,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.69</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.70</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1797,26 +1797,26 @@
         }
 
         function buildStatsHtml(stats, position, isRightSide = false) {
-            let parts = [];
+            const statItems = [];
             
             // Build stats in order
-            if (stats.mp > 0) parts.push(`<span class="stat-mp">${stats.mp}'</span>`);
-            for (let i = 0; i < stats.g; i++) parts.push(`<span class="stat-icon">⚽</span>`);
-            for (let i = 0; i < stats.own_goals; i++) parts.push(`<span class="stat-icon">🔴</span>`);
-            for (let i = 0; i < stats.a; i++) parts.push(`<span class="stat-icon">👟</span>`);
+            if (stats.mp > 0) statItems.push(`<span class="stat-mp">${stats.mp}'</span>`);
+            for (let i = 0; i < stats.g; i++) statItems.push(`<span class="stat-icon">⚽</span>`);
+            for (let i = 0; i < stats.own_goals; i++) statItems.push(`<span class="stat-icon">🔴</span>`);
+            for (let i = 0; i < stats.a; i++) statItems.push(`<span class="stat-icon">👟</span>`);
             
             // Defensive contributions (DC stat)
             if (position === 'D' && stats.dc >= 10) {
-                parts.push(`<span class="stat-icon">🚧</span>`);
+                statItems.push(`<span class="stat-icon">🚧</span>`);
             } else if (position === 'M' && stats.dc >= 12) {
-                parts.push(`<span class="stat-icon">🚧</span>`);
+                statItems.push(`<span class="stat-icon">🚧</span>`);
             }
             
-            if (stats.cs > 0 && position !== 'F') parts.push(`<span class="stat-cs">🛡️</span>`);
+            if (stats.cs > 0 && position !== 'F') statItems.push(`<span class="stat-cs">🛡️</span>`);
             // Goalie gloves - one per 3 saves
             if (position === 'GK' && stats.saves > 0) {
                 const gloves = Math.floor(stats.saves / 3);
-                for (let i = 0; i < gloves; i++) parts.push(`<span class="stat-icon">🧤</span>`);
+                for (let i = 0; i < gloves; i++) statItems.push(`<span class="stat-icon">🧤</span>`);
             }
             // Goals conceded penalty - custom SVG soccer ball with X (for GK and D only)
             if ((position === 'GK' || position === 'D') && stats.goals_conceded > 0) {
@@ -1828,24 +1828,24 @@
                     <line x1="6" y1="6" x2="18" y2="18" stroke="#e74c3c" stroke-width="2.5"/>
                     <line x1="18" y1="6" x2="6" y2="18" stroke="#e74c3c" stroke-width="2.5"/>
                 </svg>`;
-                for (let i = 0; i < concededPenalties; i++) parts.push(svgIcon);
+                for (let i = 0; i < concededPenalties; i++) statItems.push(svgIcon);
             }
             // Penalty saved by keeper
-            for (let i = 0; i < stats.penalties_saved; i++) parts.push(`<span class="stat-icon">🦸</span>`);
+            for (let i = 0; i < stats.penalties_saved; i++) statItems.push(`<span class="stat-icon">🦸</span>`);
             // Penalty missed by any player
-            for (let i = 0; i < stats.penalties_missed; i++) parts.push(`<span class="stat-icon">❌</span>`);
-            if (stats.bonus === 3) parts.push(`<span class="stat-icon">🥇</span>`);
-            else if (stats.bonus === 2) parts.push(`<span class="stat-icon">🥈</span>`);
-            else if (stats.bonus === 1) parts.push(`<span class="stat-icon">🥉</span>`);
-            for (let i = 0; i < stats.yc; i++) parts.push(`<span class="card-yellow"></span>`);
-            for (let i = 0; i < stats.rc; i++) parts.push(`<span class="card-red"></span>`);
+            for (let i = 0; i < stats.penalties_missed; i++) statItems.push(`<span class="stat-icon">❌</span>`);
+            if (stats.bonus === 3) statItems.push(`<span class="stat-icon">🥇</span>`);
+            else if (stats.bonus === 2) statItems.push(`<span class="stat-icon">🥈</span>`);
+            else if (stats.bonus === 1) statItems.push(`<span class="stat-icon">🥉</span>`);
+            for (let i = 0; i < stats.yc; i++) statItems.push(`<span class="card-yellow"></span>`);
+            for (let i = 0; i < stats.rc; i++) statItems.push(`<span class="card-red"></span>`);
             
             // Reverse for right side so minutes appear on the right
             if (isRightSide) {
-                parts.reverse();
+                return statItems.reverse().join('');
             }
             
-            return parts.join('');
+            return statItems.join('');
         }
 
         function getJerseyUrl(teamId, position) {
