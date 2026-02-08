@@ -1145,7 +1145,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.43</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.44</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1921,9 +1921,155 @@
             return liveStandings;
         }
         
-        function toggleLiveTable() {
+        async function toggleLiveTable() {
             showLiveTable = !showLiveTable;
-            showStandings();
+            
+            // Update the toggle visuals
+            const checkbox = document.querySelector('.toggle-switch input');
+            const label = document.querySelector('.live-toggle-label');
+            if (checkbox) checkbox.checked = showLiveTable;
+            if (label) label.classList.toggle('active', showLiveTable);
+            
+            // Update table in place without reloading
+            await updateStandingsTable();
+        }
+        
+        async function updateStandingsTable() {
+            if (!leagueData) return;
+            
+            const standings = leagueData.standings || [];
+            const entryMap = {};
+            leagueData.league_entries.forEach(e => {
+                entryMap[e.id] = { 
+                    entry_name: e.entry_name, 
+                    player_name: e.player_first_name + ' ' + e.player_last_name,
+                    entry_id: e.entry_id
+                };
+            });
+            
+            // Get HSW data (already calculated)
+            const matches = leagueData.matches || [];
+            const hswCounts = {};
+            const bestWeekScores = {};
+            
+            const matchesByGW = {};
+            matches.forEach(match => {
+                if (match.finished && match.event) {
+                    if (!matchesByGW[match.event]) matchesByGW[match.event] = [];
+                    matchesByGW[match.event].push(match);
+                }
+            });
+            
+            for (const gw in matchesByGW) {
+                const gwMatches = matchesByGW[gw];
+                const scores = gwMatches.flatMap(m => [
+                    { entry: m.league_entry_1, score: m.league_entry_1_points },
+                    { entry: m.league_entry_2, score: m.league_entry_2_points }
+                ]);
+                
+                scores.forEach(s => {
+                    if (!bestWeekScores[s.entry] || s.score > bestWeekScores[s.entry]) {
+                        bestWeekScores[s.entry] = s.score;
+                    }
+                });
+                
+                if (scores.length > 0) {
+                    const maxScore = Math.max(...scores.map(s => s.score));
+                    const winners = scores.filter(s => s.score === maxScore);
+                    const hswValue = 1 / winners.length;
+                    winners.forEach(w => {
+                        hswCounts[w.entry] = (hswCounts[w.entry] || 0) + hswValue;
+                    });
+                }
+            }
+            
+            // Calculate display standings
+            let displayStandings = standings;
+            if (showLiveTable) {
+                displayStandings = await calculateLiveStandings(standings, entryMap);
+            }
+            
+            // Update table body
+            const tbody = document.querySelector('.standings-table tbody');
+            if (!tbody) return;
+            
+            let html = '';
+            displayStandings.forEach((team, index) => {
+                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                const entry = entryMap[team.league_entry] || { entry_name: 'Unknown', player_name: 'Unknown' };
+                const hsw = hswCounts[team.league_entry] || 0;
+                const hswDisplay = hsw % 1 === 0 ? hsw : hsw.toString().replace(/\.?0+$/, '');
+                const bestWeek = bestWeekScores[team.league_entry] || 0;
+                
+                const pfValues = displayStandings.map(t => t.points_for || 0);
+                const sortedPF = [...pfValues].sort((a, b) => b - a);
+                const maxPF = sortedPF[0];
+                const secondPF = sortedPF[1];
+                let pfMedal = '';
+                if (team.points_for === maxPF) pfMedal = ' 🥇';
+                else if (team.points_for === secondPF) pfMedal = ' 🥈';
+                
+                const bwValues = displayStandings.map(t => bestWeekScores[t.league_entry] || 0);
+                const maxBW = Math.max(...bwValues);
+                let bwMedal = '';
+                if (bestWeek === maxBW) bwMedal = ' 🥇';
+                
+                html += '<tr>';
+                html += `<td class="rank-col ${rankClass}">${team.rank || (index + 1)}</td>`;
+                html += `<td class="team-col"><strong>${entry.entry_name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${entry.player_name}</span></td>`;
+                html += `<td class="stat-col">${team.matches_won || 0}</td>`;
+                html += `<td class="stat-col">${team.matches_drawn || 0}</td>`;
+                html += `<td class="stat-col">${team.matches_lost || 0}</td>`;
+                html += `<td class="stat-col hide-mobile pf-${index}">${team.points_for || 0}${pfMedal}</td>`;
+                html += `<td class="stat-col hide-mobile pa-${index}">${team.points_against || 0}</td>`;
+                html += `<td class="stat-col hide-mobile bw-${index}"><strong>${bestWeek}${bwMedal}</strong></td>`;
+                html += `<td class="stat-col hide-mobile"><strong>${hswDisplay}</strong></td>`;
+                html += `<td class="stat-col"><strong>${team.total || 0}</strong></td>`;
+                html += '</tr>';
+            });
+            
+            tbody.innerHTML = html;
+            
+            // Apply color gradients
+            setTimeout(() => {
+                const pfValues = displayStandings.map(t => t.points_for || 0);
+                const paValues = displayStandings.map(t => t.points_against || 0);
+                const bwValues = displayStandings.map(t => bestWeekScores[t.league_entry] || 0);
+                
+                const maxPF = Math.max(...pfValues);
+                const minPF = Math.min(...pfValues);
+                const maxPA = Math.max(...paValues);
+                const minPA = Math.min(...paValues);
+                const maxBW = Math.max(...bwValues);
+                const minBW = Math.min(...bwValues);
+                
+                displayStandings.forEach((team, index) => {
+                    const pfCell = document.querySelector(`.pf-${index}`);
+                    const paCell = document.querySelector(`.pa-${index}`);
+                    const bwCell = document.querySelector(`.bw-${index}`);
+                    
+                    if (pfCell) {
+                        const pf = team.points_for || 0;
+                        const pfRatio = maxPF > minPF ? (pf - minPF) / (maxPF - minPF) : 0;
+                        const greenIntensity = Math.round(100 + (pfRatio * 155));
+                        pfCell.style.background = `rgba(0, ${greenIntensity}, 0, ${0.15 + pfRatio * 0.35})`;
+                    }
+                    
+                    if (paCell) {
+                        const pa = team.points_against || 0;
+                        const paRatio = maxPA > minPA ? (pa - minPA) / (maxPA - minPA) : 0;
+                        const redIntensity = Math.round(100 + (paRatio * 155));
+                        paCell.style.background = `rgba(${redIntensity}, 0, 0, ${0.15 + paRatio * 0.35})`;
+                    }
+                    
+                    if (bwCell) {
+                        const bw = bestWeekScores[team.league_entry] || 0;
+                        const bwRatio = maxBW > minBW ? (bw - minBW) / (maxBW - minBW) : 0;
+                        const goldIntensity = Math.round(150 + (bwRatio * 105));
+                        bwCell.style.background = `rgba(${goldIntensity}, ${goldIntensity}, 0, ${0.15 + bwRatio * 0.35})`;
+                    }
+                });
+            }, 0);
         }
         
         let showLiveTable = false; // Track if showing live table
@@ -2030,7 +2176,6 @@
             // Calculate live standings if enabled
             let displayStandings = standings;
             if (showLiveTable) {
-                content.innerHTML = html + '<div class="loading">Calculating live standings...</div>';
                 displayStandings = await calculateLiveStandings(standings, entryMap);
             }
             
