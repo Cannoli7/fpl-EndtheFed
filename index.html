@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.92</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.93</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2320,11 +2320,12 @@
                 const numTeams = displayStandings.length;
                 const plPerPerson = profitLoss / numTeams;
                 const plColor = profitLoss >= 0 ? '#2ecc71' : '#e74c3c';
+                const quantityInSats = Math.round(WAGER_CONFIG.BTC_QUANTITY * 100000000);
                 
                 btcTbody.innerHTML = `
                     <tr>
                         <td style="text-align:center;">$${WAGER_CONFIG.PURCHASE_PRICE.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td style="text-align:center;">${WAGER_CONFIG.BTC_QUANTITY}</td>
+                        <td style="text-align:center;">${quantityInSats.toLocaleString()} sats</td>
                         <td style="text-align:center;">$${costBasis.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td style="text-align:center;">$${currentBTCPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td style="text-align:center;color:${plColor};font-weight:bold;">$${profitLoss.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -2653,6 +2654,7 @@
             const profitLoss = currentValue - costBasis;
             const numTeams = displayStandings.length;
             const plPerPerson = profitLoss / numTeams;
+            const quantityInSats = Math.round(WAGER_CONFIG.BTC_QUANTITY * 100000000);
             
             html += '<div style="margin-top:30px;">';
             html += '<h3 style="text-align:center;color:#fff;margin-bottom:15px;">BTC</h3>';
@@ -2668,7 +2670,7 @@
             html += '</tr></thead><tbody>';
             html += '<tr>';
             html += `<td style="text-align:center;">$${WAGER_CONFIG.PURCHASE_PRICE.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>`;
-            html += `<td style="text-align:center;">${WAGER_CONFIG.BTC_QUANTITY}</td>`;
+            html += `<td style="text-align:center;">${quantityInSats.toLocaleString()} sats</td>`;
             html += `<td style="text-align:center;">$${costBasis.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>`;
             html += `<td style="text-align:center;">$${currentBTCPrice.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>`;
             const plColor = profitLoss >= 0 ? '#2ecc71' : '#e74c3c';
