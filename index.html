@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.81 - TEST (League Matches)</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.82</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1211,48 +1211,17 @@
         
         // Check if current gameweek is complete by checking league matches
         async function isGameweekComplete(gw) {
-            // First check FPL API
-            let fplFinished = null;
-            try {
-                const response = await fetch('/api/deadline');
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.events && Array.isArray(data.events)) {
-                        const gwEvent = data.events.find(e => e.id === gw);
-                        if (gwEvent) {
-                            fplFinished = gwEvent.finished;
-                            console.log(`📊 FPL API - Gameweek ${gw}:`);
-                            console.log(`   finished: ${gwEvent.finished}`);
-                            console.log(`   data_checked: ${gwEvent.data_checked || 'N/A'}`);
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error('Error fetching FPL API:', e);
-            }
-            
-            // Check league matches (more reliable for draft leagues)
+            // Check league matches (most reliable for draft leagues)
             if (!leagueData || !leagueData.matches) {
-                console.log('⚠️ No league data available yet');
-                return fplFinished;
+                return null; // Can't determine yet
             }
             
             const gwMatches = leagueData.matches.filter(m => m.event === gw);
             if (gwMatches.length === 0) {
-                console.log(`⚠️ No matches found for GW ${gw} in league`);
-                return fplFinished;
+                return null; // No matches scheduled yet
             }
             
             const allFinished = gwMatches.every(m => m.finished === true);
-            const finishedCount = gwMatches.filter(m => m.finished === true).length;
-            
-            console.log(`\n📊 League Data - Gameweek ${gw}:`);
-            console.log(`   Total matches: ${gwMatches.length}`);
-            console.log(`   Finished: ${finishedCount}`);
-            console.log(`   In progress: ${gwMatches.length - finishedCount}`);
-            console.log(`   All complete: ${allFinished ? '✅' : '❌'}`);
-            
-            // Use league data as source of truth
             return allFinished;
         }
         
@@ -2263,10 +2232,6 @@
             
             if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
             
-            // TEST: Check if current gameweek is complete
-            const gwComplete = await isGameweekComplete(currentGW);
-            console.log(`\n🔍 TEST RESULT: Is GW ${currentGW} complete? ${gwComplete === true ? 'YES ✅' : gwComplete === false ? 'NO ❌' : 'UNKNOWN ⚠️'}\n`);
-            
             // Get standings from league data
             const standings = leagueData.standings || [];
             
@@ -2346,20 +2311,28 @@
                 }
             }
             
+            // Check if gameweek is complete
+            const gwComplete = await isGameweekComplete(currentGW);
+            
             let html = '<div class="standings-header">';
             html += '<button class="mobile-stats-toggle" onclick="toggleMobileStats()">Show Full Stats</button>';
-            html += '<div class="live-toggle-container">';
-            html += `<span class="live-toggle-label ${showLiveTable ? 'active' : ''}">Live</span>`;
-            html += '<label class="toggle-switch">';
-            html += `<input type="checkbox" ${showLiveTable ? 'checked' : ''} onchange="toggleLiveTable()">`;
-            html += '<span class="toggle-slider"></span>';
-            html += '</label>';
-            html += '</div>';
+            
+            // Only show Live toggle if gameweek is not complete
+            if (gwComplete !== true) {
+                html += '<div class="live-toggle-container">';
+                html += `<span class="live-toggle-label ${showLiveTable ? 'active' : ''}">Live</span>`;
+                html += '<label class="toggle-switch">';
+                html += `<input type="checkbox" ${showLiveTable ? 'checked' : ''} onchange="toggleLiveTable()">`;
+                html += '<span class="toggle-slider"></span>';
+                html += '</label>';
+                html += '</div>';
+            }
+            
             html += '</div>';
             
-            // Calculate live standings if enabled
+            // Calculate live standings if enabled (and gameweek not complete)
             let displayStandings = standings;
-            if (showLiveTable) {
+            if (showLiveTable && gwComplete !== true) {
                 displayStandings = await calculateLiveStandings(standings, entryMap);
             }
             
@@ -2585,8 +2558,17 @@
                     }
                     
                     // Otherwise, build full HTML (first load or non-silent update)
+                    // Check if gameweek is complete
+                    const gwComplete = await isGameweekComplete(topWeek);
+                    let statusBadge = '';
+                    if (gwComplete === true) {
+                        statusBadge = '<span style="background:#27ae60;color:#fff;padding:4px 10px;border-radius:12px;font-size:0.75rem;margin-left:10px;font-weight:600;">COMPLETE ✓</span>';
+                    } else if (gwComplete === false) {
+                        statusBadge = '<span style="background:#e74c3c;color:#fff;padding:4px 10px;border-radius:12px;font-size:0.75rem;margin-left:10px;font-weight:600;">IN PROGRESS 🔴</span>';
+                    }
+                    
                     html += '<div class="home-section">';
-                    html += `<div class="home-section-title">Gameweek ${topWeek}</div>`;
+                    html += `<div class="home-section-title">Gameweek ${topWeek} ${statusBadge}</div>`;
                     
                     // Display matches with calculated scores
                     topWeekMatches.forEach((match, matchIndex) => {
