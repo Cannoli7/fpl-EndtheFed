@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.80 - TEST (FPL API)</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.81 - TEST (League Matches)</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1209,38 +1209,51 @@
         let lastLiveScoresFetch = 0; // Timestamp of last fetch
         const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
         
-        // Check if current gameweek is complete using official FPL API
+        // Check if current gameweek is complete by checking league matches
         async function isGameweekComplete(gw) {
+            // First check FPL API
+            let fplFinished = null;
             try {
                 const response = await fetch('/api/deadline');
-                if (!response.ok) {
-                    console.log('⚠️ Could not fetch FPL event data');
-                    return null;
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.events && Array.isArray(data.events)) {
+                        const gwEvent = data.events.find(e => e.id === gw);
+                        if (gwEvent) {
+                            fplFinished = gwEvent.finished;
+                            console.log(`📊 FPL API - Gameweek ${gw}:`);
+                            console.log(`   finished: ${gwEvent.finished}`);
+                            console.log(`   data_checked: ${gwEvent.data_checked || 'N/A'}`);
+                        }
+                    }
                 }
-                
-                const data = await response.json();
-                if (!data.events || !Array.isArray(data.events)) {
-                    console.log('⚠️ No events data in FPL API response');
-                    return null;
-                }
-                
-                const gwEvent = data.events.find(e => e.id === gw);
-                if (!gwEvent) {
-                    console.log(`⚠️ Gameweek ${gw} not found in FPL API`);
-                    return null;
-                }
-                
-                console.log(`📊 FPL API - Gameweek ${gw} Status:`);
-                console.log(`   finished: ${gwEvent.finished}`);
-                console.log(`   data_checked: ${gwEvent.data_checked || 'N/A'}`);
-                console.log(`   is_current: ${gwEvent.is_current}`);
-                console.log(`   deadline_time: ${gwEvent.deadline_time}`);
-                
-                return gwEvent.finished === true;
             } catch (e) {
-                console.error('Error checking gameweek status:', e);
-                return null;
+                console.error('Error fetching FPL API:', e);
             }
+            
+            // Check league matches (more reliable for draft leagues)
+            if (!leagueData || !leagueData.matches) {
+                console.log('⚠️ No league data available yet');
+                return fplFinished;
+            }
+            
+            const gwMatches = leagueData.matches.filter(m => m.event === gw);
+            if (gwMatches.length === 0) {
+                console.log(`⚠️ No matches found for GW ${gw} in league`);
+                return fplFinished;
+            }
+            
+            const allFinished = gwMatches.every(m => m.finished === true);
+            const finishedCount = gwMatches.filter(m => m.finished === true).length;
+            
+            console.log(`\n📊 League Data - Gameweek ${gw}:`);
+            console.log(`   Total matches: ${gwMatches.length}`);
+            console.log(`   Finished: ${finishedCount}`);
+            console.log(`   In progress: ${gwMatches.length - finishedCount}`);
+            console.log(`   All complete: ${allFinished ? '✅' : '❌'}`);
+            
+            // Use league data as source of truth
+            return allFinished;
         }
         
         // Map FPL team names to common names used by football APIs
