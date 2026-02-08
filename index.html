@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.96 - FIXED</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.97</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -3696,6 +3696,30 @@
             }
             
             content.innerHTML = html || '<div class="loading">No matchups available</div>';
+            
+            // Add legend after the matchup content
+            if (html && html.includes('card')) {
+                const legendHtml = `
+                    <div style="max-width:800px;margin:30px auto 20px;padding:20px;background:rgba(255,255,255,0.05);border-radius:8px;">
+                        <h4 style="text-align:center;color:#fff;margin-bottom:15px;font-size:0.9rem;">Stats Legend</h4>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;font-size:0.85rem;">
+                            <div style="color:#95a5a6;">⚽ Goal</div>
+                            <div style="color:#95a5a6;">👟 Assist</div>
+                            <div style="color:#95a5a6;">🛡️ Clean Sheet</div>
+                            <div style="color:#95a5a6;">🚧 Def. Contrib.</div>
+                            <div style="color:#95a5a6;">🧤 Saves (per 3)</div>
+                            <div style="color:#95a5a6;">⚽❌ Conceded (per 2)</div>
+                            <div style="color:#95a5a6;">🦸 Penalty Saved</div>
+                            <div style="color:#95a5a6;">❌ Penalty Missed</div>
+                            <div style="color:#95a5a6;">🔴 Own Goal</div>
+                            <div style="color:#95a5a6;">🥇🥈🥉 Bonus Pts</div>
+                            <div style="color:#95a5a6;"><span class="card-yellow"></span> Yellow Card</div>
+                            <div style="color:#95a5a6;"><span class="card-red"></span> Red Card</div>
+                        </div>
+                    </div>
+                `;
+                content.innerHTML += legendHtml;
+            }
             
             // Apply slide animation
             setTimeout(() => {
