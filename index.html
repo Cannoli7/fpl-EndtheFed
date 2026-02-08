@@ -1171,7 +1171,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.62</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.64</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1777,7 +1777,11 @@
 
         function getPlayerStats(elementId, liveData) {
             const el = liveData.elements[String(elementId)];
-            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0, saves: 0, own_goals: 0, goals_conceded: 0, penalties_missed: 0, penalties_saved: 0 };
+            if (!el || !el.stats) return { mp: 0, g: 0, a: 0, cs: 0, yc: 0, rc: 0, bonus: 0, saves: 0, own_goals: 0, goals_conceded: 0, penalties_missed: 0, penalties_saved: 0, dc: 0 };
+            
+            // Log stats to help find DC field name (uncomment for debugging)
+            // console.log('Player stats:', el.stats);
+            
             return {
                 mp: el.stats.minutes || 0,
                 g: el.stats.goals_scored || 0,
@@ -1790,7 +1794,8 @@
                 own_goals: el.stats.own_goals || 0,
                 goals_conceded: el.stats.goals_conceded || 0,
                 penalties_missed: el.stats.penalties_missed || 0,
-                penalties_saved: el.stats.penalties_saved || 0
+                penalties_saved: el.stats.penalties_saved || 0,
+                dc: el.stats.dribbles_and_carries || el.stats.defensive_contributions || el.stats.dc || 0
             };
         }
 
@@ -1800,6 +1805,14 @@
             for (let i = 0; i < stats.g; i++) html += `<span class="stat-icon">⚽</span>`;
             for (let i = 0; i < stats.own_goals; i++) html += `<span class="stat-icon">🔴</span>`;
             for (let i = 0; i < stats.a; i++) html += `<span class="stat-icon">👟</span>`;
+            
+            // Defensive contributions (DC stat)
+            if (position === 'D' && stats.dc >= 10) {
+                html += `<span class="stat-icon">🚧</span>`;
+            } else if (position === 'M' && stats.dc >= 12) {
+                html += `<span class="stat-icon">🚧</span>`;
+            }
+            
             if (stats.cs > 0 && position !== 'F') html += `<span class="stat-cs">🛡️</span>`;
             // Goalie gloves - one per 3 saves
             if (position === 'GK' && stats.saves > 0) {
