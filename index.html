@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.78</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.80 - TEST (FPL API)</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1208,6 +1208,40 @@
         let liveScoresCache = null; // Cache live match minutes from external API
         let lastLiveScoresFetch = 0; // Timestamp of last fetch
         const POS = {1:'GK', 2:'D', 3:'M', 4:'F'};
+        
+        // Check if current gameweek is complete using official FPL API
+        async function isGameweekComplete(gw) {
+            try {
+                const response = await fetch('/api/deadline');
+                if (!response.ok) {
+                    console.log('⚠️ Could not fetch FPL event data');
+                    return null;
+                }
+                
+                const data = await response.json();
+                if (!data.events || !Array.isArray(data.events)) {
+                    console.log('⚠️ No events data in FPL API response');
+                    return null;
+                }
+                
+                const gwEvent = data.events.find(e => e.id === gw);
+                if (!gwEvent) {
+                    console.log(`⚠️ Gameweek ${gw} not found in FPL API`);
+                    return null;
+                }
+                
+                console.log(`📊 FPL API - Gameweek ${gw} Status:`);
+                console.log(`   finished: ${gwEvent.finished}`);
+                console.log(`   data_checked: ${gwEvent.data_checked || 'N/A'}`);
+                console.log(`   is_current: ${gwEvent.is_current}`);
+                console.log(`   deadline_time: ${gwEvent.deadline_time}`);
+                
+                return gwEvent.finished === true;
+            } catch (e) {
+                console.error('Error checking gameweek status:', e);
+                return null;
+            }
+        }
         
         // Map FPL team names to common names used by football APIs
         const teamNameMap = {
@@ -2215,6 +2249,10 @@
             content.innerHTML = '<div class="loading">Loading standings...</div>';
             
             if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
+            
+            // TEST: Check if current gameweek is complete
+            const gwComplete = await isGameweekComplete(currentGW);
+            console.log(`\n🔍 TEST RESULT: Is GW ${currentGW} complete? ${gwComplete === true ? 'YES ✅' : gwComplete === false ? 'NO ❌' : 'UNKNOWN ⚠️'}\n`);
             
             // Get standings from league data
             const standings = leagueData.standings || [];
