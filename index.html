@@ -1145,7 +1145,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.45</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.46</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2048,25 +2048,37 @@
                     const paCell = document.querySelector(`.pa-${index}`);
                     const bwCell = document.querySelector(`.bw-${index}`);
                     
+                    // PF gradient: green (high) to white (low)
                     if (pfCell) {
                         const pf = team.points_for || 0;
                         const pfRatio = maxPF > minPF ? (pf - minPF) / (maxPF - minPF) : 0;
-                        const greenIntensity = Math.round(100 + (pfRatio * 155));
-                        pfCell.style.color = `rgb(0, ${greenIntensity}, 0)`;
+                        // Interpolate from green #2ecc71 (46, 204, 113) to white (255, 255, 255)
+                        const r = Math.round(46 + (255 - 46) * (1 - pfRatio));
+                        const g = Math.round(204 + (255 - 204) * (1 - pfRatio));
+                        const b = Math.round(113 + (255 - 113) * (1 - pfRatio));
+                        pfCell.style.color = `rgb(${r}, ${g}, ${b})`;
                     }
                     
+                    // PA gradient: red (high) to white (low)
                     if (paCell) {
                         const pa = team.points_against || 0;
                         const paRatio = maxPA > minPA ? (pa - minPA) / (maxPA - minPA) : 0;
-                        const redIntensity = Math.round(100 + (paRatio * 155));
-                        paCell.style.color = `rgb(${redIntensity}, 0, 0)`;
+                        // Interpolate from red #e74c3c (231, 76, 60) to white (255, 255, 255)
+                        const r = Math.round(231 + (255 - 231) * (1 - paRatio));
+                        const g = Math.round(76 + (255 - 76) * (1 - paRatio));
+                        const b = Math.round(60 + (255 - 60) * (1 - paRatio));
+                        paCell.style.color = `rgb(${r}, ${g}, ${b})`;
                     }
                     
+                    // Best Week gradient: gold (high) to white (low)
                     if (bwCell) {
                         const bw = bestWeekScores[team.league_entry] || 0;
                         const bwRatio = maxBW > minBW ? (bw - minBW) / (maxBW - minBW) : 0;
-                        const goldIntensity = Math.round(150 + (bwRatio * 105));
-                        bwCell.style.color = `rgb(${goldIntensity}, ${goldIntensity}, 0)`;
+                        // Interpolate from gold #f39c12 (243, 156, 18) to white (255, 255, 255)
+                        const r = Math.round(243 + (255 - 243) * (1 - bwRatio));
+                        const g = Math.round(156 + (255 - 156) * (1 - bwRatio));
+                        const b = Math.round(18 + (255 - 18) * (1 - bwRatio));
+                        bwCell.style.color = `rgb(${r}, ${g}, ${b})`;
                     }
                 });
             }, 0);
@@ -2252,28 +2264,37 @@
                     const paCell = document.querySelector(`.pa-${index}`);
                     const bwCell = document.querySelector(`.bw-${index}`);
                     
-                    // PF gradient: green text
+                    // PF gradient: green (high) to white (low)
                     if (pfCell) {
                         const pf = team.points_for || 0;
                         const pfRatio = maxPF > minPF ? (pf - minPF) / (maxPF - minPF) : 0;
-                        const greenIntensity = Math.round(100 + (pfRatio * 155));
-                        pfCell.style.color = `rgb(0, ${greenIntensity}, 0)`;
+                        // Interpolate from green #2ecc71 (46, 204, 113) to white (255, 255, 255)
+                        const r = Math.round(46 + (255 - 46) * (1 - pfRatio));
+                        const g = Math.round(204 + (255 - 204) * (1 - pfRatio));
+                        const b = Math.round(113 + (255 - 113) * (1 - pfRatio));
+                        pfCell.style.color = `rgb(${r}, ${g}, ${b})`;
                     }
                     
-                    // PA gradient: red text
+                    // PA gradient: red (high) to white (low)
                     if (paCell) {
                         const pa = team.points_against || 0;
                         const paRatio = maxPA > minPA ? (pa - minPA) / (maxPA - minPA) : 0;
-                        const redIntensity = Math.round(100 + (paRatio * 155));
-                        paCell.style.color = `rgb(${redIntensity}, 0, 0)`;
+                        // Interpolate from red #e74c3c (231, 76, 60) to white (255, 255, 255)
+                        const r = Math.round(231 + (255 - 231) * (1 - paRatio));
+                        const g = Math.round(76 + (255 - 76) * (1 - paRatio));
+                        const b = Math.round(60 + (255 - 60) * (1 - paRatio));
+                        paCell.style.color = `rgb(${r}, ${g}, ${b})`;
                     }
                     
-                    // Best Week gradient: gold text
+                    // Best Week gradient: gold (high) to white (low)
                     if (bwCell) {
                         const bw = bestWeekScores[team.league_entry] || 0;
                         const bwRatio = maxBW > minBW ? (bw - minBW) / (maxBW - minBW) : 0;
-                        const goldIntensity = Math.round(150 + (bwRatio * 105));
-                        bwCell.style.color = `rgb(${goldIntensity}, ${goldIntensity}, 0)`;
+                        // Interpolate from gold #f39c12 (243, 156, 18) to white (255, 255, 255)
+                        const r = Math.round(243 + (255 - 243) * (1 - bwRatio));
+                        const g = Math.round(156 + (255 - 156) * (1 - bwRatio));
+                        const b = Math.round(18 + (255 - 18) * (1 - bwRatio));
+                        bwCell.style.color = `rgb(${r}, ${g}, ${b})`;
                     }
                 });
             }, 0);
