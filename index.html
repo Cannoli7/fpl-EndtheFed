@@ -1145,7 +1145,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.44</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.45</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2052,21 +2052,21 @@
                         const pf = team.points_for || 0;
                         const pfRatio = maxPF > minPF ? (pf - minPF) / (maxPF - minPF) : 0;
                         const greenIntensity = Math.round(100 + (pfRatio * 155));
-                        pfCell.style.background = `rgba(0, ${greenIntensity}, 0, ${0.15 + pfRatio * 0.35})`;
+                        pfCell.style.color = `rgb(0, ${greenIntensity}, 0)`;
                     }
                     
                     if (paCell) {
                         const pa = team.points_against || 0;
                         const paRatio = maxPA > minPA ? (pa - minPA) / (maxPA - minPA) : 0;
                         const redIntensity = Math.round(100 + (paRatio * 155));
-                        paCell.style.background = `rgba(${redIntensity}, 0, 0, ${0.15 + paRatio * 0.35})`;
+                        paCell.style.color = `rgb(${redIntensity}, 0, 0)`;
                     }
                     
                     if (bwCell) {
                         const bw = bestWeekScores[team.league_entry] || 0;
                         const bwRatio = maxBW > minBW ? (bw - minBW) / (maxBW - minBW) : 0;
                         const goldIntensity = Math.round(150 + (bwRatio * 105));
-                        bwCell.style.background = `rgba(${goldIntensity}, ${goldIntensity}, 0, ${0.15 + bwRatio * 0.35})`;
+                        bwCell.style.color = `rgb(${goldIntensity}, ${goldIntensity}, 0)`;
                     }
                 });
             }, 0);
@@ -2235,34 +2235,46 @@
             
             // Apply color gradients after table is rendered
             setTimeout(() => {
-                // Get all PF and PA values
+                // Get all PF, PA, and Best Week values
                 const pfValues = displayStandings.map(t => t.points_for || 0);
                 const paValues = displayStandings.map(t => t.points_against || 0);
+                const bwValues = displayStandings.map(t => bestWeekScores[t.league_entry] || 0);
                 
                 const maxPF = Math.max(...pfValues);
                 const minPF = Math.min(...pfValues);
                 const maxPA = Math.max(...paValues);
                 const minPA = Math.min(...paValues);
+                const maxBW = Math.max(...bwValues);
+                const minBW = Math.min(...bwValues);
                 
                 displayStandings.forEach((team, index) => {
-                    // PF gradient: green (high) to white (low)
-                    const pfPercent = (team.points_for - minPF) / (maxPF - minPF);
-                    const pfGreen = Math.round(46 + (255 - 46) * (1 - pfPercent));
-                    const pfColor = `rgb(${pfGreen}, ${Math.round(204 + (255 - 204) * (1 - pfPercent))}, ${Math.round(113 + (255 - 113) * (1 - pfPercent))})`;
-                    
-                    // PA gradient: red (high) to white (low)
-                    const paPercent = (team.points_against - minPA) / (maxPA - minPA);
-                    const paRed = Math.round(231 * paPercent + 255 * (1 - paPercent));
-                    const paGreen = Math.round(76 * paPercent + 255 * (1 - paPercent));
-                    const paBlue = Math.round(60 * paPercent + 255 * (1 - paPercent));
-                    const paColor = `rgb(${paRed}, ${paGreen}, ${paBlue})`;
-                    
                     const pfCell = document.querySelector(`.pf-${index}`);
                     const paCell = document.querySelector(`.pa-${index}`);
+                    const bwCell = document.querySelector(`.bw-${index}`);
                     
-                    // Apply gradients
-                    if (pfCell) pfCell.style.color = pfColor;
-                    if (paCell) paCell.style.color = paColor;
+                    // PF gradient: green text
+                    if (pfCell) {
+                        const pf = team.points_for || 0;
+                        const pfRatio = maxPF > minPF ? (pf - minPF) / (maxPF - minPF) : 0;
+                        const greenIntensity = Math.round(100 + (pfRatio * 155));
+                        pfCell.style.color = `rgb(0, ${greenIntensity}, 0)`;
+                    }
+                    
+                    // PA gradient: red text
+                    if (paCell) {
+                        const pa = team.points_against || 0;
+                        const paRatio = maxPA > minPA ? (pa - minPA) / (maxPA - minPA) : 0;
+                        const redIntensity = Math.round(100 + (paRatio * 155));
+                        paCell.style.color = `rgb(${redIntensity}, 0, 0)`;
+                    }
+                    
+                    // Best Week gradient: gold text
+                    if (bwCell) {
+                        const bw = bestWeekScores[team.league_entry] || 0;
+                        const bwRatio = maxBW > minBW ? (bw - minBW) / (maxBW - minBW) : 0;
+                        const goldIntensity = Math.round(150 + (bwRatio * 105));
+                        bwCell.style.color = `rgb(${goldIntensity}, ${goldIntensity}, 0)`;
+                    }
                 });
             }, 0);
         }
