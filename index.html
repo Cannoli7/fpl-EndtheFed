@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.89</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.91</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2184,28 +2184,21 @@
             if (thead) {
                 let headerHtml = '';
                 
-                // First header row
+                // Single header row
                 headerHtml += '<tr>';
-                headerHtml += '<th class="rank-col" rowspan="2">#</th>';
+                headerHtml += '<th class="rank-col">#</th>';
                 if (showLiveTable || gwComplete === true) {
-                    headerHtml += '<th class="indicator-col" rowspan="2"></th>'; // Empty header for position indicators
+                    headerHtml += '<th class="indicator-col"></th>'; // Empty header for position indicators
                 }
-                headerHtml += '<th class="team-col" rowspan="2">Team</th>';
-                headerHtml += '<th class="stat-col" rowspan="2">W</th>';
-                headerHtml += '<th class="stat-col" rowspan="2">D</th>';
-                headerHtml += '<th class="stat-col" rowspan="2">L</th>';
-                headerHtml += '<th class="stat-col" rowspan="2">P</th>';
-                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">PF</th>';
-                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">PA</th>';
-                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">Best Week</th>';
-                headerHtml += '<th class="stat-col hide-mobile" rowspan="2">HSW</th>';
-                headerHtml += '<th class="stat-col hide-mobile" colspan="2" style="background-color:#2d5016;color:#fff;font-weight:bold;">Running Payout</th>';
-                headerHtml += '</tr>';
-                
-                // Second header row (just SATS and USD)
-                headerHtml += '<tr>';
-                headerHtml += '<th class="stat-col hide-mobile" style="background-color:#2d5016;color:#fff;border-left:1px solid rgba(255,255,255,0.1);">SATS</th>';
-                headerHtml += '<th class="stat-col hide-mobile" style="background-color:#2d5016;color:#fff;">USD</th>';
+                headerHtml += '<th class="team-col">Team</th>';
+                headerHtml += '<th class="stat-col">W</th>';
+                headerHtml += '<th class="stat-col">D</th>';
+                headerHtml += '<th class="stat-col">L</th>';
+                headerHtml += '<th class="stat-col">P</th>';
+                headerHtml += '<th class="stat-col hide-mobile">PF</th>';
+                headerHtml += '<th class="stat-col hide-mobile">PA</th>';
+                headerHtml += '<th class="stat-col hide-mobile">Best Week</th>';
+                headerHtml += '<th class="stat-col hide-mobile">HSW</th>';
                 headerHtml += '</tr>';
                 
                 thead.innerHTML = headerHtml;
@@ -2235,36 +2228,6 @@
                 const maxBW = Math.max(...bwValues);
                 let bwMedal = '';
                 if (bestWeek === maxBW) bwMedal = ' 🥇';
-                
-                // Calculate payout for this team
-                let totalPercentage = 0;
-                
-                // 1. Placement percentage
-                if (index === 0) totalPercentage += WAGER_CONFIG.FIRST_PLACE;
-                else if (index === 1) totalPercentage += WAGER_CONFIG.SECOND_PLACE;
-                else if (index === 2) totalPercentage += WAGER_CONFIG.THIRD_PLACE;
-                
-                // 2. Most Points (PF ranking)
-                const pfRanking = [...displayStandings].sort((a, b) => (b.points_for || 0) - (a.points_for || 0));
-                const pfRank = pfRanking.findIndex(t => t.league_entry === team.league_entry);
-                if (pfRank === 0) totalPercentage += WAGER_CONFIG.MOST_POINTS_FIRST;
-                else if (pfRank === 1) totalPercentage += WAGER_CONFIG.MOST_POINTS_SECOND;
-                
-                // 3. Single Highest Week
-                if (bestWeek === maxBW && maxBW > 0) {
-                    totalPercentage += WAGER_CONFIG.MOST_POINTS_SINGLE_WEEK;
-                }
-                
-                // 4. Week Wins
-                totalPercentage += WAGER_CONFIG.WEEK_WIN * (team.matches_won || 0);
-                
-                // 5. Week Top Score (HSW)
-                totalPercentage += WAGER_CONFIG.WEEK_TOP_SCORE * hsw;
-                
-                // Calculate BTC and convert to SATS and USD
-                const btcPayout = WAGER_CONFIG.BTC_QUANTITY * totalPercentage;
-                const satsPayout = Math.round(btcPayout * 100000000);
-                const usdPayout = btcPayout * currentBTCPrice;
                 
                 // Position change indicator for live standings OR completed gameweek
                 let positionIndicator = '';
@@ -2296,12 +2259,57 @@
                 html += `<td class="stat-col hide-mobile pa-${index}">${team.points_against || 0}</td>`;
                 html += `<td class="stat-col hide-mobile bw-${index}"><strong>${bestWeek}${bwMedal}</strong></td>`;
                 html += `<td class="stat-col hide-mobile"><strong>${hswDisplay}</strong></td>`;
-                html += `<td class="stat-col hide-mobile">${satsPayout.toLocaleString()}</td>`;
-                html += `<td class="stat-col hide-mobile">$${usdPayout.toFixed(2)}</td>`;
                 html += '</tr>';
             });
             
             tbody.innerHTML = html;
+            
+            // Update payout table
+            const payoutTbody = document.querySelector('.standings-table:not(#standings-table) tbody');
+            if (payoutTbody) {
+                let payoutHtml = '';
+                displayStandings.forEach((team, index) => {
+                    const entry = entryMap[team.league_entry] || { entry_name: 'Unknown' };
+                    let totalPercentage = 0;
+                    
+                    // 1. Placement percentage
+                    if (index === 0) totalPercentage += WAGER_CONFIG.FIRST_PLACE;
+                    else if (index === 1) totalPercentage += WAGER_CONFIG.SECOND_PLACE;
+                    else if (index === 2) totalPercentage += WAGER_CONFIG.THIRD_PLACE;
+                    
+                    // 2. Most Points (PF ranking)
+                    const pfRanking = [...displayStandings].sort((a, b) => (b.points_for || 0) - (a.points_for || 0));
+                    const pfRank = pfRanking.findIndex(t => t.league_entry === team.league_entry);
+                    if (pfRank === 0) totalPercentage += WAGER_CONFIG.MOST_POINTS_FIRST;
+                    else if (pfRank === 1) totalPercentage += WAGER_CONFIG.MOST_POINTS_SECOND;
+                    
+                    // 3. Single Highest Week
+                    const maxBW = Math.max(...displayStandings.map(t => bestWeekScores[t.league_entry] || 0));
+                    const teamBW = bestWeekScores[team.league_entry] || 0;
+                    if (teamBW === maxBW && maxBW > 0) {
+                        totalPercentage += WAGER_CONFIG.MOST_POINTS_SINGLE_WEEK;
+                    }
+                    
+                    // 4. Week Wins
+                    totalPercentage += WAGER_CONFIG.WEEK_WIN * (team.matches_won || 0);
+                    
+                    // 5. Week Top Score (HSW)
+                    const hsw = hswCounts[team.league_entry] || 0;
+                    totalPercentage += WAGER_CONFIG.WEEK_TOP_SCORE * hsw;
+                    
+                    // Calculate BTC and convert to SATS and USD
+                    const btcPayout = WAGER_CONFIG.BTC_QUANTITY * totalPercentage;
+                    const satsPayout = Math.round(btcPayout * 100000000);
+                    const usdPayout = btcPayout * currentBTCPrice;
+                    
+                    payoutHtml += '<tr>';
+                    payoutHtml += `<td class="team-col"><strong>${entry.entry_name}</strong></td>`;
+                    payoutHtml += `<td class="stat-col">${satsPayout.toLocaleString()}</td>`;
+                    payoutHtml += `<td class="stat-col">$${usdPayout.toFixed(2)}</td>`;
+                    payoutHtml += '</tr>';
+                });
+                payoutTbody.innerHTML = payoutHtml;
+            }
             
             // Apply color gradients
             setTimeout(() => {
@@ -2484,28 +2492,21 @@
             html += '<div class="standings-table-wrapper">';
             html += '<table class="standings-table mobile-simple" id="standings-table"><thead>';
             
-            // First header row
+            // Single header row
             html += '<tr>';
-            html += '<th class="rank-col" rowspan="2">#</th>';
+            html += '<th class="rank-col">#</th>';
             if (showLiveTable || gwComplete === true) {
-                html += '<th class="indicator-col" rowspan="2"></th>'; // Empty header for position indicators
+                html += '<th class="indicator-col"></th>'; // Empty header for position indicators
             }
-            html += '<th class="team-col" rowspan="2">Team</th>';
-            html += '<th class="stat-col" rowspan="2">W</th>';
-            html += '<th class="stat-col" rowspan="2">D</th>';
-            html += '<th class="stat-col" rowspan="2">L</th>';
-            html += '<th class="stat-col" rowspan="2">P</th>';
-            html += '<th class="stat-col hide-mobile" rowspan="2">PF</th>';
-            html += '<th class="stat-col hide-mobile" rowspan="2">PA</th>';
-            html += '<th class="stat-col hide-mobile" rowspan="2">Best Week</th>';
-            html += '<th class="stat-col hide-mobile" rowspan="2">HSW</th>';
-            html += '<th class="stat-col hide-mobile" colspan="2" style="background-color:#2d5016;color:#fff;font-weight:bold;">Running Payout</th>';
-            html += '</tr>';
-            
-            // Second header row (just SATS and USD)
-            html += '<tr>';
-            html += '<th class="stat-col hide-mobile" style="background-color:#2d5016;color:#fff;border-left:1px solid rgba(255,255,255,0.1);">SATS</th>';
-            html += '<th class="stat-col hide-mobile" style="background-color:#2d5016;color:#fff;">USD</th>';
+            html += '<th class="team-col">Team</th>';
+            html += '<th class="stat-col">W</th>';
+            html += '<th class="stat-col">D</th>';
+            html += '<th class="stat-col">L</th>';
+            html += '<th class="stat-col">P</th>';
+            html += '<th class="stat-col hide-mobile">PF</th>';
+            html += '<th class="stat-col hide-mobile">PA</th>';
+            html += '<th class="stat-col hide-mobile">Best Week</th>';
+            html += '<th class="stat-col hide-mobile">HSW</th>';
             html += '</tr>';
             
             html += '</thead><tbody>';
@@ -2532,36 +2533,6 @@
                 const maxBW = Math.max(...bwValues);
                 let bwMedal = '';
                 if (bestWeek === maxBW) bwMedal = ' 🥇';
-                
-                // Calculate payout for this team
-                let totalPercentage = 0;
-                
-                // 1. Placement percentage
-                if (index === 0) totalPercentage += WAGER_CONFIG.FIRST_PLACE;
-                else if (index === 1) totalPercentage += WAGER_CONFIG.SECOND_PLACE;
-                else if (index === 2) totalPercentage += WAGER_CONFIG.THIRD_PLACE;
-                
-                // 2. Most Points (PF ranking)
-                const pfRanking = [...displayStandings].sort((a, b) => (b.points_for || 0) - (a.points_for || 0));
-                const pfRank = pfRanking.findIndex(t => t.league_entry === team.league_entry);
-                if (pfRank === 0) totalPercentage += WAGER_CONFIG.MOST_POINTS_FIRST;
-                else if (pfRank === 1) totalPercentage += WAGER_CONFIG.MOST_POINTS_SECOND;
-                
-                // 3. Single Highest Week
-                if (bestWeek === maxBW && maxBW > 0) {
-                    totalPercentage += WAGER_CONFIG.MOST_POINTS_SINGLE_WEEK;
-                }
-                
-                // 4. Week Wins
-                totalPercentage += WAGER_CONFIG.WEEK_WIN * (team.matches_won || 0);
-                
-                // 5. Week Top Score (HSW)
-                totalPercentage += WAGER_CONFIG.WEEK_TOP_SCORE * hsw;
-                
-                // Calculate BTC and convert to SATS and USD
-                const btcPayout = WAGER_CONFIG.BTC_QUANTITY * totalPercentage;
-                const satsPayout = Math.round(btcPayout * 100000000);
-                const usdPayout = btcPayout * currentBTCPrice;
                 
                 // Position change indicator
                 let positionIndicator = '';
@@ -2594,12 +2565,65 @@
                 html += `<td class="stat-col hide-mobile pa-${index}">${team.points_against || 0}</td>`;
                 html += `<td class="stat-col hide-mobile bw-${index}"><strong>${bestWeek}${bwMedal}</strong></td>`;
                 html += `<td class="stat-col hide-mobile"><strong>${hswDisplay}</strong></td>`;
-                html += `<td class="stat-col hide-mobile">${satsPayout.toLocaleString()}</td>`;
-                html += `<td class="stat-col hide-mobile">$${usdPayout.toFixed(2)}</td>`;
                 html += '</tr>';
             });
             
             html += '</tbody></table></div>';
+            
+            // Separate Running Payout Table
+            html += '<div style="margin-top:30px;">';
+            html += '<h3 style="text-align:center;color:#fff;margin-bottom:15px;">Running Payout</h3>';
+            html += '<div class="standings-table-wrapper">';
+            html += '<table class="standings-table" style="max-width:600px;margin:0 auto;"><thead>';
+            html += '<tr>';
+            html += '<th class="team-col" style="background-color:#2d5016;color:#fff;">Team</th>';
+            html += '<th class="stat-col" style="background-color:#2d5016;color:#fff;">SATS</th>';
+            html += '<th class="stat-col" style="background-color:#2d5016;color:#fff;">USD</th>';
+            html += '</tr></thead><tbody>';
+            
+            // Build payout rows
+            displayStandings.forEach((team, index) => {
+                const entry = entryMap[team.league_entry] || { entry_name: 'Unknown' };
+                let totalPercentage = 0;
+                
+                // 1. Placement percentage
+                if (index === 0) totalPercentage += WAGER_CONFIG.FIRST_PLACE;
+                else if (index === 1) totalPercentage += WAGER_CONFIG.SECOND_PLACE;
+                else if (index === 2) totalPercentage += WAGER_CONFIG.THIRD_PLACE;
+                
+                // 2. Most Points (PF ranking)
+                const pfRanking = [...displayStandings].sort((a, b) => (b.points_for || 0) - (a.points_for || 0));
+                const pfRank = pfRanking.findIndex(t => t.league_entry === team.league_entry);
+                if (pfRank === 0) totalPercentage += WAGER_CONFIG.MOST_POINTS_FIRST;
+                else if (pfRank === 1) totalPercentage += WAGER_CONFIG.MOST_POINTS_SECOND;
+                
+                // 3. Single Highest Week
+                const maxBW = Math.max(...displayStandings.map(t => bestWeekScores[t.league_entry] || 0));
+                const teamBW = bestWeekScores[team.league_entry] || 0;
+                if (teamBW === maxBW && maxBW > 0) {
+                    totalPercentage += WAGER_CONFIG.MOST_POINTS_SINGLE_WEEK;
+                }
+                
+                // 4. Week Wins
+                totalPercentage += WAGER_CONFIG.WEEK_WIN * (team.matches_won || 0);
+                
+                // 5. Week Top Score (HSW)
+                const hsw = hswCounts[team.league_entry] || 0;
+                totalPercentage += WAGER_CONFIG.WEEK_TOP_SCORE * hsw;
+                
+                // Calculate BTC and convert to SATS and USD
+                const btcPayout = WAGER_CONFIG.BTC_QUANTITY * totalPercentage;
+                const satsPayout = Math.round(btcPayout * 100000000);
+                const usdPayout = btcPayout * currentBTCPrice;
+                
+                html += '<tr>';
+                html += `<td class="team-col"><strong>${entry.entry_name}</strong></td>`;
+                html += `<td class="stat-col">${satsPayout.toLocaleString()}</td>`;
+                html += `<td class="stat-col">$${usdPayout.toFixed(2)}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table></div></div>';
             
             content.innerHTML = html;
             
