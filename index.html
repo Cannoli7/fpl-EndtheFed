@@ -1171,7 +1171,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.59</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.60</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1381,8 +1381,17 @@
             }
             
             // Add change event listener
-            select.addEventListener('change', (e) => {
+            select.addEventListener('change', async (e) => {
                 currentMatchIndex = 0; // Reset to first match
+                
+                // Fetch live match data immediately when changing gameweek
+                try {
+                    await fetchLiveMatchData();
+                    console.log('🎯 Fetched live data on GW change');
+                } catch (apiError) {
+                    console.log('API fetch on GW change failed:', apiError);
+                }
+                
                 loadGameweek(parseInt(e.target.value));
             });
         }
@@ -1478,11 +1487,20 @@
                 menuDropdown.style.display = 'none';
             };
             
-            document.getElementById('menu-matchups').onclick = () => {
+            document.getElementById('menu-matchups').onclick = async () => {
                 currentView = 'matchups';
                 const nav = document.querySelector('.nav');
                 nav.style.display = 'flex';
                 currentMatchIndex = 0; // Reset to first match
+                
+                // Fetch live match data immediately when opening scoreboard
+                try {
+                    await fetchLiveMatchData();
+                    console.log('🎯 Fetched live data on scoreboard open');
+                } catch (apiError) {
+                    console.log('API fetch on open failed:', apiError);
+                }
+                
                 loadGameweek(currentGW);
                 menuDropdown.style.display = 'none';
             };
@@ -1754,7 +1772,7 @@
             refreshCurrentMatch();
         }
         
-        function goToMatchup(index) {
+        async function goToMatchup(index) {
             // Set the match index
             currentMatchIndex = index;
             lastNavigationDirection = 0; // No animation from homepage
@@ -1763,6 +1781,15 @@
             currentView = 'matchups';
             const nav = document.querySelector('.nav');
             if (nav) nav.style.display = 'flex';
+            
+            // Fetch live match data immediately when jumping from homepage
+            try {
+                await fetchLiveMatchData();
+                console.log('🎯 Fetched live data on matchup jump');
+            } catch (apiError) {
+                console.log('API fetch on matchup jump failed:', apiError);
+            }
+            
             loadGameweek(currentGW);
         }
         
