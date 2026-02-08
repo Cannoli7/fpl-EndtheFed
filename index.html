@@ -1171,7 +1171,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.54</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.55</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1316,43 +1316,50 @@
         }
         
         // Get live minute for a team
+        // Normalize team names for API-Football matching
+        const teamNameAliases = {
+            'Brighton & Hove Albion': 'Brighton',
+            'Brighton and Hove Albion': 'Brighton',
+            'Manchester City': 'Man City',
+            'Manchester United': 'Man Utd',
+            'Tottenham Hotspur': 'Tottenham',
+            'Wolverhampton Wanderers': 'Wolves',
+            'West Ham United': 'West Ham',
+            'Newcastle United': 'Newcastle',
+            'Nottingham Forest': "Nott'ham Forest",
+            'Leicester City': 'Leicester'
+        };
+        
         function getLiveMinute(teamId) {
             const teamName = teamMap[teamId];
             if (!teamName || !liveMatchData.length) return null;
             
-            console.log(`Looking for team: "${teamName}" (ID: ${teamId})`);
+            // Get normalized name for API matching
+            const normalizedName = teamNameAliases[teamName] || teamName;
             
-            // Find match in API data - match on team names
+            console.log(`Looking for team: "${teamName}" → normalized: "${normalizedName}" (ID: ${teamId})`);
+            
+            // Find match in API data
             for (const match of liveMatchData) {
                 const apiHome = match.homeTeam || '';
                 const apiAway = match.awayTeam || '';
                 
                 console.log(`  Checking: ${apiHome} vs ${apiAway}`);
                 
-                // Try exact match first
-                if (apiHome === teamName || apiAway === teamName) {
-                    console.log(`  ✓ EXACT MATCH: Status ${match.status}, Minute ${match.minute}`);
+                // Check if normalized name matches either team
+                if (apiHome === normalizedName || apiAway === normalizedName ||
+                    apiHome === teamName || apiAway === teamName) {
+                    console.log(`  ✓ MATCH: Status ${match.status}, Minute ${match.minute}`);
                     return match.status === 'FT' ? null : { minute: match.minute, status: match.status };
                 }
                 
-                // Try matching first word (e.g., "Newcastle" matches "Newcastle United")
-                const teamFirstWord = teamName.split(' ')[0].toLowerCase();
+                // Fallback: first word match
+                const normFirstWord = normalizedName.split(' ')[0].toLowerCase();
                 const homeFirstWord = apiHome.split(' ')[0].toLowerCase();
                 const awayFirstWord = apiAway.split(' ')[0].toLowerCase();
                 
-                if (teamFirstWord === homeFirstWord || teamFirstWord === awayFirstWord) {
+                if (normFirstWord === homeFirstWord || normFirstWord === awayFirstWord) {
                     console.log(`  ✓ FIRST WORD MATCH: Status ${match.status}, Minute ${match.minute}`);
-                    return match.status === 'FT' ? null : { minute: match.minute, status: match.status };
-                }
-                
-                // Try substring matching (e.g., "Brighton" in "Brighton & Hove Albion")
-                const teamLower = teamName.toLowerCase();
-                const homeLower = apiHome.toLowerCase();
-                const awayLower = apiAway.toLowerCase();
-                
-                if (teamLower.includes(homeLower) || homeLower.includes(teamLower) ||
-                    teamLower.includes(awayLower) || awayLower.includes(teamLower)) {
-                    console.log(`  ✓ SUBSTRING MATCH: Status ${match.status}, Minute ${match.minute}`);
                     return match.status === 'FT' ? null : { minute: match.minute, status: match.status };
                 }
             }
