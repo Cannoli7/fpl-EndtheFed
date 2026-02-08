@@ -1171,7 +1171,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.67</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.68</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1498,7 +1498,7 @@
                 if (currentView === 'matchups') {
                     loadGameweek(currentGW, true); // true = silent update
                 } else if (currentView === 'home') {
-                    showHome(); // Refresh home page with latest scores
+                    showHome(true); // Refresh home page with latest scores (silent update)
                 }
             }, 60000);
             
@@ -2366,12 +2366,15 @@
             }, 0);
         }
         
-        async function showHome() {
+        async function showHome(silentUpdate = false) {
             const content = document.getElementById('content');
             const nav = document.querySelector('.nav');
             nav.style.display = 'none'; // Hide gameweek navigation
             
-            content.innerHTML = '<div class="loading">Loading home...</div>';
+            // Only show loading if not silent update
+            if (!silentUpdate) {
+                content.innerHTML = '<div class="loading">Loading home...</div>';
+            }
             
             try {
                 if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
@@ -2387,10 +2390,91 @@
                 const topWeek = currentGW;
                 const bottomWeek = currentGW + 1;
                 
-                let html = '';
-                
                 // Top Section: Current Gameweek
                 if (topWeek > 0) {
+                    const topWeekMatches = leagueData.matches.filter(m => m.event === topWeek);
+                    
+                    // Fetch live data - SAME as scoreboard does
+                    const liveData = await fetchData(`event/${topWeek}/live`);
+                    
+                    // Calculate scores using EXACT same logic as scoreboard
+                    const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
+                        return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
+                    }, 0);
+                    
+                    // Calculate scores for all matches
+                    const matchScores = {};
+                    for (const match of topWeekMatches) {
+                        const t1 = entryMap[match.league_entry_1];
+                        const t2 = entryMap[match.league_entry_2];
+                        
+                        const entry1 = await fetchData(`entry/${t1.entry_id}/event/${topWeek}`);
+                        const entry2 = await fetchData(`entry/${t2.entry_id}/event/${topWeek}`);
+                        
+                        matchScores[match.league_entry_1] = getScore(entry1.picks);
+                        matchScores[match.league_entry_2] = getScore(entry2.picks);
+                    }
+                    
+                    // Find highest score for highlighting
+                    let highestScore = 0;
+                    Object.values(matchScores).forEach(score => {
+                        if (score > highestScore) highestScore = score;
+                    });
+                    
+                    // If silent update, just update existing scores/classes
+                    if (silentUpdate && content.querySelector('.home-match')) {
+                        const homeMatches = content.querySelectorAll('.home-match');
+                        topWeekMatches.forEach((match, matchIndex) => {
+                            if (homeMatches[matchIndex]) {
+                                const t1Score = matchScores[match.league_entry_1];
+                                const t2Score = matchScores[match.league_entry_2];
+                                
+                                // Determine classes
+                                let t1Class = '';
+                                let t2Class = '';
+                                if (highestScore > 0) {
+                                    if (t1Score === highestScore) {
+                                        t1Class = 'home-highest';
+                                    } else if (t1Score > t2Score) {
+                                        t1Class = 'home-winner';
+                                    } else if (t1Score < t2Score) {
+                                        t1Class = 'home-loser';
+                                    }
+                                    
+                                    if (t2Score === highestScore) {
+                                        t2Class = 'home-highest';
+                                    } else if (t2Score > t1Score) {
+                                        t2Class = 'home-winner';
+                                    } else if (t2Score < t1Score) {
+                                        t2Class = 'home-loser';
+                                    }
+                                }
+                                
+                                // Update scores and classes
+                                const homeScores = homeMatches[matchIndex].querySelectorAll('.home-score');
+                                const homeTeams = homeMatches[matchIndex].querySelectorAll('.home-team');
+                                
+                                if (homeScores[0]) {
+                                    homeScores[0].textContent = t1Score;
+                                    homeScores[0].className = `home-score ${t1Class}`;
+                                }
+                                if (homeScores[1]) {
+                                    homeScores[1].textContent = t2Score;
+                                    homeScores[1].className = `home-score ${t2Class}`;
+                                }
+                                if (homeTeams[0]) {
+                                    homeTeams[0].className = `home-team ${t1Class}`;
+                                }
+                                if (homeTeams[1]) {
+                                    homeTeams[1].className = `home-team ${t2Class}`;
+                                }
+                            }
+                        });
+                        return; // Exit early - we're done with silent update
+                    }
+                    
+                    // Otherwise, build full HTML (first load or non-silent update)
+                    let html = '';
                     html += '<div class="home-section">';
                     html += `<div class="home-section-title">Gameweek ${topWeek}</div>`;
                     
