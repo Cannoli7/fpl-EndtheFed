@@ -1,0 +1,23 @@
+# FPL Draft League Wager Information
+# Configuration file for wager tracking
+
+# Bitcoin Wager Details
+BTC_QUANTITY=0.01346157
+PURCHASE_PRICE=118856.59
+
+# Placement Percentages
+FIRST_PLACE_PERCENTAGE=0.3750
+SECOND_PLACE_PERCENTAGE=0.203125
+THIRD_PLACE_PERCENTAGE=0.106875
+
+# Most Points Percentages
+MOST_POINTS_FIRST=0.0625
+MOST_POINTS_SECOND=0.03125
+MOST_POINTS_SINGLE_WEEK=0.03125
+
+# Weekly Wager Percentages
+WEEK_WIN=0.000625
+WEEK_TOP_SCORE=0.0025
+
+# Add additional wager data below:
+
