@@ -671,7 +671,6 @@
         }
         
         .mobile-stats-toggle {
-            display: none; /* Hidden on desktop */
             padding: 10px 20px;
             background: #2ecc71;
             border: none;
@@ -681,6 +680,13 @@
             cursor: pointer;
             font-size: 0.95rem;
             transition: background 0.3s;
+        }
+        
+        /* Hide on desktop (screens wider than 768px) */
+        @media (min-width: 769px) {
+            .mobile-stats-toggle {
+                display: none;
+            }
         }
         
         .mobile-stats-toggle:hover {
@@ -986,7 +992,6 @@
             }
             
             .mobile-stats-toggle {
-                display: block !important; /* Force show on mobile */
                 width: auto;
                 padding: 10px 16px;
                 font-size: 0.85rem;
@@ -1006,6 +1011,11 @@
                 -webkit-overflow-scrolling: touch;
             }
             
+            /* Hide extra columns on mobile by default */
+            .standings-table .hide-mobile {
+                display: none !important;
+            }
+            
             .standings-table.mobile-simple .hide-mobile {
                 display: none;
             }
@@ -1013,6 +1023,11 @@
             .standings-table.mobile-simple .rank-col {
                 width: 40px;
                 padding: 14px 6px;
+            }
+            
+            /* Show all columns in full mode */
+            .standings-table.mobile-full .hide-mobile {
+                display: table-cell !important;
             }
             
             .standings-table.mobile-full thead,
@@ -1147,7 +1162,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.48</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.49</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
