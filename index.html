@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.77</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.78</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2070,6 +2070,26 @@
             let displayStandings = standings;
             if (showLiveTable) {
                 displayStandings = await calculateLiveStandings(standings, entryMap);
+            }
+            
+            // Update table header
+            const thead = document.querySelector('.standings-table thead tr');
+            if (thead) {
+                let headerHtml = '';
+                headerHtml += '<th class="rank-col">#</th>';
+                if (showLiveTable) {
+                    headerHtml += '<th class="indicator-col"></th>'; // Empty header for position indicators
+                }
+                headerHtml += '<th class="team-col">Team</th>';
+                headerHtml += '<th class="stat-col">W</th>';
+                headerHtml += '<th class="stat-col">D</th>';
+                headerHtml += '<th class="stat-col">L</th>';
+                headerHtml += '<th class="stat-col">P</th>';
+                headerHtml += '<th class="stat-col hide-mobile">PF</th>';
+                headerHtml += '<th class="stat-col hide-mobile">PA</th>';
+                headerHtml += '<th class="stat-col hide-mobile">Best Week</th>';
+                headerHtml += '<th class="stat-col hide-mobile">HSW</th>';
+                thead.innerHTML = headerHtml;
             }
             
             // Update table body
