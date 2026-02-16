@@ -1,10 +1,3 @@
-// Serverless function to fetch EPL fixtures from API-Football
-// Uses same API as livescores.js
-
-let cachedData = null;
-let cacheTime = 0;
-const CACHE_DURATION = 300000; // 5 minutes (fixtures don't change as often)
-
 export default async function handler(req, res) {
     const { event } = req.query; // Gameweek number
     
@@ -24,19 +17,10 @@ export default async function handler(req, res) {
     }
     
     try {
-        const now = Date.now();
-        const cacheKey = `gw${event}`;
-        
-        // Return cached data if still fresh and same gameweek
-        if (cachedData && cachedData.cacheKey === cacheKey && (now - cacheTime) < CACHE_DURATION) {
-            console.log('Returning cached fixtures for GW', event);
-            res.status(200).json(cachedData.fixtures);
-            return;
-        }
-        
-        // Fetch from API-Football
-        // Premier League = league 39, season 2024 (2024-25 season)
+        // Simple: Just query API-Football for this round
         const round = `Regular Season - ${event}`;
+        console.log(`Fetching fixtures for: ${round}`);
+        
         const response = await fetch(
             `https://v3.football.api-sports.io/fixtures?league=39&season=2024&round=${encodeURIComponent(round)}`,
             {
@@ -52,8 +36,9 @@ export default async function handler(req, res) {
         }
 
         const data = await response.json();
+        console.log(`API-Football returned ${data.response?.length || 0} fixtures for ${round}`);
         
-        // Transform to simple format with all needed data
+        // Transform to simple format
         const fixtures = (data.response || []).map(item => ({
             homeTeam: item.teams?.home?.name || '',
             awayTeam: item.teams?.away?.name || '',
@@ -61,19 +46,11 @@ export default async function handler(req, res) {
             awayLogo: item.teams?.away?.logo || '',
             homeScore: item.goals?.home,
             awayScore: item.goals?.away,
-            status: item.fixture?.status?.short || '', // FT, LIVE, NS, HT, etc.
+            status: item.fixture?.status?.short || '',
             kickoffTime: item.fixture?.date || '',
             finished: item.fixture?.status?.short === 'FT',
             started: ['LIVE', 'HT', 'FT', '1H', '2H', 'ET', 'P', 'BT'].includes(item.fixture?.status?.short || '')
         }));
-        
-        // Update cache
-        cachedData = {
-            cacheKey,
-            fixtures
-        };
-        cacheTime = now;
-        console.log(`API-Football: Fetched ${fixtures.length} fixtures for GW ${event}`);
         
         res.status(200).json(fixtures);
 
