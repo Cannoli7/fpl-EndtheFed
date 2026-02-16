@@ -19,11 +19,12 @@ export default async function handler(req, res) {
     try {
         // Simple: Just query API-Football for this round
         const round = `Regular Season - ${event}`;
-        console.log(`Fetching fixtures for: ${round}`);
+        const apiUrl = `https://v3.football.api-sports.io/fixtures?league=39&season=2024&round=${encodeURIComponent(round)}`;
         
-        const response = await fetch(
-            `https://v3.football.api-sports.io/fixtures?league=39&season=2024&round=${encodeURIComponent(round)}`,
-            {
+        console.log(`Fetching fixtures for: ${round}`);
+        console.log(`API URL: ${apiUrl}`);
+        
+        const response = await fetch(apiUrl, {
                 headers: {
                     'x-apisports-key': process.env.API_FOOTBALL_KEY || ''
                 }
@@ -37,6 +38,11 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         console.log(`API-Football returned ${data.response?.length || 0} fixtures for ${round}`);
+        
+        // Log first fixture raw data to see what we're getting
+        if (data.response && data.response.length > 0) {
+            console.log('First fixture RAW from API-Football:', JSON.stringify(data.response[0], null, 2));
+        }
         
         // Transform to simple format
         const fixtures = (data.response || []).map(item => ({
