@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v1.97</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.0</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2907,6 +2907,103 @@
                 // No matches for this gameweek yet
                 html += '<div style="text-align:center;color:#95a5a6;padding:20px;">No matches scheduled</div>';
                 html += '</div>';
+            }
+            
+            // EPL Fixtures Section
+            try {
+                const fixturesResponse = await fetch(`https://draft.premierleague.com/api/fixtures?event=${topWeek}`);
+                if (fixturesResponse.ok) {
+                    const fixtures = await fixturesResponse.json();
+                    
+                    // Group fixtures by date
+                    const fixturesByDate = {};
+                    fixtures.forEach(fixture => {
+                        if (fixture.event === topWeek) {
+                            const kickoffDate = new Date(fixture.kickoff_time);
+                            const dateKey = kickoffDate.toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            });
+                            
+                            if (!fixturesByDate[dateKey]) {
+                                fixturesByDate[dateKey] = [];
+                            }
+                            fixturesByDate[dateKey].push(fixture);
+                        }
+                    });
+                    
+                    // Display EPL fixtures
+                    if (Object.keys(fixturesByDate).length > 0) {
+                        html += '<div class="home-section" style="margin-top:30px;">';
+                        html += `<div class="home-section-title">Premier League Fixtures - GW${topWeek}</div>`;
+                        
+                        Object.keys(fixturesByDate).sort((a, b) => {
+                            return new Date(fixturesByDate[a][0].kickoff_time) - new Date(fixturesByDate[b][0].kickoff_time);
+                        }).forEach(dateKey => {
+                            html += `<div style="background:rgba(0,0,0,0.3);padding:8px 15px;margin:15px 0 10px 0;border-radius:4px;font-size:0.9rem;font-weight:600;color:#fff;">${dateKey}</div>`;
+                            
+                            fixturesByDate[dateKey].sort((a, b) => {
+                                return new Date(a.kickoff_time) - new Date(b.kickoff_time);
+                            }).forEach(fixture => {
+                                const homeTeamName = teamMap[fixture.team_h] || 'Unknown';
+                                const awayTeamName = teamMap[fixture.team_a] || 'Unknown';
+                                const isFinished = fixture.finished || fixture.finished_provisional;
+                                const hasStarted = fixture.started;
+                                
+                                let scoreDisplay = '';
+                                if (hasStarted || isFinished) {
+                                    const homeScore = fixture.team_h_score !== null ? fixture.team_h_score : '-';
+                                    const awayScore = fixture.team_a_score !== null ? fixture.team_a_score : '-';
+                                    scoreDisplay = `${homeScore} - ${awayScore}`;
+                                } else {
+                                    // Show kickoff time for upcoming matches
+                                    const kickoffTime = new Date(fixture.kickoff_time);
+                                    scoreDisplay = kickoffTime.toLocaleTimeString('en-US', { 
+                                        hour: 'numeric', 
+                                        minute: '2-digit',
+                                        hour12: true 
+                                    });
+                                }
+                                
+                                html += `<div style="display:flex;align-items:center;padding:12px 15px;background:rgba(255,255,255,0.03);margin-bottom:8px;border-radius:6px;">`;
+                                
+                                // FT indicator
+                                if (isFinished) {
+                                    html += `<div style="width:35px;text-align:center;font-size:0.75rem;color:#7f8c8d;font-weight:600;">FT</div>`;
+                                } else {
+                                    html += `<div style="width:35px;text-align:center;font-size:0.75rem;color:#7f8c8d;"></div>`;
+                                }
+                                
+                                // Match details
+                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:15px;">`;
+                                
+                                // Home team
+                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:8px;">`;
+                                html += `<span style="font-size:0.9rem;color:#fff;">${homeTeamName}</span>`;
+                                html += `<img src="https://resources.premierleague.com/premierleague/badges/t${teamCodeMap[fixture.team_h]}.png" style="width:24px;height:24px;" onerror="this.style.display='none'">`;
+                                html += `</div>`;
+                                
+                                // Score or kickoff time
+                                const scoreColor = (hasStarted || isFinished) ? '#fff' : '#95a5a6';
+                                const fontSize = (hasStarted || isFinished) ? '1rem' : '0.85rem';
+                                html += `<div style="min-width:80px;text-align:center;font-size:${fontSize};font-weight:${(hasStarted || isFinished) ? '700' : '500'};color:${scoreColor};">${scoreDisplay}</div>`;
+                                
+                                // Away team
+                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:8px;">`;
+                                html += `<img src="https://resources.premierleague.com/premierleague/badges/t${teamCodeMap[fixture.team_a]}.png" style="width:24px;height:24px;" onerror="this.style.display='none'">`;
+                                html += `<span style="font-size:0.9rem;color:#fff;">${awayTeamName}</span>`;
+                                html += `</div>`;
+                                
+                                html += `</div></div>`;
+                            });
+                        });
+                        
+                        html += '</div>';
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to fetch EPL fixtures:', e);
             }
             
             // Bottom Section: Next Gameweek
