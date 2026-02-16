@@ -1177,7 +1177,7 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.0</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.01 - Debug</div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2911,27 +2911,31 @@
             
             // EPL Fixtures Section
             try {
-                const fixturesResponse = await fetch(`https://draft.premierleague.com/api/fixtures?event=${topWeek}`);
+                console.log('Fetching EPL fixtures for GW', topWeek);
+                const fixturesResponse = await fetch(`https://fantasy.premierleague.com/api/fixtures/?event=${topWeek}`);
+                console.log('Fixtures response status:', fixturesResponse.status);
+                
                 if (fixturesResponse.ok) {
                     const fixtures = await fixturesResponse.json();
+                    console.log('Fixtures fetched:', fixtures.length, 'matches');
                     
                     // Group fixtures by date
                     const fixturesByDate = {};
                     fixtures.forEach(fixture => {
-                        if (fixture.event === topWeek) {
-                            const kickoffDate = new Date(fixture.kickoff_time);
-                            const dateKey = kickoffDate.toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                month: 'long', 
-                                day: 'numeric' 
-                            });
-                            
-                            if (!fixturesByDate[dateKey]) {
-                                fixturesByDate[dateKey] = [];
-                            }
-                            fixturesByDate[dateKey].push(fixture);
+                        const kickoffDate = new Date(fixture.kickoff_time);
+                        const dateKey = kickoffDate.toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                        
+                        if (!fixturesByDate[dateKey]) {
+                            fixturesByDate[dateKey] = [];
                         }
+                        fixturesByDate[dateKey].push(fixture);
                     });
+                    
+                    console.log('Fixtures grouped by date:', Object.keys(fixturesByDate).length, 'days');
                     
                     // Display EPL fixtures
                     if (Object.keys(fixturesByDate).length > 0) {
@@ -2946,15 +2950,17 @@
                             fixturesByDate[dateKey].sort((a, b) => {
                                 return new Date(a.kickoff_time) - new Date(b.kickoff_time);
                             }).forEach(fixture => {
-                                const homeTeamName = teamMap[fixture.team_h] || 'Unknown';
-                                const awayTeamName = teamMap[fixture.team_a] || 'Unknown';
+                                const homeTeamName = teamMap[fixture.team_h] || `Team ${fixture.team_h}`;
+                                const awayTeamName = teamMap[fixture.team_a] || `Team ${fixture.team_a}`;
                                 const isFinished = fixture.finished || fixture.finished_provisional;
                                 const hasStarted = fixture.started;
                                 
+                                console.log('Fixture:', homeTeamName, 'vs', awayTeamName, '| Finished:', isFinished, '| Started:', hasStarted);
+                                
                                 let scoreDisplay = '';
                                 if (hasStarted || isFinished) {
-                                    const homeScore = fixture.team_h_score !== null ? fixture.team_h_score : '-';
-                                    const awayScore = fixture.team_a_score !== null ? fixture.team_a_score : '-';
+                                    const homeScore = fixture.team_h_score !== null && fixture.team_h_score !== undefined ? fixture.team_h_score : '-';
+                                    const awayScore = fixture.team_a_score !== null && fixture.team_a_score !== undefined ? fixture.team_a_score : '-';
                                     scoreDisplay = `${homeScore} - ${awayScore}`;
                                 } else {
                                     // Show kickoff time for upcoming matches
@@ -2981,7 +2987,8 @@
                                 // Home team
                                 html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:8px;">`;
                                 html += `<span style="font-size:0.9rem;color:#fff;">${homeTeamName}</span>`;
-                                html += `<img src="https://resources.premierleague.com/premierleague/badges/t${teamCodeMap[fixture.team_h]}.png" style="width:24px;height:24px;" onerror="this.style.display='none'">`;
+                                const homeCode = teamCodeMap[fixture.team_h] || fixture.team_h;
+                                html += `<img src="https://resources.premierleague.com/premierleague/badges/t${homeCode}.png" style="width:24px;height:24px;" onerror="this.style.display='none'" alt="">`;
                                 html += `</div>`;
                                 
                                 // Score or kickoff time
@@ -2991,7 +2998,8 @@
                                 
                                 // Away team
                                 html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:8px;">`;
-                                html += `<img src="https://resources.premierleague.com/premierleague/badges/t${teamCodeMap[fixture.team_a]}.png" style="width:24px;height:24px;" onerror="this.style.display='none'">`;
+                                const awayCode = teamCodeMap[fixture.team_a] || fixture.team_a;
+                                html += `<img src="https://resources.premierleague.com/premierleague/badges/t${awayCode}.png" style="width:24px;height:24px;" onerror="this.style.display='none'" alt="">`;
                                 html += `<span style="font-size:0.9rem;color:#fff;">${awayTeamName}</span>`;
                                 html += `</div>`;
                                 
@@ -3001,6 +3009,8 @@
                         
                         html += '</div>';
                     }
+                } else {
+                    console.log('No fixtures found for GW', topWeek);
                 }
             } catch (e) {
                 console.error('Failed to fetch EPL fixtures:', e);
