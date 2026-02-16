@@ -1177,7 +1177,8 @@
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.15</div></div>
+        <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.16</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1592,6 +1593,12 @@
             document.getElementById('menu-standings').onclick = () => {
                 currentView = 'standings';
                 showStandings();
+                menuDropdown.style.display = 'none';
+            };
+            
+            document.getElementById('menu-epl-fixtures').onclick = () => {
+                currentView = 'epl-fixtures';
+                showEPLFixtures();
                 menuDropdown.style.display = 'none';
             };
             
@@ -2734,6 +2741,149 @@
                     }
                 });
             }, 0);
+        }
+        
+        async function showEPLFixtures(selectedGW = null) {
+            const content = document.getElementById('content');
+            const nav = document.querySelector('.nav');
+            nav.style.display = 'none'; // Hide normal gameweek navigation
+            
+            // Use currentGW if no GW specified
+            const displayGW = selectedGW || currentGW;
+            
+            let html = '<div style="max-width:900px;margin:0 auto;padding:20px;">';
+            
+            // Title and GW Selector
+            html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Premier League Fixtures</h2>';
+            
+            // Gameweek dropdown
+            html += '<div style="text-align:center;margin-bottom:30px;">';
+            html += '<label for="epl-gw-select" style="color:#ecf0f1;margin-right:10px;font-size:1rem;">Gameweek:</label>';
+            html += '<select id="epl-gw-select" style="background:#0f3460;color:#fff;border:1px solid #1b5e20;padding:10px 20px;font-size:1rem;border-radius:5px;cursor:pointer;">';
+            
+            // Populate dropdown with all gameweeks (1-38)
+            for (let gw = 1; gw <= 38; gw++) {
+                const selected = gw === displayGW ? 'selected' : '';
+                html += `<option value="${gw}" ${selected}>Gameweek ${gw}</option>`;
+            }
+            html += '</select>';
+            html += '</div>';
+            
+            // Fetch fixtures for selected gameweek
+            try {
+                const fixturesResponse = await fetch(`/api/fixtures?event=${displayGW}`);
+                
+                if (fixturesResponse.ok) {
+                    const fixtures = await fixturesResponse.json();
+                    
+                    if (fixtures.length > 0) {
+                        // Group fixtures by date
+                        const fixturesByDate = {};
+                        fixtures.forEach(fixture => {
+                            const kickoffDate = new Date(fixture.kickoffTime);
+                            const dateKey = kickoffDate.toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                month: 'long', 
+                                day: 'numeric',
+                                year: 'numeric'
+                            });
+                            
+                            if (!fixturesByDate[dateKey]) {
+                                fixturesByDate[dateKey] = [];
+                            }
+                            fixturesByDate[dateKey].push(fixture);
+                        });
+                        
+                        // Display fixtures grouped by date
+                        Object.keys(fixturesByDate).sort((a, b) => {
+                            return new Date(fixturesByDate[a][0].kickoffTime) - new Date(fixturesByDate[b][0].kickoffTime);
+                        }).forEach(dateKey => {
+                            html += `<div style="background:rgba(0,0,0,0.3);padding:10px 20px;margin:20px 0 15px 0;border-radius:6px;font-size:1rem;font-weight:600;color:#fff;">${dateKey}</div>`;
+                            
+                            fixturesByDate[dateKey].sort((a, b) => {
+                                return new Date(a.kickoffTime) - new Date(b.kickoffTime);
+                            }).forEach(fixture => {
+                                let scoreDisplay = '';
+                                if (fixture.started || fixture.finished) {
+                                    const homeScore = fixture.homeScore !== null && fixture.homeScore !== undefined ? fixture.homeScore : '-';
+                                    const awayScore = fixture.awayScore !== null && fixture.awayScore !== undefined ? fixture.awayScore : '-';
+                                    scoreDisplay = `${homeScore} - ${awayScore}`;
+                                } else {
+                                    // Show kickoff time for upcoming matches
+                                    const kickoffTime = new Date(fixture.kickoffTime);
+                                    scoreDisplay = kickoffTime.toLocaleTimeString('en-US', { 
+                                        hour: 'numeric', 
+                                        minute: '2-digit',
+                                        hour12: true 
+                                    });
+                                }
+                                
+                                html += `<div style="display:flex;align-items:center;padding:15px 20px;background:rgba(255,255,255,0.05);margin-bottom:10px;border-radius:8px;">`;
+                                
+                                // Status indicator
+                                let statusText = '';
+                                let statusColor = '#7f8c8d';
+                                if (fixture.status === 'FT') {
+                                    statusText = 'FT';
+                                } else if (fixture.status === 'LIVE' || fixture.status === '1H' || fixture.status === '2H') {
+                                    statusText = 'LIVE';
+                                    statusColor = '#e74c3c';
+                                } else if (fixture.status === 'HT') {
+                                    statusText = 'HT';
+                                }
+                                
+                                html += `<div style="width:40px;text-align:center;font-size:0.8rem;color:${statusColor};font-weight:700;">${statusText}</div>`;
+                                
+                                // Match details
+                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:20px;">`;
+                                
+                                // Home team
+                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:10px;">`;
+                                html += `<span style="font-size:1rem;color:#fff;font-weight:500;">${fixture.homeTeam}</span>`;
+                                if (fixture.homeLogo) {
+                                    html += `<img src="${fixture.homeLogo}" style="width:28px;height:28px;" onerror="this.style.display='none'" alt="">`;
+                                }
+                                html += `</div>`;
+                                
+                                // Score or kickoff time
+                                const scoreColor = (fixture.started || fixture.finished) ? '#fff' : '#95a5a6';
+                                const fontSize = (fixture.started || fixture.finished) ? '1.1rem' : '0.9rem';
+                                const fontWeight = (fixture.started || fixture.finished) ? '700' : '500';
+                                html += `<div style="min-width:100px;text-align:center;font-size:${fontSize};font-weight:${fontWeight};color:${scoreColor};">${scoreDisplay}</div>`;
+                                
+                                // Away team
+                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:10px;">`;
+                                if (fixture.awayLogo) {
+                                    html += `<img src="${fixture.awayLogo}" style="width:28px;height:28px;" onerror="this.style.display='none'" alt="">`;
+                                }
+                                html += `<span style="font-size:1rem;color:#fff;font-weight:500;">${fixture.awayTeam}</span>`;
+                                html += `</div>`;
+                                
+                                html += `</div></div>`;
+                            });
+                        });
+                    } else {
+                        html += '<div style="text-align:center;color:#95a5a6;padding:40px;font-size:1.1rem;">No fixtures found for this gameweek</div>';
+                    }
+                } else {
+                    html += '<div style="text-align:center;color:#e74c3c;padding:40px;">Failed to load fixtures</div>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch EPL fixtures:', e);
+                html += '<div style="text-align:center;color:#e74c3c;padding:40px;">Error loading fixtures</div>';
+            }
+            
+            html += '</div>';
+            content.innerHTML = html;
+            
+            // Add change event listener to dropdown
+            const eplGwSelect = document.getElementById('epl-gw-select');
+            if (eplGwSelect) {
+                eplGwSelect.onchange = () => {
+                    const selectedGW = parseInt(eplGwSelect.value);
+                    showEPLFixtures(selectedGW);
+                };
+            }
         }
         
         async function showHome(silentUpdate = false) {
