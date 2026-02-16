@@ -19,7 +19,8 @@ export default async function handler(req, res) {
     try {
         // Simple: Just query API-Football for this round
         const round = `Regular Season - ${event}`;
-        const apiUrl = `https://v3.football.api-sports.io/fixtures?league=39&season=2024&round=${encodeURIComponent(round)}`;
+        // Season 2025 = 2025-26 season (Aug 2025 - May 2026)
+        const apiUrl = `https://v3.football.api-sports.io/fixtures?league=39&season=2025&round=${encodeURIComponent(round)}`;
         
         console.log(`Fetching fixtures for: ${round}`);
         console.log(`API URL: ${apiUrl}`);
