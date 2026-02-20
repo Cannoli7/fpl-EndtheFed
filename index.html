@@ -1178,7 +1178,7 @@
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.18</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.19</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -3115,8 +3115,6 @@
                             fixturesByDate[dateKey].sort((a, b) => {
                                 return new Date(a.kickoffTime) - new Date(b.kickoffTime);
                             }).forEach(fixture => {
-                                console.log('Fixture:', fixture.homeTeam, 'vs', fixture.awayTeam, '| Status:', fixture.status);
-                                
                                 let scoreDisplay = '';
                                 if (fixture.started || fixture.finished) {
                                     const homeScore = fixture.homeScore !== null && fixture.homeScore !== undefined ? fixture.homeScore : '-';
@@ -3132,9 +3130,7 @@
                                     });
                                 }
                                 
-                                html += `<div style="display:flex;align-items:center;padding:12px 15px;background:rgba(255,255,255,0.03);margin-bottom:8px;border-radius:6px;">`;
-                                
-                                // Status indicator (FT, LIVE, HT, etc.)
+                                // Status indicator
                                 let statusText = '';
                                 let statusColor = '#7f8c8d';
                                 if (fixture.status === 'FT') {
@@ -3146,30 +3142,37 @@
                                     statusText = 'HT';
                                 }
                                 
-                                html += `<div style="width:35px;text-align:center;font-size:0.75rem;color:${statusColor};font-weight:600;">${statusText}</div>`;
+                                html += `<div style="display:flex;align-items:center;padding:10px 8px;background:rgba(255,255,255,0.03);margin-bottom:8px;border-radius:6px;">`;
                                 
                                 // Match details
-                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:15px;">`;
+                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:clamp(6px, 2vw, 12px);">`;
                                 
                                 // Home team
-                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:8px;">`;
-                                html += `<span style="font-size:0.9rem;color:#fff;">${fixture.homeTeam}</span>`;
+                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:clamp(4px, 1.5vw, 8px);min-width:0;">`;
+                                html += `<span style="font-size:clamp(0.75rem, 2.5vw, 0.9rem);color:#fff;font-weight:500;line-height:1.2;text-align:right;">${fixture.homeTeam}</span>`;
                                 if (fixture.homeLogo) {
-                                    html += `<img src="${fixture.homeLogo}" style="width:24px;height:24px;" onerror="this.style.display='none'" alt="">`;
+                                    html += `<img src="${fixture.homeLogo}" style="width:clamp(20px, 5vw, 24px);height:clamp(20px, 5vw, 24px);flex-shrink:0;" onerror="this.style.display='none'" alt="">`;
                                 }
                                 html += `</div>`;
                                 
-                                // Score or kickoff time
+                                // Score and Status (stacked vertically)
                                 const scoreColor = (fixture.started || fixture.finished) ? '#fff' : '#95a5a6';
-                                const fontSize = (fixture.started || fixture.finished) ? '1rem' : '0.85rem';
-                                html += `<div style="min-width:80px;text-align:center;font-size:${fontSize};font-weight:${(fixture.started || fixture.finished) ? '700' : '500'};color:${scoreColor};">${scoreDisplay}</div>`;
+                                const fontSize = (fixture.started || fixture.finished) ? 'clamp(0.9rem, 3.5vw, 1.1rem)' : 'clamp(0.7rem, 2.5vw, 0.85rem)';
+                                const fontWeight = (fixture.started || fixture.finished) ? '700' : '500';
+                                
+                                html += `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:clamp(55px, 15vw, 80px);">`;
+                                html += `<div style="text-align:center;font-size:${fontSize};font-weight:${fontWeight};color:${scoreColor};">${scoreDisplay}</div>`;
+                                if (statusText) {
+                                    html += `<div style="text-align:center;font-size:clamp(0.6rem, 2vw, 0.7rem);color:${statusColor};font-weight:700;">${statusText}</div>`;
+                                }
+                                html += `</div>`;
                                 
                                 // Away team
-                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:8px;">`;
+                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:clamp(4px, 1.5vw, 8px);min-width:0;">`;
                                 if (fixture.awayLogo) {
-                                    html += `<img src="${fixture.awayLogo}" style="width:24px;height:24px;" onerror="this.style.display='none'" alt="">`;
+                                    html += `<img src="${fixture.awayLogo}" style="width:clamp(20px, 5vw, 24px);height:clamp(20px, 5vw, 24px);flex-shrink:0;" onerror="this.style.display='none'" alt="">`;
                                 }
-                                html += `<span style="font-size:0.9rem;color:#fff;">${fixture.awayTeam}</span>`;
+                                html += `<span style="font-size:clamp(0.75rem, 2.5vw, 0.9rem);color:#fff;font-weight:500;line-height:1.2;text-align:left;">${fixture.awayTeam}</span>`;
                                 html += `</div>`;
                                 
                                 html += `</div></div>`;
@@ -3305,8 +3308,6 @@
                                     });
                                 }
                                 
-                                html += `<div style="display:flex;align-items:center;padding:12px 15px;background:rgba(255,255,255,0.03);margin-bottom:8px;border-radius:6px;">`;
-                                
                                 // Status indicator
                                 let statusText = '';
                                 let statusColor = '#7f8c8d';
@@ -3319,30 +3320,37 @@
                                     statusText = 'HT';
                                 }
                                 
-                                html += `<div style="width:35px;text-align:center;font-size:0.75rem;color:${statusColor};font-weight:600;">${statusText}</div>`;
+                                html += `<div style="display:flex;align-items:center;padding:10px 8px;background:rgba(255,255,255,0.03);margin-bottom:8px;border-radius:6px;">`;
                                 
                                 // Match details
-                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:15px;">`;
+                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:clamp(6px, 2vw, 12px);">`;
                                 
                                 // Home team
-                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:8px;">`;
-                                html += `<span style="font-size:0.9rem;color:#fff;">${fixture.homeTeam}</span>`;
+                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:clamp(4px, 1.5vw, 8px);min-width:0;">`;
+                                html += `<span style="font-size:clamp(0.75rem, 2.5vw, 0.9rem);color:#fff;font-weight:500;line-height:1.2;text-align:right;">${fixture.homeTeam}</span>`;
                                 if (fixture.homeLogo) {
-                                    html += `<img src="${fixture.homeLogo}" style="width:24px;height:24px;" onerror="this.style.display='none'" alt="">`;
+                                    html += `<img src="${fixture.homeLogo}" style="width:clamp(20px, 5vw, 24px);height:clamp(20px, 5vw, 24px);flex-shrink:0;" onerror="this.style.display='none'" alt="">`;
                                 }
                                 html += `</div>`;
                                 
-                                // Score or kickoff time
+                                // Score and Status (stacked vertically)
                                 const scoreColor = (fixture.started || fixture.finished) ? '#fff' : '#95a5a6';
-                                const fontSize = (fixture.started || fixture.finished) ? '1rem' : '0.85rem';
-                                html += `<div style="min-width:80px;text-align:center;font-size:${fontSize};font-weight:${(fixture.started || fixture.finished) ? '700' : '500'};color:${scoreColor};">${scoreDisplay}</div>`;
+                                const fontSize = (fixture.started || fixture.finished) ? 'clamp(0.9rem, 3.5vw, 1.1rem)' : 'clamp(0.7rem, 2.5vw, 0.85rem)';
+                                const fontWeight = (fixture.started || fixture.finished) ? '700' : '500';
+                                
+                                html += `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:clamp(55px, 15vw, 80px);">`;
+                                html += `<div style="text-align:center;font-size:${fontSize};font-weight:${fontWeight};color:${scoreColor};">${scoreDisplay}</div>`;
+                                if (statusText) {
+                                    html += `<div style="text-align:center;font-size:clamp(0.6rem, 2vw, 0.7rem);color:${statusColor};font-weight:700;">${statusText}</div>`;
+                                }
+                                html += `</div>`;
                                 
                                 // Away team
-                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:8px;">`;
+                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:clamp(4px, 1.5vw, 8px);min-width:0;">`;
                                 if (fixture.awayLogo) {
-                                    html += `<img src="${fixture.awayLogo}" style="width:24px;height:24px;" onerror="this.style.display='none'" alt="">`;
+                                    html += `<img src="${fixture.awayLogo}" style="width:clamp(20px, 5vw, 24px);height:clamp(20px, 5vw, 24px);flex-shrink:0;" onerror="this.style.display='none'" alt="">`;
                                 }
-                                html += `<span style="font-size:0.9rem;color:#fff;">${fixture.awayTeam}</span>`;
+                                html += `<span style="font-size:clamp(0.75rem, 2.5vw, 0.9rem);color:#fff;font-weight:500;line-height:1.2;text-align:left;">${fixture.awayTeam}</span>`;
                                 html += `</div>`;
                                 
                                 html += `</div></div>`;
