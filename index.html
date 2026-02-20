@@ -1178,7 +1178,7 @@
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.16</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.17</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2751,15 +2751,15 @@
             // Use currentGW if no GW specified
             const displayGW = selectedGW || currentGW;
             
-            let html = '<div style="max-width:900px;margin:0 auto;padding:20px;">';
+            let html = '<div style="max-width:900px;margin:0 auto;padding:10px;">';
             
             // Title and GW Selector
-            html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Premier League Fixtures</h2>';
+            html += '<h2 style="text-align:center;color:#fff;margin-bottom:20px;font-size:clamp(1.2rem, 5vw, 1.8rem);">Premier League Fixtures</h2>';
             
             // Gameweek dropdown
-            html += '<div style="text-align:center;margin-bottom:30px;">';
-            html += '<label for="epl-gw-select" style="color:#ecf0f1;margin-right:10px;font-size:1rem;">Gameweek:</label>';
-            html += '<select id="epl-gw-select" style="background:#0f3460;color:#fff;border:1px solid #1b5e20;padding:10px 20px;font-size:1rem;border-radius:5px;cursor:pointer;">';
+            html += '<div style="text-align:center;margin-bottom:20px;">';
+            html += '<label for="epl-gw-select" style="color:#ecf0f1;margin-right:8px;font-size:clamp(0.85rem, 3vw, 1rem);">Gameweek:</label>';
+            html += '<select id="epl-gw-select" style="background:#0f3460;color:#fff;border:1px solid #1b5e20;padding:8px 15px;font-size:clamp(0.85rem, 3vw, 1rem);border-radius:5px;cursor:pointer;">';
             
             // Populate dropdown with all gameweeks (1-38)
             for (let gw = 1; gw <= 38; gw++) {
@@ -2798,7 +2798,7 @@
                         Object.keys(fixturesByDate).sort((a, b) => {
                             return new Date(fixturesByDate[a][0].kickoffTime) - new Date(fixturesByDate[b][0].kickoffTime);
                         }).forEach(dateKey => {
-                            html += `<div style="background:rgba(0,0,0,0.3);padding:10px 20px;margin:20px 0 15px 0;border-radius:6px;font-size:1rem;font-weight:600;color:#fff;">${dateKey}</div>`;
+                            html += `<div style="background:rgba(0,0,0,0.3);padding:8px 12px;margin:15px 0 10px 0;border-radius:6px;font-size:clamp(0.8rem, 3vw, 1rem);font-weight:600;color:#fff;">${dateKey}</div>`;
                             
                             fixturesByDate[dateKey].sort((a, b) => {
                                 return new Date(a.kickoffTime) - new Date(b.kickoffTime);
@@ -2818,7 +2818,7 @@
                                     });
                                 }
                                 
-                                html += `<div style="display:flex;align-items:center;padding:15px 20px;background:rgba(255,255,255,0.05);margin-bottom:10px;border-radius:8px;">`;
+                                html += `<div style="display:flex;align-items:center;padding:10px 8px;background:rgba(255,255,255,0.05);margin-bottom:8px;border-radius:6px;">`;
                                 
                                 // Status indicator
                                 let statusText = '';
@@ -2832,38 +2832,38 @@
                                     statusText = 'HT';
                                 }
                                 
-                                html += `<div style="width:40px;text-align:center;font-size:0.8rem;color:${statusColor};font-weight:700;">${statusText}</div>`;
+                                html += `<div style="width:30px;text-align:center;font-size:clamp(0.65rem, 2vw, 0.75rem);color:${statusColor};font-weight:700;flex-shrink:0;">${statusText}</div>`;
                                 
                                 // Match details
-                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:20px;">`;
+                                html += `<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:clamp(8px, 2vw, 15px);min-width:0;">`;
                                 
                                 // Home team
-                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:10px;">`;
-                                html += `<span style="font-size:1rem;color:#fff;font-weight:500;">${fixture.homeTeam}</span>`;
+                                html += `<div style="flex:1;text-align:right;display:flex;align-items:center;justify-content:flex-end;gap:clamp(4px, 1.5vw, 8px);min-width:0;">`;
+                                html += `<span style="font-size:clamp(0.75rem, 2.5vw, 0.95rem);color:#fff;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fixture.homeTeam}</span>`;
                                 if (fixture.homeLogo) {
-                                    html += `<img src="${fixture.homeLogo}" style="width:28px;height:28px;" onerror="this.style.display='none'" alt="">`;
+                                    html += `<img src="${fixture.homeLogo}" style="width:clamp(20px, 5vw, 26px);height:clamp(20px, 5vw, 26px);flex-shrink:0;" onerror="this.style.display='none'" alt="">`;
                                 }
                                 html += `</div>`;
                                 
                                 // Score or kickoff time
                                 const scoreColor = (fixture.started || fixture.finished) ? '#fff' : '#95a5a6';
-                                const fontSize = (fixture.started || fixture.finished) ? '1.1rem' : '0.9rem';
+                                const fontSize = (fixture.started || fixture.finished) ? 'clamp(0.85rem, 3vw, 1rem)' : 'clamp(0.7rem, 2.5vw, 0.85rem)';
                                 const fontWeight = (fixture.started || fixture.finished) ? '700' : '500';
-                                html += `<div style="min-width:100px;text-align:center;font-size:${fontSize};font-weight:${fontWeight};color:${scoreColor};">${scoreDisplay}</div>`;
+                                html += `<div style="min-width:clamp(60px, 15vw, 90px);text-align:center;font-size:${fontSize};font-weight:${fontWeight};color:${scoreColor};flex-shrink:0;">${scoreDisplay}</div>`;
                                 
                                 // Away team
-                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:10px;">`;
+                                html += `<div style="flex:1;text-align:left;display:flex;align-items:center;gap:clamp(4px, 1.5vw, 8px);min-width:0;">`;
                                 if (fixture.awayLogo) {
-                                    html += `<img src="${fixture.awayLogo}" style="width:28px;height:28px;" onerror="this.style.display='none'" alt="">`;
+                                    html += `<img src="${fixture.awayLogo}" style="width:clamp(20px, 5vw, 26px);height:clamp(20px, 5vw, 26px);flex-shrink:0;" onerror="this.style.display='none'" alt="">`;
                                 }
-                                html += `<span style="font-size:1rem;color:#fff;font-weight:500;">${fixture.awayTeam}</span>`;
+                                html += `<span style="font-size:clamp(0.75rem, 2.5vw, 0.95rem);color:#fff;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fixture.awayTeam}</span>`;
                                 html += `</div>`;
                                 
                                 html += `</div></div>`;
                             });
                         });
                     } else {
-                        html += '<div style="text-align:center;color:#95a5a6;padding:40px;font-size:1.1rem;">No fixtures found for this gameweek</div>';
+                        html += '<div style="text-align:center;color:#95a5a6;padding:40px;font-size:clamp(0.9rem, 3vw, 1.1rem);">No fixtures found for this gameweek</div>';
                     }
                 } else {
                     html += '<div style="text-align:center;color:#e74c3c;padding:40px;">Failed to load fixtures</div>';
