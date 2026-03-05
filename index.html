@@ -1178,7 +1178,7 @@
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.21</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.24</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -3768,12 +3768,21 @@
                             
                             if (p1) {
                                 const pts1 = freshLiveData.elements[String(p1.element)]?.stats?.total_points || 0;
+                                const mins1 = freshLiveData.elements[String(p1.element)]?.stats?.minutes || 0;
                                 const scoreLeft = row.querySelector('.p-score-left');
                                 if (scoreLeft) {
-                                    scoreLeft.textContent = pts1;
+                                    // Check if match has started for this player
+                                    const player1 = playerMap[p1.element];
+                                    let matchStarted = false;
+                                    if (player1) {
+                                        const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
+                                        matchStarted = fix && fix.started;
+                                    }
+                                    
+                                    // Show "-" if match hasn't started, otherwise show points
+                                    scoreLeft.textContent = matchStarted ? pts1 : '-';
                                     
                                     // Update match status color
-                                    const player1 = playerMap[p1.element];
                                     if (player1) {
                                         const fix = cachedFixtures.find(f => f.team_h === player1.team || f.team_a === player1.team);
                                         
@@ -3813,12 +3822,21 @@
                             
                             if (p2) {
                                 const pts2 = freshLiveData.elements[String(p2.element)]?.stats?.total_points || 0;
+                                const mins2 = freshLiveData.elements[String(p2.element)]?.stats?.minutes || 0;
                                 const scoreRight = row.querySelector('.p-score-right');
                                 if (scoreRight) {
-                                    scoreRight.textContent = pts2;
+                                    // Check if match has started for this player
+                                    const player2 = playerMap[p2.element];
+                                    let matchStarted = false;
+                                    if (player2) {
+                                        const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
+                                        matchStarted = fix && fix.started;
+                                    }
+                                    
+                                    // Show "-" if match hasn't started, otherwise show points
+                                    scoreRight.textContent = matchStarted ? pts2 : '-';
                                     
                                     // Update match status color
-                                    const player2 = playerMap[p2.element];
                                     if (player2) {
                                         const fix = cachedFixtures.find(f => f.team_h === player2.team || f.team_a === player2.team);
                                         
@@ -3967,21 +3985,24 @@
                             const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
                             if (!fix) return 'not-started';
                             
-                            // Check API-Football data to see if match is ACTUALLY live right now
-                            const apiData = getLiveMinute(player.team);
+                            // First check FPL data for started/finished
+                            // If match hasn't started according to FPL, definitely not started
+                            if (!fix.started) return 'not-started';
                             
-                            // If API says it's finished (FT), it's finished regardless of FPL
-                            if (apiData === null) return 'finished';
+                            // Match has started according to FPL
+                            // Now check API-Football for more accurate live/finished status
+                            const apiData = getLiveMinute(player.team);
                             
                             // If API has live data (minute/status), match is definitely live
                             if (apiData && apiData.status) {
                                 return 'live';
                             }
                             
-                            // Fallback to FPL data
+                            // If FPL says finished, it's finished
                             if (fix.finished) return 'finished';
-                            if (fix.started) return 'live';
-                            return 'not-started';
+                            
+                            // Match started but no API data and not finished = assume live
+                            return 'live';
                         };
                         
                         const status1 = player1 ? getMatchStatus(player1) : 'not-started';
