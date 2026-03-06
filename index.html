@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.32 - Points Tracking</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.33 - All Teams Stats</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2928,7 +2928,227 @@
             }
         }
         
-        async function showStats() {
+        async function showStats(teamName = null) {
+            const content = document.getElementById('content');
+            const nav = document.querySelector('.nav');
+            nav.style.display = 'none';
+            
+            if (teamName) {
+                // Show individual team stats
+                await showTeamStats(teamName);
+            } else {
+                // Show overview of all teams
+                await showStatsOverview();
+            }
+        }
+        
+        async function showStatsOverview() {
+            const content = document.getElementById('content');
+            content.innerHTML = '<div class="loading">Loading stats overview...</div>';
+            
+            try {
+                if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
+                
+                let html = '<div style="max-width:1200px;margin:0 auto;padding:20px;">';
+                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">📈 Season Stats - All Teams</h2>';
+                
+                // Calculate stats for all teams
+                const allTeamStats = [];
+                
+                for (const entry of leagueData.league_entries) {
+                    const teamName = entry.player_first_name;
+                    const cacheKey = `team-${entry.entry_id}-stats-gw${currentGW}`;
+                    
+                    let teamData = null;
+                    
+                    // Try to get from cache
+                    try {
+                        const result = await window.storage.get(cacheKey);
+                        if (result) {
+                            teamData = JSON.parse(result.value);
+                        }
+                    } catch (e) {
+                        // Cache miss, will calculate
+                    }
+                    
+                    // If not cached, calculate
+                    if (!teamData) {
+                        teamData = await calculateTeamStats(entry.entry_id);
+                        
+                        // Save to cache
+                        try {
+                            await window.storage.set(cacheKey, JSON.stringify(teamData));
+                        } catch (e) {
+                            console.warn('Could not cache team stats:', e);
+                        }
+                    }
+                    
+                    allTeamStats.push({
+                        name: teamName,
+                        entryName: entry.entry_name,
+                        ...teamData
+                    });
+                    
+                    // Update progress
+                    content.innerHTML = '<div class="loading">Loading stats... (' + allTeamStats.length + '/' + leagueData.league_entries.length + ' teams)</div>';
+                }
+                
+                // Sort by total starter points
+                allTeamStats.sort((a, b) => b.totalPoints - a.totalPoints);
+                
+                // Build display
+                html = '<div style="max-width:1200px;margin:0 auto;padding:20px;">';
+                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">📈 Season Stats - All Teams</h2>';
+                
+                // Stats table
+                html += '<div style="background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;">';
+                html += '<table style="width:100%;border-collapse:collapse;">';
+                html += '<thead>';
+                html += '<tr style="background:rgba(255,255,255,0.1);">';
+                html += '<th style="padding:15px;text-align:left;color:#ecf0f1;font-weight:600;">Team</th>';
+                html += '<th style="padding:15px;text-align:center;color:#4facfe;font-weight:600;">Points</th>';
+                html += '<th style="padding:15px;text-align:center;color:#2ecc71;font-weight:600;">Goals</th>';
+                html += '<th style="padding:15px;text-align:center;color:#f5576c;font-weight:600;">Assists</th>';
+                html += '<th style="padding:15px;text-align:center;color:#e74c3c;font-weight:600;" class="hide-mobile">Bench Pts</th>';
+                html += '</tr>';
+                html += '</thead>';
+                html += '<tbody>';
+                
+                allTeamStats.forEach((team, index) => {
+                    const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+                    html += `<tr style="background:${bgColor};cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='${bgColor}'" onclick="showStats('${team.name}')">`;
+                    html += `<td style="padding:15px;color:#fff;font-weight:600;">`;
+                    html += `<div>${team.name}</div>`;
+                    html += `<div style="font-size:0.85rem;color:#95a5a6;font-weight:400;">${team.entryName}</div>`;
+                    html += `</td>`;
+                    html += `<td style="padding:15px;text-align:center;color:#4facfe;font-size:1.2rem;font-weight:700;">${team.totalPoints}</td>`;
+                    html += `<td style="padding:15px;text-align:center;color:#2ecc71;font-size:1.1rem;font-weight:600;">${team.totalGoals}</td>`;
+                    html += `<td style="padding:15px;text-align:center;color:#f5576c;font-size:1.1rem;font-weight:600;">${team.totalAssists}</td>`;
+                    html += `<td style="padding:15px;text-align:center;color:#e74c3c;font-size:1rem;" class="hide-mobile">${team.totalBenchPoints}</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</tbody>';
+                html += '</table>';
+                html += '</div>';
+                
+                // Footer note
+                html += '<div style="margin-top:20px;text-align:center;color:#95a5a6;font-size:0.85rem;">Click on a team to see detailed stats</div>';
+                
+                html += '</div>';
+                content.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading stats overview:', error);
+                content.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;"><h2>Error Loading Stats</h2><p>' + error.message + '</p></div>';
+            }
+        }
+        
+        async function calculateTeamStats(entryId) {
+            // Calculate all stats for a single team
+            const playerGoals = {};
+            const benchGoals = {};
+            const playerAssists = {};
+            const benchAssists = {};
+            const playerPoints = {};
+            const benchPoints = {};
+            let totalGoals = 0;
+            let totalBenchGoals = 0;
+            let totalAssists = 0;
+            let totalBenchAssists = 0;
+            let totalPoints = 0;
+            let totalBenchPoints = 0;
+            
+            // Loop through all gameweeks
+            for (let gw = 1; gw <= currentGW; gw++) {
+                try {
+                    const entryData = await fetchData(`entry/${entryId}/event/${gw}`);
+                    const liveData = await fetchData(`event/${gw}/live`);
+                    
+                    entryData.picks.forEach(pick => {
+                        const playerId = pick.element;
+                        const playerStats = liveData.elements[String(playerId)];
+                        const isStarter = pick.position <= 11;
+                        
+                        if (playerStats && playerStats.stats) {
+                            const goals = playerStats.stats.goals_scored || 0;
+                            const assists = playerStats.stats.assists || 0;
+                            const points = playerStats.stats.total_points || 0;
+                            const playerName = playerMap[playerId]?.name || 'Unknown';
+                            
+                            // Track points
+                            if (isStarter) {
+                                if (!playerPoints[playerId]) {
+                                    playerPoints[playerId] = { name: playerName, points: 0 };
+                                }
+                                playerPoints[playerId].points += points;
+                                totalPoints += points;
+                            } else {
+                                if (!benchPoints[playerId]) {
+                                    benchPoints[playerId] = { name: playerName, points: 0 };
+                                }
+                                benchPoints[playerId].points += points;
+                                totalBenchPoints += points;
+                            }
+                            
+                            // Track goals
+                            if (goals > 0) {
+                                if (isStarter) {
+                                    if (!playerGoals[playerId]) {
+                                        playerGoals[playerId] = { name: playerName, goals: 0 };
+                                    }
+                                    playerGoals[playerId].goals += goals;
+                                    totalGoals += goals;
+                                } else {
+                                    if (!benchGoals[playerId]) {
+                                        benchGoals[playerId] = { name: playerName, goals: 0 };
+                                    }
+                                    benchGoals[playerId].goals += goals;
+                                    totalBenchGoals += goals;
+                                }
+                            }
+                            
+                            // Track assists
+                            if (assists > 0) {
+                                if (isStarter) {
+                                    if (!playerAssists[playerId]) {
+                                        playerAssists[playerId] = { name: playerName, assists: 0 };
+                                    }
+                                    playerAssists[playerId].assists += assists;
+                                    totalAssists += assists;
+                                } else {
+                                    if (!benchAssists[playerId]) {
+                                        benchAssists[playerId] = { name: playerName, assists: 0 };
+                                    }
+                                    benchAssists[playerId].assists += assists;
+                                    totalBenchAssists += assists;
+                                }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.log(`Could not fetch GW${gw} for entry ${entryId}:`, e);
+                }
+            }
+            
+            return {
+                playerGoals,
+                benchGoals,
+                playerAssists,
+                benchAssists,
+                playerPoints,
+                benchPoints,
+                totalGoals,
+                totalBenchGoals,
+                totalAssists,
+                totalBenchAssists,
+                totalPoints,
+                totalBenchPoints,
+                calculatedAt: new Date().toISOString()
+            };
+        }
+        
+        async function showTeamStats(teamName) {
             const content = document.getElementById('content');
             const nav = document.querySelector('.nav');
             nav.style.display = 'none';
@@ -2938,16 +3158,16 @@
             try {
                 if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
                 
-                // Find Nolan's entry
-                const nolanEntry = leagueData.league_entries.find(e => e.player_first_name === 'Nolan');
+                // Find the team entry
+                const teamEntry = leagueData.league_entries.find(e => e.player_first_name === teamName);
                 
-                if (!nolanEntry) {
-                    content.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;">Could not find Nolan in league</div>';
+                if (!teamEntry) {
+                    content.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;">Could not find team: ' + teamName + '</div>';
                     return;
                 }
                 
                 // Check if we have cached data for current gameweek
-                const cacheKey = `nolan-stats-gw${currentGW}`;
+                const cacheKey = `team-${teamEntry.entry_id}-stats-gw${currentGW}`;
                 let cachedData = null;
                 
                 try {
@@ -2980,124 +3200,27 @@
                     content.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:20px;"><div style="color:#2ecc71;text-align:center;margin-bottom:20px;">✅ Loaded from cache</div></div>';
                 } else {
                     // Calculate fresh data
-                    let html = '<div style="max-width:900px;margin:0 auto;padding:20px;">';
-                    html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Season Stats - Nolan</h2>';
-                    html += '<h3 style="color:#ecf0f1;margin-bottom:20px;">📊 Calculating Stats</h3>';
-                    html += '<div style="color:#95a5a6;margin-bottom:20px;">Analyzing all gameweeks...</div>';
+                    content.innerHTML = '<div class="loading">Calculating stats for ' + teamName + '...</div>';
                     
-                    content.innerHTML = html;
+                    const teamData = await calculateTeamStats(teamEntry.entry_id);
                     
-                    // Track goals and assists by player
-                    playerGoals = {}; // { playerId: { name: '', goals: 0 } }
-                    benchGoals = {}; // Goals scored while on bench
-                    playerAssists = {}; // { playerId: { name: '', assists: 0 } }
-                    benchAssists = {}; // Assists while on bench
-                    playerPoints = {}; // Total points by player
-                    benchPoints = {}; // Points while on bench
-                    totalGoals = 0;
-                    totalBenchGoals = 0;
-                    totalAssists = 0;
-                    totalBenchAssists = 0;
-                    totalPoints = 0;
-                    totalBenchPoints = 0;
-                    
-                    // Loop through all gameweeks up to current
-                    for (let gw = 1; gw <= currentGW; gw++) {
-                        try {
-                            // Fetch picks for this gameweek
-                            const entryData = await fetchData(`entry/${nolanEntry.entry_id}/event/${gw}`);
-                            const liveData = await fetchData(`event/${gw}/live`);
-                            
-                            // Check each player's picks
-                            entryData.picks.forEach(pick => {
-                                const playerId = pick.element;
-                                const playerStats = liveData.elements[String(playerId)];
-                                const isStarter = pick.position <= 11; // Positions 1-11 are starters
-                                
-                                if (playerStats && playerStats.stats) {
-                                    const goals = playerStats.stats.goals_scored || 0;
-                                    const assists = playerStats.stats.assists || 0;
-                                    const points = playerStats.stats.total_points || 0;
-                                    const playerName = playerMap[playerId]?.name || 'Unknown';
-                                    
-                                    // Track points (always, not just when > 0)
-                                    if (isStarter) {
-                                        if (!playerPoints[playerId]) {
-                                            playerPoints[playerId] = { name: playerName, points: 0 };
-                                        }
-                                        playerPoints[playerId].points += points;
-                                        totalPoints += points;
-                                    } else {
-                                        if (!benchPoints[playerId]) {
-                                            benchPoints[playerId] = { name: playerName, points: 0 };
-                                        }
-                                        benchPoints[playerId].points += points;
-                                        totalBenchPoints += points;
-                                    }
-                                    
-                                    // Track goals
-                                    if (goals > 0) {
-                                        if (isStarter) {
-                                            if (!playerGoals[playerId]) {
-                                                playerGoals[playerId] = { name: playerName, goals: 0 };
-                                            }
-                                            playerGoals[playerId].goals += goals;
-                                            totalGoals += goals;
-                                        } else {
-                                            if (!benchGoals[playerId]) {
-                                                benchGoals[playerId] = { name: playerName, goals: 0 };
-                                            }
-                                            benchGoals[playerId].goals += goals;
-                                            totalBenchGoals += goals;
-                                        }
-                                    }
-                                    
-                                    // Track assists
-                                    if (assists > 0) {
-                                        if (isStarter) {
-                                            if (!playerAssists[playerId]) {
-                                                playerAssists[playerId] = { name: playerName, assists: 0 };
-                                            }
-                                            playerAssists[playerId].assists += assists;
-                                            totalAssists += assists;
-                                        } else {
-                                            if (!benchAssists[playerId]) {
-                                                benchAssists[playerId] = { name: playerName, assists: 0 };
-                                            }
-                                            benchAssists[playerId].assists += assists;
-                                            totalBenchAssists += assists;
-                                        }
-                                    }
-                                }
-                            });
-                            
-                            // Update progress
-                            const progress = Math.round((gw / currentGW) * 100);
-                            content.innerHTML = html + `<div style="color:#2ecc71;">Processing GW${gw}... ${progress}% complete</div>`;
-                            
-                        } catch (e) {
-                            console.log(`Could not fetch GW${gw}:`, e);
-                        }
-                    }
+                    playerGoals = teamData.playerGoals;
+                    benchGoals = teamData.benchGoals;
+                    playerAssists = teamData.playerAssists;
+                    benchAssists = teamData.benchAssists;
+                    playerPoints = teamData.playerPoints;
+                    benchPoints = teamData.benchPoints;
+                    totalGoals = teamData.totalGoals;
+                    totalBenchGoals = teamData.totalBenchGoals;
+                    totalAssists = teamData.totalAssists;
+                    totalBenchAssists = teamData.totalBenchAssists;
+                    totalPoints = teamData.totalPoints;
+                    totalBenchPoints = teamData.totalBenchPoints;
                     
                     // Save to cache
                     try {
-                        await window.storage.set(cacheKey, JSON.stringify({
-                            playerGoals,
-                            benchGoals,
-                            playerAssists,
-                            benchAssists,
-                            playerPoints,
-                            benchPoints,
-                            totalGoals,
-                            totalBenchGoals,
-                            totalAssists,
-                            totalBenchAssists,
-                            totalPoints,
-                            totalBenchPoints,
-                            calculatedAt: new Date().toISOString()
-                        }));
-                        console.log('✅ Stats cached for GW', currentGW);
+                        await window.storage.set(cacheKey, JSON.stringify(teamData));
+                        console.log('✅ Stats cached for', teamName, 'GW', currentGW);
                     } catch (e) {
                         console.warn('Could not cache stats:', e);
                     }
@@ -3105,7 +3228,8 @@
                 
                 // Build final display
                 let html = '<div style="max-width:900px;margin:0 auto;padding:20px;">';
-                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Season Stats - Nolan</h2>';
+                html += '<button onclick="showStats()" style="margin-bottom:20px;padding:10px 20px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:5px;cursor:pointer;font-size:0.9rem;">← Back to All Teams</button>';
+                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Season Stats - ' + teamName + '</h2>';
                 
                 // Summary cards
                 html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px;">';
@@ -3230,7 +3354,7 @@
                 // Add cache info and refresh button
                 html += '<div style="margin-top:30px;text-align:center;padding-top:20px;border-top:1px solid rgba(255,255,255,0.1);">';
                 html += '<div style="color:#95a5a6;font-size:0.85rem;margin-bottom:15px;">Data cached for GW' + currentGW + '</div>';
-                html += '<button onclick="clearStatsCache()" style="padding:10px 20px;background:#e74c3c;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.9rem;">🔄 Recalculate Stats</button>';
+                html += '<button onclick="clearStatsCache(\'' + teamName + '\', ' + teamEntry.entry_id + ')" style="padding:10px 20px;background:#e74c3c;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.9rem;">🔄 Recalculate Stats</button>';
                 html += '</div>';
                 
                 html += '</div>';
@@ -3243,13 +3367,13 @@
         }
         
         // Function to clear stats cache and recalculate
-        async function clearStatsCache() {
-            const cacheKey = `nolan-stats-gw${currentGW}`;
+        async function clearStatsCache(teamName, entryId) {
+            const cacheKey = `team-${entryId}-stats-gw${currentGW}`;
             try {
                 await window.storage.delete(cacheKey);
-                console.log('✅ Cache cleared for GW', currentGW);
-                // Reload stats
-                showStats();
+                console.log('✅ Cache cleared for', teamName, 'GW', currentGW);
+                // Reload stats for this team
+                showStats(teamName);
             } catch (e) {
                 console.error('Error clearing cache:', e);
                 alert('Could not clear cache. Please refresh the page.');
