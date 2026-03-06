@@ -1178,7 +1178,8 @@
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.28 - Auto GW</div></div>
+        <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.30 - Bench Stats</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1630,6 +1631,12 @@
             document.getElementById('menu-epl-fixtures').onclick = () => {
                 currentView = 'epl-fixtures';
                 showEPLFixtures();
+                menuDropdown.style.display = 'none';
+            };
+            
+            document.getElementById('menu-stats').onclick = () => {
+                currentView = 'stats';
+                showStats();
                 menuDropdown.style.display = 'none';
             };
             
@@ -2918,6 +2925,144 @@
                     const selectedGW = parseInt(eplGwSelect.value);
                     showEPLFixtures(selectedGW);
                 };
+            }
+        }
+        
+        async function showStats() {
+            const content = document.getElementById('content');
+            const nav = document.querySelector('.nav');
+            nav.style.display = 'none';
+            
+            content.innerHTML = '<div class="loading">Loading stats...</div>';
+            
+            try {
+                if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
+                
+                // Find Nolan's entry
+                const nolanEntry = leagueData.league_entries.find(e => e.player_first_name === 'Nolan');
+                
+                if (!nolanEntry) {
+                    content.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;">Could not find Nolan in league</div>';
+                    return;
+                }
+                
+                let html = '<div style="max-width:900px;margin:0 auto;padding:20px;">';
+                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Season Stats - Nolan</h2>';
+                html += '<h3 style="color:#ecf0f1;margin-bottom:20px;">⚽ Goals Scored This Season</h3>';
+                html += '<div style="color:#95a5a6;margin-bottom:20px;">Calculating across all gameweeks...</div>';
+                
+                content.innerHTML = html;
+                
+                // Track goals by player
+                const playerGoals = {}; // { playerId: { name: '', goals: 0 } }
+                const benchGoals = {}; // Goals scored while on bench
+                let totalGoals = 0;
+                let totalBenchGoals = 0;
+                
+                // Loop through all gameweeks up to current
+                for (let gw = 1; gw <= currentGW; gw++) {
+                    try {
+                        // Fetch picks for this gameweek
+                        const entryData = await fetchData(`entry/${nolanEntry.entry_id}/event/${gw}`);
+                        const liveData = await fetchData(`event/${gw}/live`);
+                        
+                        // Check each player's picks
+                        entryData.picks.forEach(pick => {
+                            const playerId = pick.element;
+                            const playerStats = liveData.elements[String(playerId)];
+                            const isStarter = pick.position <= 11; // Positions 1-11 are starters
+                            
+                            if (playerStats && playerStats.stats) {
+                                const goals = playerStats.stats.goals_scored || 0;
+                                
+                                if (goals > 0) {
+                                    const playerName = playerMap[playerId]?.name || 'Unknown';
+                                    
+                                    if (isStarter) {
+                                        // Count starter goals
+                                        if (!playerGoals[playerId]) {
+                                            playerGoals[playerId] = { name: playerName, goals: 0 };
+                                        }
+                                        playerGoals[playerId].goals += goals;
+                                        totalGoals += goals;
+                                    } else {
+                                        // Count bench goals separately
+                                        if (!benchGoals[playerId]) {
+                                            benchGoals[playerId] = { name: playerName, goals: 0 };
+                                        }
+                                        benchGoals[playerId].goals += goals;
+                                        totalBenchGoals += goals;
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Update progress
+                        const progress = Math.round((gw / currentGW) * 100);
+                        content.innerHTML = html + `<div style="color:#2ecc71;">Processing GW${gw}... ${progress}% complete</div>`;
+                        
+                    } catch (e) {
+                        console.log(`Could not fetch GW${gw}:`, e);
+                    }
+                }
+                
+                // Build final display
+                html = '<div style="max-width:900px;margin:0 auto;padding:20px;">';
+                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Season Stats - Nolan</h2>';
+                
+                // Total goals summary
+                html += '<div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);padding:30px;border-radius:12px;text-align:center;margin-bottom:30px;">';
+                html += '<div style="font-size:3rem;font-weight:700;color:#fff;margin-bottom:10px;">⚽ ' + totalGoals + '</div>';
+                html += '<div style="font-size:1.2rem;color:#fff;opacity:0.9;">Goals by Starters</div>';
+                html += '<div style="font-size:0.9rem;color:#fff;opacity:0.7;margin-top:10px;">Across ' + currentGW + ' gameweeks</div>';
+                if (totalBenchGoals > 0) {
+                    html += '<div style="margin-top:15px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.3);">';
+                    html += '<div style="font-size:1.5rem;color:#fff;opacity:0.8;">💺 ' + totalBenchGoals + ' bench goals</div>';
+                    html += '<div style="font-size:0.85rem;color:#fff;opacity:0.6;">(Goals wasted on bench)</div>';
+                    html += '</div>';
+                }
+                html += '</div>';
+                
+                // Goals by player (Starters)
+                html += '<h3 style="color:#ecf0f1;margin-bottom:20px;">⚽ Starter Goals</h3>';
+                
+                // Sort players by goals
+                const sortedPlayers = Object.entries(playerGoals).sort((a, b) => b[1].goals - a[1].goals);
+                
+                if (sortedPlayers.length > 0) {
+                    html += '<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:20px;margin-bottom:30px;">';
+                    sortedPlayers.forEach(([playerId, data]) => {
+                        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);">';
+                        html += `<div style="color:#fff;font-size:1rem;">${data.name}</div>`;
+                        html += `<div style="color:#2ecc71;font-size:1.2rem;font-weight:700;">⚽ ${data.goals}</div>`;
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<div style="text-align:center;color:#95a5a6;padding:40px;margin-bottom:30px;">No goals scored by starters</div>';
+                }
+                
+                // Bench goals (if any)
+                const sortedBenchPlayers = Object.entries(benchGoals).sort((a, b) => b[1].goals - a[1].goals);
+                
+                if (sortedBenchPlayers.length > 0) {
+                    html += '<h3 style="color:#e74c3c;margin-bottom:20px;">💺 Bench Goals (Wasted)</h3>';
+                    html += '<div style="background:rgba(231,76,60,0.1);border-radius:8px;padding:20px;border:1px solid rgba(231,76,60,0.3);">';
+                    sortedBenchPlayers.forEach(([playerId, data]) => {
+                        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);">';
+                        html += `<div style="color:#fff;font-size:1rem;opacity:0.8;">${data.name}</div>`;
+                        html += `<div style="color:#e74c3c;font-size:1.2rem;font-weight:700;">⚽ ${data.goals}</div>`;
+                        html += '</div>';
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                content.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                content.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;"><h2>Error Loading Stats</h2><p>' + error.message + '</p></div>';
             }
         }
         
