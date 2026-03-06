@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.31 - Cached Stats</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.32 - Points Tracking</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2960,7 +2960,7 @@
                     console.log('No cached data found, will calculate');
                 }
                 
-                let playerGoals, benchGoals, playerAssists, benchAssists, totalGoals, totalBenchGoals, totalAssists, totalBenchAssists;
+                let playerGoals, benchGoals, playerAssists, benchAssists, playerPoints, benchPoints, totalGoals, totalBenchGoals, totalAssists, totalBenchAssists, totalPoints, totalBenchPoints;
                 
                 if (cachedData) {
                     // Use cached data
@@ -2968,10 +2968,14 @@
                     benchGoals = cachedData.benchGoals;
                     playerAssists = cachedData.playerAssists;
                     benchAssists = cachedData.benchAssists;
+                    playerPoints = cachedData.playerPoints || {};
+                    benchPoints = cachedData.benchPoints || {};
                     totalGoals = cachedData.totalGoals;
                     totalBenchGoals = cachedData.totalBenchGoals;
                     totalAssists = cachedData.totalAssists;
                     totalBenchAssists = cachedData.totalBenchAssists;
+                    totalPoints = cachedData.totalPoints || 0;
+                    totalBenchPoints = cachedData.totalBenchPoints || 0;
                     
                     content.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:20px;"><div style="color:#2ecc71;text-align:center;margin-bottom:20px;">✅ Loaded from cache</div></div>';
                 } else {
@@ -2988,10 +2992,14 @@
                     benchGoals = {}; // Goals scored while on bench
                     playerAssists = {}; // { playerId: { name: '', assists: 0 } }
                     benchAssists = {}; // Assists while on bench
+                    playerPoints = {}; // Total points by player
+                    benchPoints = {}; // Points while on bench
                     totalGoals = 0;
                     totalBenchGoals = 0;
                     totalAssists = 0;
                     totalBenchAssists = 0;
+                    totalPoints = 0;
+                    totalBenchPoints = 0;
                     
                     // Loop through all gameweeks up to current
                     for (let gw = 1; gw <= currentGW; gw++) {
@@ -3009,7 +3017,23 @@
                                 if (playerStats && playerStats.stats) {
                                     const goals = playerStats.stats.goals_scored || 0;
                                     const assists = playerStats.stats.assists || 0;
+                                    const points = playerStats.stats.total_points || 0;
                                     const playerName = playerMap[playerId]?.name || 'Unknown';
+                                    
+                                    // Track points (always, not just when > 0)
+                                    if (isStarter) {
+                                        if (!playerPoints[playerId]) {
+                                            playerPoints[playerId] = { name: playerName, points: 0 };
+                                        }
+                                        playerPoints[playerId].points += points;
+                                        totalPoints += points;
+                                    } else {
+                                        if (!benchPoints[playerId]) {
+                                            benchPoints[playerId] = { name: playerName, points: 0 };
+                                        }
+                                        benchPoints[playerId].points += points;
+                                        totalBenchPoints += points;
+                                    }
                                     
                                     // Track goals
                                     if (goals > 0) {
@@ -3063,10 +3087,14 @@
                             benchGoals,
                             playerAssists,
                             benchAssists,
+                            playerPoints,
+                            benchPoints,
                             totalGoals,
                             totalBenchGoals,
                             totalAssists,
                             totalBenchAssists,
+                            totalPoints,
+                            totalBenchPoints,
                             calculatedAt: new Date().toISOString()
                         }));
                         console.log('✅ Stats cached for GW', currentGW);
@@ -3106,39 +3134,53 @@
                 }
                 html += '</div>';
                 
+                // Points card
+                html += '<div style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);padding:25px;border-radius:12px;text-align:center;">';
+                html += '<div style="font-size:2.5rem;font-weight:700;color:#fff;margin-bottom:8px;">🏆 ' + totalPoints + '</div>';
+                html += '<div style="font-size:1rem;color:#fff;opacity:0.9;">Starter Points</div>';
+                if (totalBenchPoints > 0) {
+                    html += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.3);">';
+                    html += '<div style="font-size:1.2rem;color:#fff;opacity:0.7;">💺 ' + totalBenchPoints + '</div>';
+                    html += '<div style="font-size:0.75rem;color:#fff;opacity:0.6;">on bench</div>';
+                    html += '</div>';
+                }
+                html += '</div>';
+                
                 html += '</div>';
                 
                 // Combined player stats table
                 html += '<h3 style="color:#ecf0f1;margin-bottom:20px;">📊 Player Stats (Starters)</h3>';
                 
-                // Combine goals and assists into single player list
-                const allPlayerIds = new Set([...Object.keys(playerGoals), ...Object.keys(playerAssists)]);
+                // Combine goals, assists, and points into single player list
+                const allPlayerIds = new Set([...Object.keys(playerGoals), ...Object.keys(playerAssists), ...Object.keys(playerPoints)]);
                 const playerStats = [];
                 
                 allPlayerIds.forEach(playerId => {
                     playerStats.push({
                         id: playerId,
-                        name: playerGoals[playerId]?.name || playerAssists[playerId]?.name || 'Unknown',
+                        name: playerGoals[playerId]?.name || playerAssists[playerId]?.name || playerPoints[playerId]?.name || 'Unknown',
                         goals: playerGoals[playerId]?.goals || 0,
                         assists: playerAssists[playerId]?.assists || 0,
+                        points: playerPoints[playerId]?.points || 0,
                         total: (playerGoals[playerId]?.goals || 0) + (playerAssists[playerId]?.assists || 0)
                     });
                 });
                 
-                // Sort by total contributions
-                playerStats.sort((a, b) => b.total - a.total);
+                // Sort by total points
+                playerStats.sort((a, b) => b.points - a.points);
                 
                 if (playerStats.length > 0) {
                     html += '<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:20px;margin-bottom:30px;">';
                     playerStats.forEach(player => {
                         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);">';
                         html += `<div style="color:#fff;font-size:1rem;flex:1;">${player.name}</div>`;
-                        html += '<div style="display:flex;gap:15px;">';
+                        html += '<div style="display:flex;gap:15px;align-items:center;">';
+                        html += `<div style="color:#4facfe;font-size:1.2rem;font-weight:700;">${player.points}pts</div>`;
                         if (player.goals > 0) {
-                            html += `<div style="color:#2ecc71;font-size:1.1rem;font-weight:600;">⚽ ${player.goals}</div>`;
+                            html += `<div style="color:#2ecc71;font-size:1rem;font-weight:600;">⚽${player.goals}</div>`;
                         }
                         if (player.assists > 0) {
-                            html += `<div style="color:#f5576c;font-size:1.1rem;font-weight:600;">👟 ${player.assists}</div>`;
+                            html += `<div style="color:#f5576c;font-size:1rem;font-weight:600;">👟${player.assists}</div>`;
                         }
                         html += '</div>';
                         html += '</div>';
@@ -3149,20 +3191,21 @@
                 }
                 
                 // Bench stats (if any)
-                const allBenchIds = new Set([...Object.keys(benchGoals), ...Object.keys(benchAssists)]);
+                const allBenchIds = new Set([...Object.keys(benchGoals), ...Object.keys(benchAssists), ...Object.keys(benchPoints)]);
                 const benchStats = [];
                 
                 allBenchIds.forEach(playerId => {
                     benchStats.push({
                         id: playerId,
-                        name: benchGoals[playerId]?.name || benchAssists[playerId]?.name || 'Unknown',
+                        name: benchGoals[playerId]?.name || benchAssists[playerId]?.name || benchPoints[playerId]?.name || 'Unknown',
                         goals: benchGoals[playerId]?.goals || 0,
                         assists: benchAssists[playerId]?.assists || 0,
+                        points: benchPoints[playerId]?.points || 0,
                         total: (benchGoals[playerId]?.goals || 0) + (benchAssists[playerId]?.assists || 0)
                     });
                 });
                 
-                benchStats.sort((a, b) => b.total - a.total);
+                benchStats.sort((a, b) => b.points - a.points);
                 
                 if (benchStats.length > 0) {
                     html += '<h3 style="color:#e74c3c;margin-bottom:20px;">💺 Bench Stats (Wasted)</h3>';
@@ -3170,12 +3213,13 @@
                     benchStats.forEach(player => {
                         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);">';
                         html += `<div style="color:#fff;font-size:1rem;opacity:0.8;flex:1;">${player.name}</div>`;
-                        html += '<div style="display:flex;gap:15px;">';
+                        html += '<div style="display:flex;gap:15px;align-items:center;">';
+                        html += `<div style="color:#e74c3c;font-size:1.2rem;font-weight:700;">${player.points}pts</div>`;
                         if (player.goals > 0) {
-                            html += `<div style="color:#e74c3c;font-size:1.1rem;font-weight:600;">⚽ ${player.goals}</div>`;
+                            html += `<div style="color:#e74c3c;font-size:1rem;font-weight:600;">⚽${player.goals}</div>`;
                         }
                         if (player.assists > 0) {
-                            html += `<div style="color:#e74c3c;font-size:1.1rem;font-weight:600;">👟 ${player.assists}</div>`;
+                            html += `<div style="color:#e74c3c;font-size:1rem;font-weight:600;">👟${player.assists}</div>`;
                         }
                         html += '</div>';
                         html += '</div>';
