@@ -1171,17 +1171,14 @@
     <div class="topbar">
         <button id="menu-btn" style="background:none;border:none;color:#fff;font-size:1.9rem;cursor:pointer;padding:0;z-index:1;position:relative;">☰</button>
         <h1>End the Fed</h1>
-        <div style="display:flex;align-items:center;gap:15px;z-index:1;position:relative;">
-            <span id="debug-gw" style="font-size:0.85rem;font-weight:600;padding:4px 8px;background:rgba(255,255,255,0.1);border-radius:4px;color:#95a5a6;">GW: --</span>
-            <span id="btc-price" style="font-size:0.9rem;color:#F7931A;font-weight:600;padding-right:10px;">₿ --</span>
-        </div>
+        <span id="btc-price" style="font-size:0.9rem;color:#F7931A;font-weight:600;padding-right:10px;z-index:1;position:relative;">₿ --</span>
     </div>
     <div id="menu-dropdown" style="display:none;position:fixed;top:60px;left:10px;background:#0f3460;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;min-width:200px;">
         <div id="menu-home" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏠 Home</div>
         <div id="menu-standings" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🏆 Standings</div>
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.27 - Debug</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.28 - Auto GW</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1210,7 +1207,18 @@
             WEEK_TOP_SCORE: 0.0025
         };
         
-        let currentGW = 27; // Fallback if API fails - UPDATE THIS EACH WEEK
+        // Calculate current gameweek based on season start
+        // 2025-26 season started August 16, 2025 (GW1)
+        function calculateCurrentGW() {
+            const seasonStart = new Date('2025-08-16'); // GW1 kickoff
+            const now = new Date();
+            const daysSinceStart = Math.floor((now - seasonStart) / (1000 * 60 * 60 * 24));
+            const weeksSinceStart = Math.floor(daysSinceStart / 7);
+            const estimatedGW = Math.min(Math.max(weeksSinceStart + 1, 1), 38); // Between 1 and 38
+            return estimatedGW;
+        }
+        
+        let currentGW = calculateCurrentGW(); // Smart fallback based on date
         let leagueData = null;
         let currentBTCPrice = 0; // Store live BTC price
         let playerMap = {};
@@ -1540,55 +1548,44 @@
                 teamCodeMap[t.id] = t.code;
             });
             
-            // Find the current gameweek from deadline API (regular FPL, not draft)
-            // If API fails, use the fallback value above
-            
-            const debugGW = document.getElementById('debug-gw');
-            debugGW.textContent = `GW: ${currentGW} (fallback)`;
-            debugGW.style.color = '#f39c12'; // Yellow for fallback
-            
+            // Try to get current gameweek from API, but don't block if it fails
             try {
-                const response = await fetch('/api/deadline', { timeout: 5000 });
+                const response = await fetch('/api/deadline');
                 if (response.ok) {
-                    const deadlineData = await response.json();
-                    console.log('📥 Deadline API response:', deadlineData);
-                    
-                    if (deadlineData.events && Array.isArray(deadlineData.events)) {
-                        console.log(`📊 Found ${deadlineData.events.length} events`);
-                        
-                        const currentEvent = deadlineData.events.find(e => e.is_current);
-                        if (currentEvent) {
-                            currentGW = currentEvent.id;
-                            console.log('✅ Current gameweek from API:', currentGW);
-                            debugGW.textContent = `GW: ${currentGW} (API)`;
-                            debugGW.style.color = '#2ecc71'; // Green for API
-                        } else {
-                            console.warn('⚠️ No current event found in events array');
-                            console.log('Events is_current values:', deadlineData.events.map(e => ({ id: e.id, is_current: e.is_current })));
-                            debugGW.textContent = `GW: ${currentGW} (no is_current)`;
-                            debugGW.style.color = '#e74c3c'; // Red for error
+                    const data = await response.json();
+                    if (data.events && Array.isArray(data.events)) {
+                        const current = data.events.find(e => e.is_current);
+                        if (current) {
+                            currentGW = current.id;
+                            console.log('Current gameweek from serverless API:', currentGW);
                         }
-                    } else {
-                        console.warn('⚠️ Invalid API response structure');
-                        console.log('Response:', deadlineData);
-                        debugGW.textContent = `GW: ${currentGW} (bad response)`;
-                        debugGW.style.color = '#e74c3c'; // Red for error
                     }
                 } else {
-                    console.warn(`⚠️ API returned status ${response.status}`);
-                    const errorText = await response.text();
-                    console.log('Error response:', errorText);
-                    debugGW.textContent = `GW: ${currentGW} (${response.status})`;
-                    debugGW.style.color = '#e74c3c'; // Red for error
+                    throw new Error('Serverless function failed');
                 }
             } catch (e) {
-                console.error('❌ Deadline API error:', e);
-                debugGW.textContent = `GW: ${currentGW} (error)`;
-                debugGW.style.color = '#e74c3c'; // Red for error
+                // If serverless fails, try calling FPL API directly
+                console.log('Serverless API failed, trying direct FPL API...');
+                try {
+                    const directResponse = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+                    if (directResponse.ok) {
+                        const directData = await directResponse.json();
+                        if (directData.events && Array.isArray(directData.events)) {
+                            const current = directData.events.find(e => e.is_current);
+                            if (current) {
+                                currentGW = current.id;
+                                console.log('Current gameweek from direct FPL API:', currentGW);
+                            } else {
+                                throw new Error('No current event in direct API');
+                            }
+                        }
+                    }
+                } catch (directError) {
+                    console.log('Both APIs failed, using calculated fallback:', currentGW);
+                }
             }
             
-            // Always proceed with either API value or fallback
-            try {
+            // Continue initialization regardless of API result
             // Populate gameweek dropdown
             populateGWDropdown();
             
