@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.36 - Clean UI</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.37 - Combined Stats</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -3032,7 +3032,6 @@
                 html += '<th style="padding:15px;text-align:center;color:#4facfe;font-weight:600;">Points</th>';
                 html += '<th style="padding:15px;text-align:center;color:#2ecc71;font-weight:600;">Goals</th>';
                 html += '<th style="padding:15px;text-align:center;color:#f5576c;font-weight:600;">Assists</th>';
-                html += '<th style="padding:15px;text-align:center;color:#e74c3c;font-weight:600;" class="hide-mobile">Bench Pts</th>';
                 html += '</tr>';
                 html += '</thead>';
                 html += '<tbody>';
@@ -3044,10 +3043,9 @@
                     html += `<div>${team.name}</div>`;
                     html += `<div style="font-size:0.85rem;color:#95a5a6;font-weight:400;">${team.entryName}</div>`;
                     html += `</td>`;
-                    html += `<td style="padding:15px;text-align:center;color:#4facfe;font-size:1.2rem;font-weight:700;">${team.totalPoints}</td>`;
-                    html += `<td style="padding:15px;text-align:center;color:#2ecc71;font-size:1.1rem;font-weight:600;">${team.totalGoals}</td>`;
-                    html += `<td style="padding:15px;text-align:center;color:#f5576c;font-size:1.1rem;font-weight:600;">${team.totalAssists}</td>`;
-                    html += `<td style="padding:15px;text-align:center;color:#e74c3c;font-size:1rem;" class="hide-mobile">${team.totalBenchPoints}</td>`;
+                    html += `<td style="padding:15px;text-align:center;color:#4facfe;font-size:1.1rem;font-weight:700;">${team.totalPoints}/<span style="opacity:0.6;">${team.totalBenchPoints}</span></td>`;
+                    html += `<td style="padding:15px;text-align:center;color:#2ecc71;font-size:1rem;font-weight:600;">${team.totalGoals}/<span style="opacity:0.6;">${team.totalBenchGoals}</span></td>`;
+                    html += `<td style="padding:15px;text-align:center;color:#f5576c;font-size:1rem;font-weight:600;">${team.totalAssists}/<span style="opacity:0.6;">${team.totalBenchAssists}</span></td>`;
                     html += '</tr>';
                 });
                 
