@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.38 - Standings Style</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.39 - Top Player</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -3032,17 +3032,29 @@
                 html += '<th class="stat-col">Points</th>';
                 html += '<th class="stat-col">Goals</th>';
                 html += '<th class="stat-col">Assists</th>';
+                html += '<th class="stat-col hide-mobile" style="width:120px;text-align:left;">Top Player</th>';
                 html += '</tr>';
                 html += '</thead><tbody>';
                 
                 allTeamStats.forEach((team, index) => {
-                    const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                    // Find top player by points
+                    let topPlayer = { name: 'N/A', points: 0 };
+                    if (team.playerPoints) {
+                        const players = Object.values(team.playerPoints);
+                        if (players.length > 0) {
+                            topPlayer = players.reduce((max, player) => 
+                                player.points > max.points ? player : max
+                            , { name: '', points: 0 });
+                        }
+                    }
+                    
                     html += `<tr onclick="showStats('${team.name}')" style="cursor:pointer;">`;
-                    html += `<td class="rank-col ${rankClass}">${index + 1}</td>`;
+                    html += `<td class="rank-col">${index + 1}</td>`;
                     html += `<td class="team-col"><strong>${team.name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${team.entryName}</span></td>`;
                     html += `<td class="stat-col" style="color:#4facfe;">${team.totalPoints}/<span style="opacity:0.6;">${team.totalBenchPoints}</span></td>`;
                     html += `<td class="stat-col" style="color:#2ecc71;">${team.totalGoals}/<span style="opacity:0.6;">${team.totalBenchGoals}</span></td>`;
                     html += `<td class="stat-col" style="color:#f5576c;">${team.totalAssists}/<span style="opacity:0.6;">${team.totalBenchAssists}</span></td>`;
+                    html += `<td class="stat-col hide-mobile" style="text-align:left;"><strong>${topPlayer.name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${topPlayer.points} pts</span></td>`;
                     html += '</tr>';
                 });
                 
