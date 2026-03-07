@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.37 - Combined Stats</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.38 - Standings Style</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -3023,29 +3023,26 @@
                 let html = '<div style="max-width:1200px;margin:0 auto;padding:20px;">';
                 html += '<h2 style="text-align:center;color:#fff;margin-bottom:20px;">📈 Season Stats - All Teams</h2>';
                 
-                // Stats table
-                html += '<div style="background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;">';
-                html += '<table style="width:100%;border-collapse:collapse;">';
-                html += '<thead>';
-                html += '<tr style="background:rgba(255,255,255,0.1);">';
-                html += '<th style="padding:15px;text-align:left;color:#ecf0f1;font-weight:600;">Team</th>';
-                html += '<th style="padding:15px;text-align:center;color:#4facfe;font-weight:600;">Points</th>';
-                html += '<th style="padding:15px;text-align:center;color:#2ecc71;font-weight:600;">Goals</th>';
-                html += '<th style="padding:15px;text-align:center;color:#f5576c;font-weight:600;">Assists</th>';
+                // Stats table with standings styling
+                html += '<div class="standings-table-wrapper">';
+                html += '<table class="standings-table"><thead>';
+                html += '<tr>';
+                html += '<th class="rank-col">#</th>';
+                html += '<th class="team-col">Team</th>';
+                html += '<th class="stat-col">Points</th>';
+                html += '<th class="stat-col">Goals</th>';
+                html += '<th class="stat-col">Assists</th>';
                 html += '</tr>';
-                html += '</thead>';
-                html += '<tbody>';
+                html += '</thead><tbody>';
                 
                 allTeamStats.forEach((team, index) => {
-                    const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
-                    html += `<tr style="background:${bgColor};cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='${bgColor}'" onclick="showStats('${team.name}')">`;
-                    html += `<td style="padding:15px;color:#fff;font-weight:600;">`;
-                    html += `<div>${team.name}</div>`;
-                    html += `<div style="font-size:0.85rem;color:#95a5a6;font-weight:400;">${team.entryName}</div>`;
-                    html += `</td>`;
-                    html += `<td style="padding:15px;text-align:center;color:#4facfe;font-size:1.1rem;font-weight:700;">${team.totalPoints}/<span style="opacity:0.6;">${team.totalBenchPoints}</span></td>`;
-                    html += `<td style="padding:15px;text-align:center;color:#2ecc71;font-size:1rem;font-weight:600;">${team.totalGoals}/<span style="opacity:0.6;">${team.totalBenchGoals}</span></td>`;
-                    html += `<td style="padding:15px;text-align:center;color:#f5576c;font-size:1rem;font-weight:600;">${team.totalAssists}/<span style="opacity:0.6;">${team.totalBenchAssists}</span></td>`;
+                    const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                    html += `<tr onclick="showStats('${team.name}')" style="cursor:pointer;">`;
+                    html += `<td class="rank-col ${rankClass}">${index + 1}</td>`;
+                    html += `<td class="team-col"><strong>${team.name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${team.entryName}</span></td>`;
+                    html += `<td class="stat-col" style="color:#4facfe;">${team.totalPoints}/<span style="opacity:0.6;">${team.totalBenchPoints}</span></td>`;
+                    html += `<td class="stat-col" style="color:#2ecc71;">${team.totalGoals}/<span style="opacity:0.6;">${team.totalBenchGoals}</span></td>`;
+                    html += `<td class="stat-col" style="color:#f5576c;">${team.totalAssists}/<span style="opacity:0.6;">${team.totalBenchAssists}</span></td>`;
                     html += '</tr>';
                 });
                 
