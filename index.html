@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.35 - GitHub Storage</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.36 - Clean UI</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -3023,14 +3023,6 @@
                 let html = '<div style="max-width:1200px;margin:0 auto;padding:20px;">';
                 html += '<h2 style="text-align:center;color:#fff;margin-bottom:20px;">📈 Season Stats - All Teams</h2>';
                 
-                // Backup/Restore buttons
-                html += '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;">';
-                html += '<button onclick="downloadStatsBackup()" style="padding:8px 16px;background:#27ae60;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.85rem;">💾 Download JSON</button>';
-                html += '<button onclick="document.getElementById(\'stats-upload\').click()" style="padding:8px 16px;background:#3498db;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.85rem;">📂 Upload JSON</button>';
-                html += '<button onclick="recalculateAllStats()" style="padding:8px 16px;background:#e74c3c;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.85rem;">🔄 Recalculate</button>';
-                html += '<input type="file" id="stats-upload" accept=".json" style="display:none;" onchange="uploadStatsBackup(this)">';
-                html += '</div>';
-                
                 // Stats table
                 html += '<div style="background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;">';
                 html += '<table style="width:100%;border-collapse:collapse;">';
@@ -3065,8 +3057,7 @@
                 
                 // Footer note
                 html += '<div style="margin-top:20px;text-align:center;color:#95a5a6;font-size:0.85rem;">';
-                html += 'Click on a team to see detailed stats • GW' + currentGW + '<br>';
-                html += '<span style="font-size:0.75rem;opacity:0.7;">Stats automatically saved to GitHub</span>';
+                html += 'Click on a team to see detailed stats • GW' + currentGW;
                 html += '</div>';
                 
                 html += '</div>';
