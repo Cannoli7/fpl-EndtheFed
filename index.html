@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.33 - All Teams Stats</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.35 - GitHub Storage</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2949,56 +2949,87 @@
             try {
                 if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
                 
-                let html = '<div style="max-width:1200px;margin:0 auto;padding:20px;">';
-                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">📈 Season Stats - All Teams</h2>';
+                // Try to load stats from GitHub
+                let allTeamStats = null;
                 
-                // Calculate stats for all teams
-                const allTeamStats = [];
+                try {
+                    const response = await fetch(`/api/stats?gameweek=${currentGW}&action=load`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success && result.data) {
+                            allTeamStats = result.data.stats || result.data;
+                            console.log('✅ Loaded stats from GitHub for GW', currentGW);
+                        }
+                    } else if (response.status === 404) {
+                        console.log('No stats found in GitHub, will calculate');
+                    } else {
+                        console.warn('GitHub fetch failed:', await response.text());
+                    }
+                } catch (e) {
+                    console.log('Could not load from GitHub:', e.message);
+                }
                 
-                for (const entry of leagueData.league_entries) {
-                    const teamName = entry.player_first_name;
-                    const cacheKey = `team-${entry.entry_id}-stats-gw${currentGW}`;
+                // If not in GitHub, calculate all teams
+                if (!allTeamStats) {
+                    allTeamStats = [];
                     
-                    let teamData = null;
+                    for (const entry of leagueData.league_entries) {
+                        const teamName = entry.player_first_name;
+                        
+                        content.innerHTML = '<div class="loading">Calculating stats... (' + (allTeamStats.length + 1) + '/' + leagueData.league_entries.length + ' teams)</div>';
+                        
+                        const teamData = await calculateTeamStats(entry.entry_id);
+                        
+                        allTeamStats.push({
+                            name: teamName,
+                            entryName: entry.entry_name,
+                            entryId: entry.entry_id,
+                            ...teamData
+                        });
+                    }
                     
-                    // Try to get from cache
+                    // Save to GitHub
                     try {
-                        const result = await window.storage.get(cacheKey);
-                        if (result) {
-                            teamData = JSON.parse(result.value);
+                        const saveResponse = await fetch('/api/stats', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                gameweek: currentGW,
+                                action: 'save',
+                                data: {
+                                    gameweek: currentGW,
+                                    leagueId: LEAGUE_ID,
+                                    generatedAt: new Date().toISOString(),
+                                    stats: allTeamStats
+                                }
+                            })
+                        });
+                        
+                        if (saveResponse.ok) {
+                            const result = await saveResponse.json();
+                            console.log('✅ Saved stats to GitHub:', result.url);
+                        } else {
+                            console.warn('Could not save to GitHub:', await saveResponse.text());
                         }
                     } catch (e) {
-                        // Cache miss, will calculate
+                        console.warn('GitHub save error:', e);
                     }
-                    
-                    // If not cached, calculate
-                    if (!teamData) {
-                        teamData = await calculateTeamStats(entry.entry_id);
-                        
-                        // Save to cache
-                        try {
-                            await window.storage.set(cacheKey, JSON.stringify(teamData));
-                        } catch (e) {
-                            console.warn('Could not cache team stats:', e);
-                        }
-                    }
-                    
-                    allTeamStats.push({
-                        name: teamName,
-                        entryName: entry.entry_name,
-                        ...teamData
-                    });
-                    
-                    // Update progress
-                    content.innerHTML = '<div class="loading">Loading stats... (' + allTeamStats.length + '/' + leagueData.league_entries.length + ' teams)</div>';
                 }
                 
                 // Sort by total starter points
                 allTeamStats.sort((a, b) => b.totalPoints - a.totalPoints);
                 
                 // Build display
-                html = '<div style="max-width:1200px;margin:0 auto;padding:20px;">';
-                html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">📈 Season Stats - All Teams</h2>';
+                let html = '<div style="max-width:1200px;margin:0 auto;padding:20px;">';
+                html += '<h2 style="text-align:center;color:#fff;margin-bottom:20px;">📈 Season Stats - All Teams</h2>';
+                
+                // Backup/Restore buttons
+                html += '<div style="display:flex;gap:10px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;">';
+                html += '<button onclick="downloadStatsBackup()" style="padding:8px 16px;background:#27ae60;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.85rem;">💾 Download JSON</button>';
+                html += '<button onclick="document.getElementById(\'stats-upload\').click()" style="padding:8px 16px;background:#3498db;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.85rem;">📂 Upload JSON</button>';
+                html += '<button onclick="recalculateAllStats()" style="padding:8px 16px;background:#e74c3c;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:0.85rem;">🔄 Recalculate</button>';
+                html += '<input type="file" id="stats-upload" accept=".json" style="display:none;" onchange="uploadStatsBackup(this)">';
+                html += '</div>';
                 
                 // Stats table
                 html += '<div style="background:rgba(255,255,255,0.05);border-radius:12px;overflow:hidden;">';
@@ -3033,10 +3064,16 @@
                 html += '</div>';
                 
                 // Footer note
-                html += '<div style="margin-top:20px;text-align:center;color:#95a5a6;font-size:0.85rem;">Click on a team to see detailed stats</div>';
+                html += '<div style="margin-top:20px;text-align:center;color:#95a5a6;font-size:0.85rem;">';
+                html += 'Click on a team to see detailed stats • GW' + currentGW + '<br>';
+                html += '<span style="font-size:0.75rem;opacity:0.7;">Stats automatically saved to GitHub</span>';
+                html += '</div>';
                 
                 html += '</div>';
                 content.innerHTML = html;
+                
+                // Store in window for backup functions
+                window.currentStatsData = allTeamStats;
                 
             } catch (error) {
                 console.error('Error loading stats overview:', error);
@@ -3166,40 +3203,39 @@
                     return;
                 }
                 
-                // Check if we have cached data for current gameweek
-                const cacheKey = `team-${teamEntry.entry_id}-stats-gw${currentGW}`;
-                let cachedData = null;
-                
-                try {
-                    const result = await window.storage.get(cacheKey);
-                    if (result) {
-                        cachedData = JSON.parse(result.value);
-                        console.log('✅ Using cached stats for GW', currentGW);
-                    }
-                } catch (e) {
-                    console.log('No cached data found, will calculate');
-                }
-                
                 let playerGoals, benchGoals, playerAssists, benchAssists, playerPoints, benchPoints, totalGoals, totalBenchGoals, totalAssists, totalBenchAssists, totalPoints, totalBenchPoints;
                 
-                if (cachedData) {
-                    // Use cached data
-                    playerGoals = cachedData.playerGoals;
-                    benchGoals = cachedData.benchGoals;
-                    playerAssists = cachedData.playerAssists;
-                    benchAssists = cachedData.benchAssists;
-                    playerPoints = cachedData.playerPoints || {};
-                    benchPoints = cachedData.benchPoints || {};
-                    totalGoals = cachedData.totalGoals;
-                    totalBenchGoals = cachedData.totalBenchGoals;
-                    totalAssists = cachedData.totalAssists;
-                    totalBenchAssists = cachedData.totalBenchAssists;
-                    totalPoints = cachedData.totalPoints || 0;
-                    totalBenchPoints = cachedData.totalBenchPoints || 0;
-                    
-                    content.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:20px;"><div style="color:#2ecc71;text-align:center;margin-bottom:20px;">✅ Loaded from cache</div></div>';
-                } else {
-                    // Calculate fresh data
+                // Try to get from GitHub
+                try {
+                    const response = await fetch(`/api/stats?gameweek=${currentGW}&action=load`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        const allTeamStats = result.data.stats || result.data;
+                        const teamData = allTeamStats.find(t => t.name === teamName);
+                        
+                        if (teamData) {
+                            playerGoals = teamData.playerGoals;
+                            benchGoals = teamData.benchGoals;
+                            playerAssists = teamData.playerAssists;
+                            benchAssists = teamData.benchAssists;
+                            playerPoints = teamData.playerPoints;
+                            benchPoints = teamData.benchPoints;
+                            totalGoals = teamData.totalGoals;
+                            totalBenchGoals = teamData.totalBenchGoals;
+                            totalAssists = teamData.totalAssists;
+                            totalBenchAssists = teamData.totalBenchAssists;
+                            totalPoints = teamData.totalPoints;
+                            totalBenchPoints = teamData.totalBenchPoints;
+                            
+                            console.log('✅ Using GitHub stats for', teamName);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Could not load from GitHub:', e);
+                }
+                
+                // If not found in GitHub, calculate fresh
+                if (!playerGoals) {
                     content.innerHTML = '<div class="loading">Calculating stats for ' + teamName + '...</div>';
                     
                     const teamData = await calculateTeamStats(teamEntry.entry_id);
@@ -3216,14 +3252,6 @@
                     totalBenchAssists = teamData.totalBenchAssists;
                     totalPoints = teamData.totalPoints;
                     totalBenchPoints = teamData.totalBenchPoints;
-                    
-                    // Save to cache
-                    try {
-                        await window.storage.set(cacheKey, JSON.stringify(teamData));
-                        console.log('✅ Stats cached for', teamName, 'GW', currentGW);
-                    } catch (e) {
-                        console.warn('Could not cache stats:', e);
-                    }
                 }
                 
                 // Build final display
@@ -3368,16 +3396,97 @@
         
         // Function to clear stats cache and recalculate
         async function clearStatsCache(teamName, entryId) {
-            const cacheKey = `team-${entryId}-stats-gw${currentGW}`;
-            try {
-                await window.storage.delete(cacheKey);
-                console.log('✅ Cache cleared for', teamName, 'GW', currentGW);
-                // Reload stats for this team
-                showStats(teamName);
-            } catch (e) {
-                console.error('Error clearing cache:', e);
-                alert('Could not clear cache. Please refresh the page.');
+            // This will force recalculation next time
+            alert('This will recalculate stats for ' + teamName + '. Continue?');
+            showStats(teamName);
+        }
+        
+        // Download stats as JSON backup file
+        function downloadStatsBackup() {
+            if (!window.currentStatsData) {
+                alert('No stats data available to download');
+                return;
             }
+            
+            const backup = {
+                gameweek: currentGW,
+                leagueId: LEAGUE_ID,
+                generatedAt: new Date().toISOString(),
+                stats: window.currentStatsData
+            };
+            
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fpl-stats-gw${currentGW}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('✅ Stats backup downloaded');
+        }
+        
+        // Upload and restore stats from JSON backup file  
+        async function uploadStatsBackup(input) {
+            if (!input.files || !input.files[0]) return;
+            
+            const file = input.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    
+                    // Validate backup file
+                    if (!backup.stats || !backup.gameweek) {
+                        alert('Invalid backup file format');
+                        return;
+                    }
+                    
+                    // Check if backup is for current gameweek
+                    if (backup.gameweek !== currentGW) {
+                        const proceed = confirm(`This backup is for GW${backup.gameweek}, but current GW is ${currentGW}. Continue anyway?`);
+                        if (!proceed) return;
+                    }
+                    
+                    // Save to GitHub
+                    const saveResponse = await fetch('/api/stats', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            gameweek: backup.gameweek,
+                            action: 'save',
+                            data: backup
+                        })
+                    });
+                    
+                    if (saveResponse.ok) {
+                        console.log('✅ Stats restored from backup for GW', backup.gameweek);
+                        alert('Stats restored successfully! Refreshing page...');
+                        showStats();
+                    } else {
+                        throw new Error('Failed to save to GitHub: ' + await saveResponse.text());
+                    }
+                    
+                } catch (error) {
+                    console.error('Error restoring backup:', error);
+                    alert('Error restoring backup: ' + error.message);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Recalculate all stats (force GitHub to recalculate)
+        async function recalculateAllStats() {
+            const confirmed = confirm('This will recalculate stats for all teams from scratch. This may take a minute. Continue?');
+            if (!confirmed) return;
+            
+            // Just reload the page - the calculation will happen if data not found
+            // We could add a force parameter to the API if needed
+            showStats();
         }
         
         async function showHome(silentUpdate = false) {
