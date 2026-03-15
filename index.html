@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.41 - Last 5 Games</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.42 - Player Average</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -4274,14 +4274,65 @@
                         const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
                             return sum + (freshLiveData.elements[String(p.element)]?.stats?.total_points || 0);
                         }, 0);
+                        
+                        const getAverageScore = (picks) => {
+                            const starters = picks.filter(p => p.position <= 11);
+                            const playersWhoseTeamsStarted = starters.filter(p => {
+                                const player = playerMap[p.element];
+                                if (!player) return false;
+                                
+                                // Find the fixture for this player's team
+                                const fix = freshLiveData.fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
+                                
+                                // Only include if fixture has started
+                                return fix && fix.started;
+                            });
+                            
+                            if (playersWhoseTeamsStarted.length === 0) return 0;
+                            
+                            const totalPoints = playersWhoseTeamsStarted.reduce((sum, p) => {
+                                return sum + (freshLiveData.elements[String(p.element)]?.stats?.total_points || 0);
+                            }, 0);
+                            
+                            return (totalPoints / playersWhoseTeamsStarted.length).toFixed(1);
+                        };
 
                         const t1Score = getScore(entry1.picks);
                         const t2Score = getScore(entry2.picks);
+                        const t1Avg = getAverageScore(entry1.picks);
+                        const t2Avg = getAverageScore(entry2.picks);
 
                         // Update team scores
                         const scoreElements = card.querySelectorAll('.team-score');
                         if (scoreElements[0]) scoreElements[0].textContent = t1Score;
                         if (scoreElements[1]) scoreElements[1].textContent = t2Score;
+                        
+                        // Update average scores
+                        const headerTeams = card.querySelectorAll('.header-team');
+                        if (headerTeams[0]) {
+                            let avgDiv = headerTeams[0].querySelector('.avg-score');
+                            if (!avgDiv) {
+                                avgDiv = document.createElement('div');
+                                avgDiv.className = 'avg-score';
+                                avgDiv.style.fontSize = '0.9rem';
+                                avgDiv.style.color = '#95a5a6';
+                                avgDiv.style.marginTop = '5px';
+                                headerTeams[0].appendChild(avgDiv);
+                            }
+                            avgDiv.textContent = `Avg: ${t1Avg}`;
+                        }
+                        if (headerTeams[1]) {
+                            let avgDiv = headerTeams[1].querySelector('.avg-score');
+                            if (!avgDiv) {
+                                avgDiv = document.createElement('div');
+                                avgDiv.className = 'avg-score';
+                                avgDiv.style.fontSize = '0.9rem';
+                                avgDiv.style.color = '#95a5a6';
+                                avgDiv.style.marginTop = '5px';
+                                headerTeams[1].appendChild(avgDiv);
+                            }
+                            avgDiv.textContent = `Avg: ${t2Avg}`;
+                        }
 
                         // Update player scores and stats
                         const rows = card.querySelectorAll('.row');
@@ -4579,9 +4630,34 @@
                     const getScore = (picks) => picks.filter(p => p.position <= 11).reduce((sum, p) => {
                         return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
                     }, 0);
+                    
+                    // Calculate average score for players whose teams have started playing
+                    const getAverageScore = (picks) => {
+                        const starters = picks.filter(p => p.position <= 11);
+                        const playersWhoseTeamsStarted = starters.filter(p => {
+                            const player = playerMap[p.element];
+                            if (!player) return false;
+                            
+                            // Find the fixture for this player's team
+                            const fix = fixtures.find(f => f.team_h === player.team || f.team_a === player.team);
+                            
+                            // Only include if fixture has started
+                            return fix && fix.started;
+                        });
+                        
+                        if (playersWhoseTeamsStarted.length === 0) return 0;
+                        
+                        const totalPoints = playersWhoseTeamsStarted.reduce((sum, p) => {
+                            return sum + (liveData.elements[String(p.element)]?.stats?.total_points || 0);
+                        }, 0);
+                        
+                        return (totalPoints / playersWhoseTeamsStarted.length).toFixed(1);
+                    };
 
                     const t1Score = getScore(entry1.picks);
                     const t2Score = getScore(entry2.picks);
+                    const t1Avg = getAverageScore(entry1.picks);
+                    const t2Avg = getAverageScore(entry2.picks);
 
                     const starters1 = entry1.picks.filter(p => p.position <= 11);
                     const bench1 = entry1.picks.filter(p => p.position > 11);
@@ -4707,6 +4783,7 @@
                                 <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
                                 <div class="owner-name">${t1.owner}</div>
                                 <div class="team-score">${t1Score}</div>
+                                <div style="font-size:0.9rem;color:#95a5a6;margin-top:5px;">Avg: ${t1Avg}</div>
                             </div>
                             <div class="header-vs">
                                 VS
@@ -4716,6 +4793,7 @@
                                 <div class="team-name">${t2.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t2Rank})</span></div>
                                 <div class="owner-name">${t2.owner}</div>
                                 <div class="team-score">${t2Score}</div>
+                                <div style="font-size:0.9rem;color:#95a5a6;margin-top:5px;">Avg: ${t2Avg}</div>
                             </div>
                         </div>
                         <div id="${matchId}" class="recent-record">
