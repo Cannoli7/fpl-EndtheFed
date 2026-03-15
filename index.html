@@ -4310,28 +4310,12 @@
                         // Update average scores
                         const headerTeams = card.querySelectorAll('.header-team');
                         if (headerTeams[0]) {
-                            let avgDiv = headerTeams[0].querySelector('.avg-score');
-                            if (!avgDiv) {
-                                avgDiv = document.createElement('div');
-                                avgDiv.className = 'avg-score';
-                                avgDiv.style.fontSize = '0.9rem';
-                                avgDiv.style.color = '#95a5a6';
-                                avgDiv.style.marginTop = '5px';
-                                headerTeams[0].appendChild(avgDiv);
-                            }
-                            avgDiv.textContent = `Avg: ${t1Avg}`;
+                            const avgDiv = headerTeams[0].querySelector('.avg-score');
+                            if (avgDiv) avgDiv.textContent = `Avg: ${t1Avg}`;
                         }
                         if (headerTeams[1]) {
-                            let avgDiv = headerTeams[1].querySelector('.avg-score');
-                            if (!avgDiv) {
-                                avgDiv = document.createElement('div');
-                                avgDiv.className = 'avg-score';
-                                avgDiv.style.fontSize = '0.9rem';
-                                avgDiv.style.color = '#95a5a6';
-                                avgDiv.style.marginTop = '5px';
-                                headerTeams[1].appendChild(avgDiv);
-                            }
-                            avgDiv.textContent = `Avg: ${t2Avg}`;
+                            const avgDiv = headerTeams[1].querySelector('.avg-score');
+                            if (avgDiv) avgDiv.textContent = `Avg: ${t2Avg}`;
                         }
 
                         // Update player scores and stats
@@ -4783,7 +4767,7 @@
                                 <div class="team-name">${t1.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t1Rank})</span></div>
                                 <div class="owner-name">${t1.owner}</div>
                                 <div class="team-score">${t1Score}</div>
-                                <div style="font-size:0.9rem;color:#95a5a6;margin-top:5px;">Avg: ${t1Avg}</div>
+                                <div class="avg-score" style="font-size:0.9rem;color:#95a5a6;margin-top:5px;">Avg: ${t1Avg}</div>
                             </div>
                             <div class="header-vs">
                                 VS
@@ -4793,7 +4777,7 @@
                                 <div class="team-name">${t2.name} <span style="color:#7f8c8d;font-size:0.7em;">(${t2Rank})</span></div>
                                 <div class="owner-name">${t2.owner}</div>
                                 <div class="team-score">${t2Score}</div>
-                                <div style="font-size:0.9rem;color:#95a5a6;margin-top:5px;">Avg: ${t2Avg}</div>
+                                <div class="avg-score" style="font-size:0.9rem;color:#95a5a6;margin-top:5px;">Avg: ${t2Avg}</div>
                             </div>
                         </div>
                         <div id="${matchId}" class="recent-record">
