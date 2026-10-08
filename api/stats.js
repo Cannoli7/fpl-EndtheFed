@@ -33,7 +33,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'gameweek parameter required' });
   }
   
-  const filePath = `stats/gw${gameweek}.json`;
+  // Each season gets its own folder so old season files are never loaded
+  const SEASON = process.env.FPL_SEASON || '2026-27';
+  const filePath = `stats/${SEASON}/gw${gameweek}.json`;
   const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}`;
   
   try {
@@ -66,7 +68,7 @@ export default async function handler(req, res) {
       const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
       
       const payload = {
-        message: `Update stats for GW${gameweek}`,
+        message: `Update ${SEASON} stats for GW${gameweek}`,
         content: content,
         branch: GITHUB_BRANCH
       };
