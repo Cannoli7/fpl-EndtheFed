@@ -1170,7 +1170,7 @@
 <body>
     <div class="topbar">
         <button id="menu-btn" style="background:none;border:none;color:#fff;font-size:1.9rem;cursor:pointer;padding:0;z-index:1;position:relative;">☰</button>
-        <h1>End the Fed <span style="font-size:0.6rem;color:#95a5a6;font-weight:400;vertical-align:middle;">v3.2</span></h1>
+        <h1>End the Fed</h1>
         <span id="btc-price" style="font-size:0.9rem;color:#F7931A;font-weight:600;padding-right:10px;z-index:1;position:relative;">₿ --</span>
     </div>
     <div id="menu-dropdown" style="display:none;position:fixed;top:60px;left:10px;background:#0f3460;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:1000;min-width:200px;">
@@ -1179,7 +1179,8 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.2 - Jerseys fixed</div></div>
+        <div id="menu-luck" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🍀 Luck Index</div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.4 - Luck Index</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1637,6 +1638,12 @@
             document.getElementById('menu-stats').onclick = () => {
                 currentView = 'stats';
                 showStats();
+                menuDropdown.style.display = 'none';
+            };
+            
+            document.getElementById('menu-luck').onclick = () => {
+                currentView = 'luck';
+                showLuckIndex();
                 menuDropdown.style.display = 'none';
             };
             
@@ -2434,6 +2441,129 @@
         }
         
         let showLiveTable = false; // Track if showing live table
+        
+        // Luck Index: compares each team's actual league points with the points they
+        // would expect if they played EVERY other team each week (all-play record).
+        async function showLuckIndex() {
+            const content = document.getElementById('content');
+            document.querySelector('.nav').style.display = 'none';
+            content.innerHTML = '<div class="loading">Calculating luck...</div>';
+            
+            try {
+                if (!leagueData) leagueData = await fetchData(`league/${LEAGUE_ID}/details`);
+                
+                const teams = {};
+                leagueData.league_entries.forEach(e => {
+                    teams[e.id] = {
+                        name: e.entry_name, owner: e.player_first_name,
+                        w: 0, d: 0, l: 0, apW: 0, apD: 0, apL: 0, expPts: 0
+                    };
+                });
+                
+                // Group finished matches by gameweek
+                const byGW = {};
+                (leagueData.matches || []).forEach(m => {
+                    if (m.finished && m.league_entry_1_points !== null && m.league_entry_2_points !== null) {
+                        (byGW[m.event] = byGW[m.event] || []).push(m);
+                    }
+                });
+                
+                let luckiestWin = null;   // lowest score that still won
+                let unluckiestLoss = null; // highest score that still lost
+                const gws = Object.keys(byGW).map(Number);
+                
+                gws.forEach(gw => {
+                    // Every team's score this week
+                    const scores = [];
+                    byGW[gw].forEach(m => {
+                        scores.push({ id: m.league_entry_1, pts: m.league_entry_1_points, opp: m.league_entry_2, oppPts: m.league_entry_2_points });
+                        scores.push({ id: m.league_entry_2, pts: m.league_entry_2_points, opp: m.league_entry_1, oppPts: m.league_entry_1_points });
+                    });
+                    
+                    scores.forEach(t => {
+                        const team = teams[t.id];
+                        if (!team) return;
+                        
+                        // Actual result
+                        if (t.pts > t.oppPts) {
+                            team.w++;
+                            if (!luckiestWin || t.pts < luckiestWin.pts) luckiestWin = { ...t, gw };
+                        } else if (t.pts < t.oppPts) {
+                            team.l++;
+                            if (!unluckiestLoss || t.pts > unluckiestLoss.pts) unluckiestLoss = { ...t, gw };
+                        } else {
+                            team.d++;
+                        }
+                        
+                        // All-play: this score vs every other team's score this week
+                        let w = 0, d = 0, l = 0;
+                        scores.forEach(o => {
+                            if (o.id === t.id) return;
+                            if (t.pts > o.pts) w++; else if (t.pts < o.pts) l++; else d++;
+                        });
+                        team.apW += w; team.apD += d; team.apL += l;
+                        const others = w + d + l;
+                        if (others > 0) team.expPts += (w * 3 + d) / others;
+                    });
+                });
+                
+                const rows = Object.values(teams).map(t => {
+                    const pts = t.w * 3 + t.d;
+                    return { ...t, pts, luck: pts - t.expPts };
+                }).sort((a, b) => b.luck - a.luck);
+                
+                const fmtLuck = v => {
+                    const r = Math.round(v * 10) / 10;
+                    const color = r > 0 ? '#2ecc71' : r < 0 ? '#e74c3c' : '#95a5a6';
+                    return `<span style="color:${color};font-weight:700;">${r > 0 ? '+' : ''}${r.toFixed(1)}</span>`;
+                };
+                
+                let html = '<h2 style="text-align:center;color:#fff;margin-bottom:10px;">🍀 Luck Index</h2>';
+                html += `<p style="text-align:center;color:#95a5a6;margin:0 auto 25px;max-width:600px;font-size:0.9rem;">If every team played everyone each week, how many league points would they expect? Luck is actual points minus expected. Through GW${gws.length ? Math.max(...gws) : 0}.</p>`;
+                
+                html += '<div class="standings-table-wrapper"><table class="standings-table"><thead><tr>';
+                html += '<th class="rank-col">#</th><th class="team-col">Team</th>';
+                html += '<th class="stat-col">Record</th>';
+                html += '<th class="stat-col hide-mobile">All-Play</th>';
+                html += '<th class="stat-col">Pts</th>';
+                html += '<th class="stat-col">Exp</th>';
+                html += '<th class="stat-col">Luck</th>';
+                html += '</tr></thead><tbody>';
+                
+                rows.forEach((t, i) => {
+                    html += '<tr>';
+                    html += `<td class="rank-col">${i + 1}</td>`;
+                    html += `<td class="team-col"><strong>${t.name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${t.owner}</span></td>`;
+                    html += `<td class="stat-col">${t.w}-${t.d}-${t.l}</td>`;
+                    html += `<td class="stat-col hide-mobile">${t.apW}-${t.apD}-${t.apL}</td>`;
+                    html += `<td class="stat-col">${t.pts}</td>`;
+                    html += `<td class="stat-col">${t.expPts.toFixed(1)}</td>`;
+                    html += `<td class="stat-col">${fmtLuck(t.luck)}</td>`;
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+                
+                // Callouts
+                const card = (title, emoji, x) => {
+                    if (!x) return '';
+                    const t = teams[x.id], o = teams[x.opp];
+                    return `<div style="flex:1;min-width:240px;background:rgba(255,255,255,0.05);border-radius:12px;padding:18px;">
+                        <div style="color:#95a5a6;font-size:0.85rem;margin-bottom:6px;">${emoji} ${title}</div>
+                        <div style="color:#fff;font-weight:700;font-size:1.1rem;">${t ? t.name : ''}</div>
+                        <div style="color:#ecf0f1;margin-top:4px;">${x.pts} - ${x.oppPts} vs ${o ? o.name : ''} <span style="color:#7f8c8d;">(GW${x.gw})</span></div>
+                    </div>`;
+                };
+                html += '<div style="display:flex;flex-wrap:wrap;gap:15px;margin-top:25px;">';
+                html += card('Luckiest win (lowest winning score)', '😅', luckiestWin);
+                html += card('Unluckiest loss (highest losing score)', '😤', unluckiestLoss);
+                html += '</div>';
+                
+                content.innerHTML = html;
+            } catch (err) {
+                console.error('Luck index error:', err);
+                content.innerHTML = `<div style="text-align:center;color:#e74c3c;padding:40px;">Error calculating luck index<br><span style="color:#95a5a6;font-size:0.9rem;">${err.message}</span></div>`;
+            }
+        }
         
         async function showStandings() {
             const content = document.getElementById('content');
