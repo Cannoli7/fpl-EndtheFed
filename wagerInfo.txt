@@ -2,8 +2,8 @@
 # Configuration file for wager tracking
 
 # Bitcoin Wager Details
-BTC_QUANTITY=0.01346157
-PURCHASE_PRICE=118856.59
+BTC_QUANTITY=0.02483226
+PURCHASE_PRICE=64432.32
 
 # Placement Percentages
 FIRST_PLACE_PERCENTAGE=0.3750
