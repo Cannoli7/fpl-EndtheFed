@@ -1180,7 +1180,7 @@
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
         <div id="menu-luck" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🍀 Luck Index</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.4 - Luck Index</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.5 - Luck explainer</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -2520,6 +2520,31 @@
                 
                 let html = '<h2 style="text-align:center;color:#fff;margin-bottom:10px;">🍀 Luck Index</h2>';
                 html += `<p style="text-align:center;color:#95a5a6;margin:0 auto 25px;max-width:600px;font-size:0.9rem;">If every team played everyone each week, how many league points would they expect? Luck is actual points minus expected. Through GW${gws.length ? Math.max(...gws) : 0}.</p>`;
+                
+                // Collapsible explanation (closed by default)
+                html += `<details style="background:rgba(255,255,255,0.05);border-radius:12px;padding:14px 18px;margin:0 auto 25px;max-width:800px;color:#ecf0f1;line-height:1.6;">
+                    <summary style="cursor:pointer;font-weight:600;color:#fff;">❓ How does the Luck Index work?</summary>
+                    <div style="margin-top:12px;font-size:0.95rem;">
+                        <p>The Luck Index asks one question: <strong>were your results down to how well you scored, or to who you happened to play?</strong></p>
+                        <p><strong>Step 1: pretend you played everyone.</strong> Each week, your score is compared against all 7 other teams' scores, not just your actual opponent's. Take GW5, when the scores were 61, 61, 55, 35, 32, 30, 28 and 27:</p>
+                        <ul style="margin:0 0 12px 20px;">
+                            <li><strong>Go Birds (55)</strong> would have beaten 5 of the 7 other teams and lost to the two 61s.</li>
+                            <li><strong>Ray Getards (32)</strong> would have beaten 3 teams (30, 28, 27) and lost to 4.</li>
+                        </ul>
+                        <p><strong>Step 2: turn that into expected points.</strong> Using league scoring (3 for a win, 1 for a draw), expected points are your all-play results averaged over 7 games:</p>
+                        <ul style="margin:0 0 12px 20px;">
+                            <li>Go Birds: (5 wins × 3) ÷ 7 = <strong>2.14 expected</strong></li>
+                            <li>Ray Getards: (3 wins × 3) ÷ 7 = <strong>1.29 expected</strong></li>
+                        </ul>
+                        <p><strong>Step 3: compare with what actually happened.</strong></p>
+                        <ul style="margin:0 0 12px 20px;">
+                            <li>Go Birds lost 55–61 and got <strong>0</strong> points: 0 − 2.14 = <strong style="color:#e74c3c;">−2.1 luck</strong>. A top-3 score, but they ran into the week's best team.</li>
+                            <li>Ray Getards beat Haalandaise Sauce 32–28 and got <strong>3</strong> points: 3 − 1.29 = <strong style="color:#2ecc71;">+1.7 luck</strong>. A below-average score, but they drew one of the few teams they could beat.</li>
+                        </ul>
+                        <p><strong>Step 4: add it up over the season.</strong> The page sums these for every gameweek. A big positive number means your record flatters you; a big negative number means your scores deserved better than your record shows. Over a full season it usually lands somewhere between about −8 and +8, and evens out a bit as weeks go by.</p>
+                        <p style="margin-bottom:0;">The other columns on the page are the pieces of that sum: <strong>Record</strong> is your real W-D-L, <strong>All-Play</strong> is your W-D-L against everyone every week, <strong>Pts</strong> and <strong>Exp</strong> are actual and expected league points, and <strong>Luck</strong> is the difference between them.</p>
+                    </div>
+                </details>`;
                 
                 html += '<div class="standings-table-wrapper"><table class="standings-table"><thead><tr>';
                 html += '<th class="rank-col">#</th><th class="team-col">Team</th>';
