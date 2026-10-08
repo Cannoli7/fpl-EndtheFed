@@ -451,6 +451,48 @@
             align-items: flex-end;
         }
         
+        /* Player stats popup */
+        .p-name[data-el] { cursor: pointer; }
+        .p-name[data-el]:hover { text-decoration: underline; text-underline-offset: 3px; }
+        #player-modal {
+            position: fixed; inset: 0; z-index: 2000;
+            background: rgba(0,0,0,0.65);
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .pm-card {
+            background: #16213e; color: #ecf0f1;
+            width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto;
+            border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .pm-close {
+            position: absolute; top: 10px; right: 12px;
+            background: none; border: none; color: #95a5a6; font-size: 1.6rem;
+            cursor: pointer; line-height: 1; padding: 4px;
+        }
+        .pm-close:hover { color: #fff; }
+        .pm-header { display: flex; gap: 14px; align-items: center; padding: 18px 18px 14px; background: #0f3460; border-radius: 14px 14px 0 0; }
+        .pm-photo { width: 72px; height: 92px; object-fit: contain; flex-shrink: 0; }
+        .pm-name { font-size: 1.25rem; font-weight: 800; color: #fff; padding-right: 28px; }
+        .pm-sub { color: #95a5a6; font-size: 0.9rem; margin-top: 4px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .pm-news { margin: 12px 18px 0; padding: 10px 12px; border-radius: 8px; background: rgba(230,126,34,0.15); color: #f0a35e; font-size: 0.88rem; }
+        .pm-section { padding: 14px 18px 4px; }
+        .pm-section h4 { margin: 0 0 10px; font-size: 0.78rem; letter-spacing: 0.6px; text-transform: uppercase; color: #95a5a6; }
+        .pm-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .pm-tiles.three { grid-template-columns: repeat(3, 1fr); }
+        .pm-tile { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 9px 6px; text-align: center; }
+        .pm-tile .v { font-size: 1.15rem; font-weight: 800; color: #fff; }
+        .pm-tile .l { font-size: 0.72rem; color: #95a5a6; margin-top: 2px; }
+        .pm-list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.92rem; }
+        .pm-list-row:last-child { border-bottom: none; }
+        .pm-gw { color: #95a5a6; width: 42px; flex-shrink: 0; font-size: 0.85rem; }
+        .pm-opp { flex: 1; }
+        .pm-bar { height: 6px; border-radius: 3px; background: #2ecc71; margin-top: 4px; }
+        .pm-pts { font-weight: 800; width: 34px; text-align: right; }
+        .pm-fdr { padding: 3px 9px; border-radius: 5px; font-weight: 700; font-size: 0.8rem; }
+        .pm-loading { color: #95a5a6; font-size: 0.9rem; padding: 6px 0 10px; }
+        .pm-footer { padding: 10px 18px 16px; }
         .p-name-row { display: flex; align-items: center; gap: 5px; }
         .p-left .p-name-row { justify-content: flex-start; }
         .p-right .p-name-row { flex-direction: row-reverse; justify-content: flex-end; }
@@ -1180,7 +1222,7 @@
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
         <div id="menu-luck" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🍀 Luck Index</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.6 - Luck explainer at bottom</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.7 - Player stats popup</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1224,6 +1266,8 @@
         let leagueData = null;
         let currentBTCPrice = 0; // Store live BTC price
         let playerMap = {};
+        let elementData = {}; // Full bootstrap-static player records (season stats, form, news)
+        const elementSummaryCache = {};
         let teamMap = {};  // Full team names for API matching
         let shortNameMap = {};  // Short names (3-letter) for display
         let teamCodeMap = {};
@@ -1543,6 +1587,7 @@
             const staticData = await fetchData('bootstrap-static');
             staticData.elements.forEach(el => {
                 playerMap[el.id] = { name: el.web_name, pos: POS[el.element_type] || '?', team: el.team };
+                elementData[el.id] = el;
             });
             staticData.teams.forEach(t => {
                 teamMap[t.id] = t.name;  // Full name for API matching
@@ -1599,6 +1644,18 @@
             menuBtn.onclick = () => {
                 menuDropdown.style.display = menuDropdown.style.display === 'none' ? 'block' : 'none';
             };
+            
+            // Player stats popup: tap a player name on the scoreboard
+            document.addEventListener('click', (e) => {
+                const nameEl = e.target.closest('.p-name[data-el]');
+                if (nameEl) {
+                    e.stopPropagation();
+                    showPlayerPopup(parseInt(nameEl.dataset.el, 10));
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closePlayerPopup();
+            });
             
             // Close menu when clicking outside
             document.addEventListener('click', (e) => {
@@ -1788,7 +1845,7 @@
             
             // Add keyboard navigation for matches
             document.addEventListener('keydown', (e) => {
-                if (currentView === 'matchups') {
+                if (currentView === 'matchups' && !document.getElementById('player-modal')) {
                     if (e.key === 'ArrowLeft' && currentMatchIndex > 0) {
                         navigateMatch(-1);
                     } else if (e.key === 'ArrowRight' && currentMatchIndex < totalMatches - 1) {
@@ -2002,6 +2059,161 @@
             return statItems.join('');
         }
 
+        // ---------- Player stats popup ----------
+        function closePlayerPopup() {
+            const m = document.getElementById('player-modal');
+            if (m) m.remove();
+            document.body.style.overflow = '';
+        }
+        
+        async function getElementSummary(id) {
+            if (!elementSummaryCache[id]) {
+                elementSummaryCache[id] = fetchData(`element-summary/${id}`).catch(err => {
+                    delete elementSummaryCache[id];
+                    throw err;
+                });
+            }
+            return elementSummaryCache[id];
+        }
+        
+        function showPlayerPopup(id) {
+            const el = elementData[id];
+            const basic = playerMap[id];
+            if (!el || !basic) return;
+            closePlayerPopup();
+            
+            const pos = basic.pos;
+            const teamShort = shortNameMap[el.team] || '';
+            const teamFull = teamMap[el.team] || teamShort;
+            const tile = (v, l) => `<div class="pm-tile"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+            const num = v => (v === null || v === undefined || v === '') ? '-' : v;
+            
+            // This gameweek (from the live data the scoreboard already loaded)
+            const live = cachedLiveData?.elements?.[String(id)]?.stats;
+            
+            // Position-specific season stats
+            let posTiles;
+            if (pos === 'GK') {
+                posTiles = [tile(el.saves, 'Saves'), tile(el.clean_sheets, 'Clean sheets'), tile(el.goals_conceded, 'Conceded'),
+                            tile(el.penalties_saved, 'Pens saved'), tile(el.bonus, 'Bonus'), tile(num(el.expected_goals_conceded), 'xGC')];
+            } else if (pos === 'D') {
+                posTiles = [tile(el.goals_scored, 'Goals'), tile(el.assists, 'Assists'), tile(el.clean_sheets, 'Clean sheets'),
+                            tile(el.defensive_contribution, 'Def. contrib'), tile(el.bonus, 'Bonus'), tile(num(el.expected_goal_involvements), 'xGI')];
+            } else if (pos === 'M') {
+                posTiles = [tile(el.goals_scored, 'Goals'), tile(el.assists, 'Assists'), tile(el.clean_sheets, 'Clean sheets'),
+                            tile(el.defensive_contribution, 'Def. contrib'), tile(el.bonus, 'Bonus'), tile(num(el.expected_goal_involvements), 'xGI')];
+            } else {
+                posTiles = [tile(el.goals_scored, 'Goals'), tile(el.assists, 'Assists'), tile(el.bonus, 'Bonus'),
+                            tile(num(el.expected_goals), 'xG'), tile(num(el.expected_assists), 'xA'), tile(el.defensive_contribution, 'Def. contrib')];
+            }
+            
+            const photo = `https://resources.premierleague.com/premierleague/photos/players/110x140/p${el.code}.png`;
+            const fallback = getJerseyUrl(el.team, pos);
+            
+            let news = '';
+            if (el.news) {
+                news = `<div class="pm-news">⚠️ ${el.news}</div>`;
+            }
+            
+            const cards = (el.yellow_cards || el.red_cards)
+                ? `<span>${el.yellow_cards ? `<span class="card-yellow"></span> ${el.yellow_cards}` : ''} ${el.red_cards ? `<span class="card-red"></span> ${el.red_cards}` : ''}</span>` : '';
+            
+            const html = `
+                <div class="pm-card" role="dialog" aria-modal="true" aria-label="${el.first_name} ${el.second_name} stats">
+                    <button class="pm-close" aria-label="Close">×</button>
+                    <div class="pm-header">
+                        <img class="pm-photo" src="${photo}" onerror="this.onerror=null;this.src='${fallback}'">
+                        <div>
+                            <div class="pm-name">${el.first_name} ${el.second_name}</div>
+                            <div class="pm-sub">
+                                <span class="pos-badge pos-${pos}">${pos}</span>
+                                <span>${teamFull}</span>
+                                ${cards}
+                            </div>
+                        </div>
+                    </div>
+                    ${news}
+                    <div class="pm-section">
+                        <h4>Season</h4>
+                        <div class="pm-tiles">
+                            ${tile(el.total_points, 'Points')}
+                            ${tile(num(el.form), 'Form')}
+                            ${tile(num(el.points_per_game), 'Pts / game')}
+                            ${tile(el.minutes, 'Minutes')}
+                        </div>
+                        <div class="pm-tiles three" style="margin-top:8px;">${posTiles.join('')}</div>
+                    </div>
+                    ${live ? `
+                    <div class="pm-section">
+                        <h4>GW${currentGW}</h4>
+                        <div class="pm-tiles">
+                            ${tile(live.total_points, 'Points')}
+                            ${tile(live.minutes, 'Minutes')}
+                            ${tile(live.goals_scored + ' / ' + live.assists, 'G / A')}
+                            ${tile(live.bonus, 'Bonus')}
+                        </div>
+                    </div>` : ''}
+                    <div class="pm-section">
+                        <h4>Last 5 gameweeks</h4>
+                        <div id="pm-history"><div class="pm-loading">Loading…</div></div>
+                    </div>
+                    <div class="pm-section">
+                        <h4>Next fixtures</h4>
+                        <div id="pm-fixtures"><div class="pm-loading">Loading…</div></div>
+                    </div>
+                    <div class="pm-footer"></div>
+                </div>`;
+            
+            const modal = document.createElement('div');
+            modal.id = 'player-modal';
+            modal.innerHTML = html;
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal || e.target.closest('.pm-close')) closePlayerPopup();
+            });
+            document.body.appendChild(modal);
+            document.body.style.overflow = 'hidden';
+            
+            // Game-by-game history and upcoming fixtures
+            getElementSummary(id).then(summary => {
+                if (!document.getElementById('player-modal')) return;
+                
+                const hist = (summary.history || []).slice().sort((a, b) => b.event - a.event).slice(0, 5);
+                const maxPts = Math.max(10, ...hist.map(h => h.total_points));
+                const histEl = document.getElementById('pm-history');
+                histEl.innerHTML = hist.length ? hist.map(h => {
+                    const dnp = h.minutes === 0;
+                    const width = Math.max(0, h.total_points) / maxPts * 100;
+                    return `<div class="pm-list-row">
+                        <span class="pm-gw">GW${h.event}</span>
+                        <div class="pm-opp">
+                            <div>${h.detail || shortNameMap[h.opponent_team] || ''}${dnp ? ' <span style="color:#7f8c8d;">· DNP</span>' : ` <span style="color:#7f8c8d;font-size:0.82rem;">· ${h.minutes}'</span>`}</div>
+                            <div class="pm-bar" style="width:${width}%;${dnp ? 'background:#7f8c8d;' : ''}"></div>
+                        </div>
+                        <span class="pm-pts">${h.total_points}</span>
+                    </div>`;
+                }).join('') : '<div class="pm-loading">No games yet</div>';
+                
+                const fdrColor = { 1: ['#257d5a', '#fff'], 2: ['#00ff86', '#000'], 3: ['#ebebe4', '#000'], 4: ['#ff005a', '#fff'], 5: ['#861d46', '#fff'] };
+                const next = (summary.fixtures || []).filter(f => !f.finished).sort((a, b) => a.event - b.event).slice(0, 3);
+                const fixEl = document.getElementById('pm-fixtures');
+                fixEl.innerHTML = next.length ? next.map(f => {
+                    const oppId = f.is_home ? f.team_a : f.team_h;
+                    const [bg, fg] = fdrColor[f.difficulty] || ['#555', '#fff'];
+                    const when = f.kickoff_time ? new Date(f.kickoff_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+                    return `<div class="pm-list-row">
+                        <span class="pm-gw">GW${f.event}</span>
+                        <span class="pm-opp">${shortNameMap[oppId] || ''} (${f.is_home ? 'H' : 'A'}) <span style="color:#7f8c8d;font-size:0.82rem;">· ${when}</span></span>
+                        <span class="pm-fdr" style="background:${bg};color:${fg};">${f.difficulty}</span>
+                    </div>`;
+                }).join('') : '<div class="pm-loading">No upcoming fixtures</div>';
+            }).catch(err => {
+                console.error('Player summary error:', err);
+                const msg = '<div class="pm-loading">Couldn\'t load right now</div>';
+                const h = document.getElementById('pm-history'); if (h) h.innerHTML = msg;
+                const f = document.getElementById('pm-fixtures'); if (f) f.innerHTML = msg;
+            });
+        }
+        
         function getJerseyUrl(teamId, position) {
             const teamCode = teamCodeMap[teamId];
             if (position === 'GK') {
@@ -4851,7 +5063,7 @@
                                    </div>
                                    <div class="p-info-wrap">
                                        <div class="p-name-row">
-                                           <span class="p-name">${player1.name}</span>
+                                           <span class="p-name" data-el="${p1.element}">${player1.name}</span>
                                            <span class="pos-badge pos-${player1.pos}">${player1.pos}</span>
                                        </div>
                                        <span class="p-fixture">${getFixtureStr(player1)}</span>
@@ -4865,7 +5077,7 @@
                                <div class="p-top-row">
                                    <div class="p-info-wrap">
                                        <div class="p-name-row">
-                                           <span class="p-name">${player2.name}</span>
+                                           <span class="p-name" data-el="${p2.element}">${player2.name}</span>
                                            <span class="pos-badge pos-${player2.pos}">${player2.pos}</span>
                                        </div>
                                        <span class="p-fixture">${getFixtureStr(player2)}</span>
