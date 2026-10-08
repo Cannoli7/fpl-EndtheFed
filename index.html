@@ -1179,7 +1179,7 @@
         <div id="menu-matchups" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📊 Scoreboard</div>
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v2.42 - Player Average</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.0 - 2026-27 Season</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1192,7 +1192,7 @@
     </div>
 
     <script>
-        const LEAGUE_ID = 8308; // CHANGE THIS TO YOUR LEAGUE ID
+        const LEAGUE_ID = 24055; // CHANGE THIS TO YOUR LEAGUE ID
         
         // Wager Configuration (from wagerInfo.txt)
         const WAGER_CONFIG = {
@@ -1209,9 +1209,9 @@
         };
         
         // Calculate current gameweek based on season start
-        // 2025-26 season started August 16, 2025 (GW1)
+        // 2026-27 season started August 21, 2026 (GW1)
         function calculateCurrentGW() {
-            const seasonStart = new Date('2025-08-16'); // GW1 kickoff
+            const seasonStart = new Date('2026-08-21'); // GW1 kickoff
             const now = new Date();
             const daysSinceStart = Math.floor((now - seasonStart) / (1000 * 60 * 60 * 24));
             const weeksSinceStart = Math.floor(daysSinceStart / 7);
