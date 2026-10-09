@@ -1230,7 +1230,7 @@
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
         <div id="menu-luck" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🍀 Luck Index</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.8 - Aligned player stats</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.9 - Back button works</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1644,7 +1644,14 @@
             // Populate gameweek dropdown
             populateGWDropdown();
             
-            await showHome(); // Start on home page
+            // Start on the page in the URL (home by default), so refresh and Back keep your place
+            const startRoute = parseRoute();
+            history.replaceState({ route: startRoute }, '', startRoute === 'home' ? location.pathname : '#/' + startRoute);
+            if (startRoute === 'home') {
+                await showHome();
+            } else {
+                renderRoute(startRoute);
+            }
             
             // Menu toggle
             const menuBtn = document.getElementById('menu-btn');
@@ -1674,42 +1681,27 @@
             
             // Menu options
             document.getElementById('menu-home').onclick = () => {
-                currentView = 'home';
-                showHome();
-                menuDropdown.style.display = 'none';
+                goTo('home');
             };
             
             document.getElementById('menu-matchups').onclick = () => {
-                currentView = 'matchups';
-                const nav = document.querySelector('.nav');
-                nav.style.display = 'flex';
-                currentMatchIndex = 0; // Reset to first match
-                loadGameweek(currentGW); // API fetch happens inside after fixtures load
-                menuDropdown.style.display = 'none';
+                goTo('scoreboard');
             };
             
             document.getElementById('menu-standings').onclick = () => {
-                currentView = 'standings';
-                showStandings();
-                menuDropdown.style.display = 'none';
+                goTo('standings');
             };
             
             document.getElementById('menu-epl-fixtures').onclick = () => {
-                currentView = 'epl-fixtures';
-                showEPLFixtures();
-                menuDropdown.style.display = 'none';
+                goTo('fixtures');
             };
             
             document.getElementById('menu-stats').onclick = () => {
-                currentView = 'stats';
-                showStats();
-                menuDropdown.style.display = 'none';
+                goTo('stats');
             };
             
             document.getElementById('menu-luck').onclick = () => {
-                currentView = 'luck';
-                showLuckIndex();
-                menuDropdown.style.display = 'none';
+                goTo('luck');
             };
             
             // Auto-refresh every 60 seconds (for matchups and home views)
@@ -1949,6 +1941,64 @@
             }
         }
         
+        // ---------- Page history (makes the browser Back/Forward buttons work) ----------
+        // Routes live in the URL hash, e.g. #/standings, #/stats/Nolan, #/scoreboard/2
+        let ignoreNextPop = false;
+        function parseRoute() {
+            const h = (location.hash || '').replace(/^#\/?/, '');
+            return h || 'home';
+        }
+        
+        function renderRoute(route) {
+            const [page, arg] = route.split('/');
+            const nav = document.querySelector('.nav');
+            document.getElementById('menu-dropdown').style.display = 'none';
+            switch (page) {
+                case 'scoreboard':
+                    currentView = 'matchups';
+                    if (nav) nav.style.display = 'flex';
+                    currentMatchIndex = arg ? (parseInt(arg, 10) || 0) : 0;
+                    lastNavigationDirection = 0;
+                    return loadGameweek(currentGW);
+                case 'standings':
+                    currentView = 'standings';
+                    return showStandings();
+                case 'fixtures':
+                    currentView = 'epl-fixtures';
+                    return showEPLFixtures();
+                case 'stats':
+                    currentView = 'stats';
+                    return showStats(arg ? decodeURIComponent(arg) : null);
+                case 'luck':
+                    currentView = 'luck';
+                    return showLuckIndex();
+                default:
+                    currentView = 'home';
+                    return showHome();
+            }
+        }
+        
+        // Go to a page and add it to the browser history
+        function goTo(route) {
+            closePlayerPopup(true);
+            if (route !== parseRoute()) {
+                const fromStats = parseRoute() === 'stats' && route.startsWith('stats/');
+                history.pushState({ route, fromStats }, '', '#/' + route);
+            }
+            window.scrollTo(0, 0);
+            return renderRoute(route);
+        }
+        
+        window.addEventListener('popstate', (e) => {
+            if (ignoreNextPop) { ignoreNextPop = false; return; }
+            // Back while the player popup is open just closes the popup
+            if (document.getElementById('player-modal')) {
+                closePlayerPopup(true);
+                if (!(e.state && e.state.popup)) return;
+            }
+            renderRoute(parseRoute());
+        });
+        
         function navigateMatch(direction) {
             const prevIndex = currentMatchIndex;
             currentMatchIndex += direction;
@@ -1974,15 +2024,7 @@
         }
         
         function goToMatchup(index) {
-            // Set the match index
-            currentMatchIndex = index;
-            lastNavigationDirection = 0; // No animation from homepage
-            
-            // Navigate to matchups view (same as clicking menu button)
-            currentView = 'matchups';
-            const nav = document.querySelector('.nav');
-            if (nav) nav.style.display = 'flex';
-            loadGameweek(currentGW); // API fetch happens inside after fixtures load
+            goTo('scoreboard/' + index);
         }
         
         async function refreshCurrentMatch() {
@@ -2068,10 +2110,16 @@
         }
 
         // ---------- Player stats popup ----------
-        function closePlayerPopup() {
+        function closePlayerPopup(fromHistory = false) {
             const m = document.getElementById('player-modal');
-            if (m) m.remove();
+            if (!m) return;
+            m.remove();
             document.body.style.overflow = '';
+            // Closed with the X / backdrop / Esc: drop the history entry the popup added
+            if (!fromHistory && history.state && history.state.popup) {
+                ignoreNextPop = true;
+                history.back();
+            }
         }
         
         async function getElementSummary(id) {
@@ -2088,7 +2136,8 @@
             const el = elementData[id];
             const basic = playerMap[id];
             if (!el || !basic) return;
-            closePlayerPopup();
+            const existing = document.getElementById('player-modal');
+            if (existing) { existing.remove(); }
             
             const pos = basic.pos;
             const teamShort = shortNameMap[el.team] || '';
@@ -2180,6 +2229,7 @@
             });
             document.body.appendChild(modal);
             document.body.style.overflow = 'hidden';
+            history.pushState({ ...(history.state || {}), popup: id }, '', location.href);
             
             // Game-by-game history and upcoming fixtures
             getElementSummary(id).then(summary => {
@@ -3423,7 +3473,7 @@
                         }
                     }
                     
-                    html += `<tr onclick="showStats('${team.name}')" style="cursor:pointer;">`;
+                    html += `<tr data-team="${encodeURIComponent(team.name).replace(/'/g, '%27')}" onclick="goTo('stats/' + this.dataset.team)" style="cursor:pointer;">`;
                     html += `<td class="rank-col">${index + 1}</td>`;
                     html += `<td class="team-col"><strong>${team.name}</strong><br><span style="font-size:0.85rem;color:#7f8c8d;">${team.entryName}</span></td>`;
                     html += `<td class="stat-col">${team.totalPoints}/<span style="opacity:0.6;">${team.totalBenchPoints}</span></td>`;
@@ -3629,7 +3679,7 @@
                 
                 // Build final display
                 let html = '<div style="max-width:900px;margin:0 auto;padding:20px;">';
-                html += '<button onclick="showStats()" style="margin-bottom:20px;padding:10px 20px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:5px;cursor:pointer;font-size:0.9rem;">← Back to All Teams</button>';
+                html += '<button onclick="if (history.state && history.state.fromStats) { history.back(); } else { goTo(\'stats\'); }" style="margin-bottom:20px;padding:10px 20px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:5px;cursor:pointer;font-size:0.9rem;">← Back to All Teams</button>';
                 html += '<h2 style="text-align:center;color:#fff;margin-bottom:30px;">Season Stats - ' + teamName + '</h2>';
                 
                 // Summary cards
