@@ -452,8 +452,16 @@
         }
         
         /* Player stats popup */
-        .p-name[data-el] { cursor: pointer; }
-        .p-name[data-el]:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .p-name[data-el], .player-link[data-el] { cursor: pointer; }
+        .p-name[data-el]:hover, .player-link[data-el]:hover { text-decoration: underline; text-underline-offset: 3px; }
+        .player-stats-table .stat-col { width: 70px; }
+        .player-stats-table .team-col { white-space: nowrap; }
+        @media (max-width: 768px) {
+            .player-stats-table th, .player-stats-table td { padding: 10px 6px; }
+            .player-stats-table .rank-col { width: 28px; }
+            .player-stats-table .stat-col { width: 44px; }
+            .player-stats-table th { font-size: 0.75rem; letter-spacing: 0; }
+        }
         #player-modal {
             position: fixed; inset: 0; z-index: 2000;
             background: rgba(0,0,0,0.65);
@@ -1222,7 +1230,7 @@
         <div id="menu-epl-fixtures" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">⚽ EPL Fixtures</div>
         <div id="menu-stats" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">📈 Stats</div>
         <div id="menu-luck" style="padding:15px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.1);font-weight:600;">🍀 Luck Index</div>
-        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.7 - Player stats popup</div></div>
+        <div style="padding:10px 20px;text-align:center;font-size:0.75rem;color:#95a5a6;border-top:1px solid rgba(255,255,255,0.1);margin-top:5px;">v3.8 - Aligned player stats</div></div>
     </div>
     <div class="nav">
         <label for="gw-select" style="margin-right: 10px; color: #ecf0f1;">Gameweek:</label>
@@ -1647,7 +1655,7 @@
             
             // Player stats popup: tap a player name on the scoreboard
             document.addEventListener('click', (e) => {
-                const nameEl = e.target.closest('.p-name[data-el]');
+                const nameEl = e.target.closest('.p-name[data-el], .player-link[data-el]');
                 if (nameEl) {
                     e.stopPropagation();
                     showPlayerPopup(parseInt(nameEl.dataset.el, 10));
@@ -3716,6 +3724,36 @@
                 }
                 
                 // Combined player stats table
+                // Aligned player table (shared by starters and bench)
+                const buildPlayerTable = (list, isBench) => {
+                    const dash = '<span style="color:#55606e;">–</span>';
+                    const ptsColor = isBench ? '#e74c3c' : '#4facfe';
+                    let t = `<div class="standings-table-wrapper" style="margin-bottom:30px;${isBench ? 'border:1px solid rgba(231,76,60,0.3);border-radius:8px;' : ''}">`;
+                    t += '<table class="standings-table player-stats-table" style="margin-top:0;"><thead><tr>';
+                    t += '<th class="rank-col">#</th>';
+                    t += '<th class="team-col">Player</th>';
+                    t += '<th class="stat-col">Pts</th>';
+                    t += '<th class="stat-col">⚽ G</th>';
+                    t += '<th class="stat-col">👟 A</th>';
+                    t += '</tr></thead><tbody>';
+                    list.forEach((player, i) => {
+                        const info = playerMap[player.id] || {};
+                        const team = shortNameMap[info.team] || '';
+                        const posBadge = info.pos ? `<span class="pos-badge pos-${info.pos}" style="margin-left:6px;">${info.pos}</span>` : '';
+                        t += '<tr>';
+                        t += `<td class="rank-col" style="color:#95a5a6;font-weight:600;">${i + 1}</td>`;
+                        t += `<td class="team-col"><span class="player-link" data-el="${player.id}" style="color:#fff;${isBench ? 'opacity:0.85;' : ''}">${player.name}</span>${posBadge}`;
+                        if (team) t += `<br><span style="font-size:0.8rem;color:#7f8c8d;font-weight:400;">${team}</span>`;
+                        t += '</td>';
+                        t += `<td class="stat-col" style="color:${ptsColor};font-weight:800;font-size:1.1rem;">${player.points}</td>`;
+                        t += `<td class="stat-col" style="font-weight:600;">${player.goals || dash}</td>`;
+                        t += `<td class="stat-col" style="font-weight:600;">${player.assists || dash}</td>`;
+                        t += '</tr>';
+                    });
+                    t += '</tbody></table></div>';
+                    return t;
+                };
+                
                 html += '<h3 style="color:#ecf0f1;margin-bottom:20px;">📊 Player Stats (Starters)</h3>';
                 
                 // Combine goals, assists, and points into single player list
@@ -3737,22 +3775,7 @@
                 playerStats.sort((a, b) => b.points - a.points);
                 
                 if (playerStats.length > 0) {
-                    html += '<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:20px;margin-bottom:30px;">';
-                    playerStats.forEach(player => {
-                        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);">';
-                        html += `<div style="color:#fff;font-size:1rem;flex:1;">${player.name}</div>`;
-                        html += '<div style="display:flex;gap:15px;align-items:center;">';
-                        html += `<div style="color:#4facfe;font-size:1.2rem;font-weight:700;">${player.points}pts</div>`;
-                        if (player.goals > 0) {
-                            html += `<div style="color:#2ecc71;font-size:1rem;font-weight:600;">⚽${player.goals}</div>`;
-                        }
-                        if (player.assists > 0) {
-                            html += `<div style="color:#f5576c;font-size:1rem;font-weight:600;">👟${player.assists}</div>`;
-                        }
-                        html += '</div>';
-                        html += '</div>';
-                    });
-                    html += '</div>';
+                    html += buildPlayerTable(playerStats, false);
                 } else {
                     html += '<div style="text-align:center;color:#95a5a6;padding:40px;margin-bottom:30px;">No goals or assists by starters</div>';
                 }
@@ -3776,22 +3799,7 @@
                 
                 if (benchStats.length > 0) {
                     html += '<h3 style="color:#e74c3c;margin-bottom:20px;">💺 Bench Stats (Wasted)</h3>';
-                    html += '<div style="background:rgba(231,76,60,0.1);border-radius:8px;padding:20px;border:1px solid rgba(231,76,60,0.3);">';
-                    benchStats.forEach(player => {
-                        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);">';
-                        html += `<div style="color:#fff;font-size:1rem;opacity:0.8;flex:1;">${player.name}</div>`;
-                        html += '<div style="display:flex;gap:15px;align-items:center;">';
-                        html += `<div style="color:#e74c3c;font-size:1.2rem;font-weight:700;">${player.points}pts</div>`;
-                        if (player.goals > 0) {
-                            html += `<div style="color:#e74c3c;font-size:1rem;font-weight:600;">⚽${player.goals}</div>`;
-                        }
-                        if (player.assists > 0) {
-                            html += `<div style="color:#e74c3c;font-size:1rem;font-weight:600;">👟${player.assists}</div>`;
-                        }
-                        html += '</div>';
-                        html += '</div>';
-                    });
-                    html += '</div>';
+                    html += buildPlayerTable(benchStats, true);
                 }
                 
                 // Add cache info and refresh button
