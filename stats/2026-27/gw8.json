@@ -1,7 +1,7 @@
 {
   "gameweek": 8,
   "leagueId": 24055,
-  "generatedAt": "2026-10-09T17:11:02.609Z",
+  "generatedAt": "2026-10-09T17:11:18.252Z",
   "stats": [
     {
       "name": "Nolan",
@@ -176,7 +176,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 242,
       "totalBenchPoints": 44,
-      "calculatedAt": "2026-10-09T17:10:46.116Z"
+      "calculatedAt": "2026-10-09T17:11:01.149Z"
     },
     {
       "name": "Collin",
@@ -359,7 +359,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 229,
       "totalBenchPoints": 35,
-      "calculatedAt": "2026-10-09T17:10:48.553Z"
+      "calculatedAt": "2026-10-09T17:11:03.463Z"
     },
     {
       "name": "Stu",
@@ -497,7 +497,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 226,
       "totalBenchPoints": 17,
-      "calculatedAt": "2026-10-09T17:10:50.893Z"
+      "calculatedAt": "2026-10-09T17:11:05.946Z"
     },
     {
       "name": "Nick",
@@ -656,7 +656,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 216,
       "totalBenchPoints": 46,
-      "calculatedAt": "2026-10-09T17:10:53.486Z"
+      "calculatedAt": "2026-10-09T17:11:08.151Z"
     },
     {
       "name": "Tony",
@@ -831,7 +831,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 205,
       "totalBenchPoints": 48,
-      "calculatedAt": "2026-10-09T17:10:55.774Z"
+      "calculatedAt": "2026-10-09T17:11:10.782Z"
     },
     {
       "name": "Dan",
@@ -1009,7 +1009,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 230,
       "totalBenchPoints": 17,
-      "calculatedAt": "2026-10-09T17:10:58.076Z"
+      "calculatedAt": "2026-10-09T17:11:13.385Z"
     },
     {
       "name": "Erick",
@@ -1159,7 +1159,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 133,
       "totalBenchPoints": 4,
-      "calculatedAt": "2026-10-09T17:11:00.421Z"
+      "calculatedAt": "2026-10-09T17:11:15.671Z"
     },
     {
       "name": "Matthew",
@@ -1301,7 +1301,7 @@
       "totalBenchAssists": 0,
       "totalPoints": 204,
       "totalBenchPoints": 0,
-      "calculatedAt": "2026-10-09T17:11:02.609Z"
+      "calculatedAt": "2026-10-09T17:11:18.252Z"
     }
   ]
 }
