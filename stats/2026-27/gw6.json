@@ -1,0 +1,1385 @@
+{
+  "gameweek": 6,
+  "leagueId": 24055,
+  "generatedAt": "2026-10-10T16:00:20.425Z",
+  "stats": [
+    {
+      "name": "Nolan",
+      "entryName": "Ray Getards",
+      "entryId": 122471,
+      "playerGoals": {
+        "8": {
+          "name": "Calafiori",
+          "goals": 1
+        },
+        "15": {
+          "name": "Ødegaard",
+          "goals": 2
+        },
+        "94": {
+          "name": "Schade",
+          "goals": 3
+        },
+        "154": {
+          "name": "Palmer",
+          "goals": 2
+        },
+        "249": {
+          "name": "Barry",
+          "goals": 1
+        },
+        "464": {
+          "name": "Wissa",
+          "goals": 1
+        }
+      },
+      "benchGoals": {
+        "391": {
+          "name": "Gvardiol",
+          "goals": 1
+        }
+      },
+      "playerAssists": {
+        "8": {
+          "name": "Calafiori",
+          "assists": 2
+        },
+        "94": {
+          "name": "Schade",
+          "assists": 2
+        },
+        "154": {
+          "name": "Palmer",
+          "assists": 4
+        },
+        "237": {
+          "name": "Ndiaye",
+          "assists": 1
+        },
+        "391": {
+          "name": "Gvardiol",
+          "assists": 3
+        },
+        "464": {
+          "name": "Wissa",
+          "assists": 1
+        },
+        "554": {
+          "name": "Tzolis",
+          "assists": 2
+        }
+      },
+      "benchAssists": {
+        "125": {
+          "name": "Georginio",
+          "assists": 1
+        }
+      },
+      "playerPoints": {
+        "8": {
+          "name": "Calafiori",
+          "points": 38
+        },
+        "15": {
+          "name": "Ødegaard",
+          "points": 30
+        },
+        "94": {
+          "name": "Schade",
+          "points": 40
+        },
+        "109": {
+          "name": "Verbruggen",
+          "points": 17
+        },
+        "142": {
+          "name": "James",
+          "points": 3
+        },
+        "154": {
+          "name": "Palmer",
+          "points": 36
+        },
+        "237": {
+          "name": "Ndiaye",
+          "points": 13
+        },
+        "249": {
+          "name": "Barry",
+          "points": 8
+        },
+        "384": {
+          "name": "Donnarumma",
+          "points": 12
+        },
+        "387": {
+          "name": "O'Reilly",
+          "points": 5
+        },
+        "391": {
+          "name": "Gvardiol",
+          "points": 28
+        },
+        "417": {
+          "name": "Dalot",
+          "points": 2
+        },
+        "464": {
+          "name": "Wissa",
+          "points": 15
+        },
+        "504": {
+          "name": "Vuskovic",
+          "points": 8
+        },
+        "554": {
+          "name": "Tzolis",
+          "points": 16
+        },
+        "628": {
+          "name": "Barcola",
+          "points": 7
+        }
+      },
+      "benchPoints": {
+        "109": {
+          "name": "Verbruggen",
+          "points": 15
+        },
+        "125": {
+          "name": "Georginio",
+          "points": 5
+        },
+        "142": {
+          "name": "James",
+          "points": 0
+        },
+        "223": {
+          "name": "Mateta",
+          "points": 2
+        },
+        "249": {
+          "name": "Barry",
+          "points": 2
+        },
+        "384": {
+          "name": "Donnarumma",
+          "points": 7
+        },
+        "387": {
+          "name": "O'Reilly",
+          "points": 1
+        },
+        "391": {
+          "name": "Gvardiol",
+          "points": 9
+        },
+        "417": {
+          "name": "Dalot",
+          "points": 6
+        },
+        "492": {
+          "name": "Awoniyi",
+          "points": 1
+        }
+      },
+      "totalGoals": 10,
+      "totalBenchGoals": 1,
+      "totalAssists": 15,
+      "totalBenchAssists": 1,
+      "totalPoints": 278,
+      "totalBenchPoints": 48,
+      "calculatedAt": "2026-10-10T16:00:08.032Z"
+    },
+    {
+      "name": "Collin",
+      "entryName": "Robin Hood",
+      "entryId": 122472,
+      "playerGoals": {
+        "165": {
+          "name": "João Pedro",
+          "goals": 5
+        },
+        "167": {
+          "name": "Delap",
+          "goals": 1
+        },
+        "388": {
+          "name": "Guéhi",
+          "goals": 1
+        },
+        "399": {
+          "name": "Cherki",
+          "goals": 3
+        },
+        "454": {
+          "name": "Elanga",
+          "goals": 1
+        },
+        "480": {
+          "name": "Gibbs-White",
+          "goals": 1
+        }
+      },
+      "benchGoals": {
+        "204": {
+          "name": "Mitchell",
+          "goals": 2
+        }
+      },
+      "playerAssists": {
+        "165": {
+          "name": "João Pedro",
+          "assists": 3
+        },
+        "388": {
+          "name": "Guéhi",
+          "assists": 1
+        },
+        "399": {
+          "name": "Cherki",
+          "assists": 2
+        },
+        "480": {
+          "name": "Gibbs-White",
+          "assists": 2
+        }
+      },
+      "benchAssists": {},
+      "playerPoints": {
+        "1": {
+          "name": "Raya",
+          "points": 33
+        },
+        "9": {
+          "name": "Hincapie",
+          "points": 1
+        },
+        "11": {
+          "name": "Mosquera",
+          "points": 6
+        },
+        "14": {
+          "name": "Eze",
+          "points": 4
+        },
+        "60": {
+          "name": "Hill",
+          "points": 14
+        },
+        "69": {
+          "name": "Scott",
+          "points": 6
+        },
+        "95": {
+          "name": "O.Dango",
+          "points": 5
+        },
+        "98": {
+          "name": "Janelt",
+          "points": 3
+        },
+        "165": {
+          "name": "João Pedro",
+          "points": 45
+        },
+        "167": {
+          "name": "Delap",
+          "points": 8
+        },
+        "204": {
+          "name": "Mitchell",
+          "points": 9
+        },
+        "388": {
+          "name": "Guéhi",
+          "points": 30
+        },
+        "399": {
+          "name": "Cherki",
+          "points": 34
+        },
+        "445": {
+          "name": "Thiaw",
+          "points": 11
+        },
+        "454": {
+          "name": "Elanga",
+          "points": 9
+        },
+        "460": {
+          "name": "Willock",
+          "points": 0
+        },
+        "480": {
+          "name": "Gibbs-White",
+          "points": 28
+        },
+        "490": {
+          "name": "Wood",
+          "points": 2
+        },
+        "553": {
+          "name": "Isidor",
+          "points": 1
+        }
+      },
+      "benchPoints": {
+        "11": {
+          "name": "Mosquera",
+          "points": 0
+        },
+        "14": {
+          "name": "Eze",
+          "points": 0
+        },
+        "31": {
+          "name": "Konsa",
+          "points": 4
+        },
+        "127": {
+          "name": "Gomez",
+          "points": 5
+        },
+        "165": {
+          "name": "João Pedro",
+          "points": 0
+        },
+        "167": {
+          "name": "Delap",
+          "points": 1
+        },
+        "204": {
+          "name": "Mitchell",
+          "points": 15
+        },
+        "208": {
+          "name": "Sarr",
+          "points": 0
+        },
+        "248": {
+          "name": "Beto",
+          "points": 1
+        },
+        "445": {
+          "name": "Thiaw",
+          "points": 3
+        },
+        "454": {
+          "name": "Elanga",
+          "points": 0
+        },
+        "467": {
+          "name": "Sels",
+          "points": 14
+        },
+        "490": {
+          "name": "Wood",
+          "points": 0
+        },
+        "553": {
+          "name": "Isidor",
+          "points": 3
+        }
+      },
+      "totalGoals": 12,
+      "totalBenchGoals": 2,
+      "totalAssists": 8,
+      "totalBenchAssists": 0,
+      "totalPoints": 249,
+      "totalBenchPoints": 46,
+      "calculatedAt": "2026-10-10T16:00:09.720Z"
+    },
+    {
+      "name": "Stu",
+      "entryName": "CHANGE NAME",
+      "entryId": 122473,
+      "playerGoals": {
+        "236": {
+          "name": "Dewsbury-Hall",
+          "goals": 1
+        },
+        "335": {
+          "name": "Stach",
+          "goals": 1
+        },
+        "346": {
+          "name": "Calvert-Lewin",
+          "goals": 2
+        },
+        "368": {
+          "name": "Szoboszlai",
+          "goals": 1
+        },
+        "426": {
+          "name": "B.Fernandes",
+          "goals": 3
+        }
+      },
+      "benchGoals": {},
+      "playerAssists": {
+        "346": {
+          "name": "Calvert-Lewin",
+          "assists": 1
+        },
+        "426": {
+          "name": "B.Fernandes",
+          "assists": 1
+        },
+        "463": {
+          "name": "Woltemade",
+          "assists": 1
+        }
+      },
+      "benchAssists": {},
+      "playerPoints": {
+        "4": {
+          "name": "Gabriel",
+          "points": 27
+        },
+        "136": {
+          "name": "Welbeck",
+          "points": 5
+        },
+        "198": {
+          "name": "Henderson",
+          "points": 5
+        },
+        "202": {
+          "name": "Richards",
+          "points": 3
+        },
+        "236": {
+          "name": "Dewsbury-Hall",
+          "points": 20
+        },
+        "250": {
+          "name": "Leno",
+          "points": 14
+        },
+        "335": {
+          "name": "Stach",
+          "points": 29
+        },
+        "346": {
+          "name": "Calvert-Lewin",
+          "points": 24
+        },
+        "356": {
+          "name": "Virgil",
+          "points": 25
+        },
+        "368": {
+          "name": "Szoboszlai",
+          "points": 20
+        },
+        "426": {
+          "name": "B.Fernandes",
+          "points": 31
+        },
+        "463": {
+          "name": "Woltemade",
+          "points": 4
+        },
+        "481": {
+          "name": "Anderson",
+          "points": 15
+        },
+        "533": {
+          "name": "Mukiele",
+          "points": 16
+        }
+      },
+      "benchPoints": {
+        "136": {
+          "name": "Welbeck",
+          "points": 0
+        },
+        "198": {
+          "name": "Henderson",
+          "points": 0
+        },
+        "202": {
+          "name": "Richards",
+          "points": 11
+        },
+        "231": {
+          "name": "Keane",
+          "points": 0
+        },
+        "250": {
+          "name": "Leno",
+          "points": 6
+        },
+        "463": {
+          "name": "Woltemade",
+          "points": 0
+        },
+        "533": {
+          "name": "Mukiele",
+          "points": 0
+        }
+      },
+      "totalGoals": 8,
+      "totalBenchGoals": 0,
+      "totalAssists": 3,
+      "totalBenchAssists": 0,
+      "totalPoints": 238,
+      "totalBenchPoints": 17,
+      "calculatedAt": "2026-10-10T16:00:11.434Z"
+    },
+    {
+      "name": "Nick",
+      "entryName": "Go Birds",
+      "entryId": 122474,
+      "playerGoals": {
+        "12": {
+          "name": "Saka",
+          "goals": 3
+        },
+        "26": {
+          "name": "Havertz",
+          "goals": 2
+        },
+        "166": {
+          "name": "N.Jackson",
+          "goals": 1
+        },
+        "268": {
+          "name": "King",
+          "goals": 1
+        },
+        "449": {
+          "name": "Hall",
+          "goals": 1
+        },
+        "453": {
+          "name": "Barnes",
+          "goals": 1
+        }
+      },
+      "benchGoals": {
+        "166": {
+          "name": "N.Jackson",
+          "goals": 1
+        },
+        "552": {
+          "name": "Brobbey",
+          "goals": 3
+        }
+      },
+      "playerAssists": {
+        "10": {
+          "name": "White",
+          "assists": 2
+        },
+        "200": {
+          "name": "Lacroix",
+          "assists": 1
+        },
+        "449": {
+          "name": "Hall",
+          "assists": 1
+        },
+        "453": {
+          "name": "Barnes",
+          "assists": 3
+        }
+      },
+      "benchAssists": {},
+      "playerPoints": {
+        "10": {
+          "name": "White",
+          "points": 26
+        },
+        "12": {
+          "name": "Saka",
+          "points": 34
+        },
+        "26": {
+          "name": "Havertz",
+          "points": 21
+        },
+        "67": {
+          "name": "Rayan",
+          "points": 12
+        },
+        "166": {
+          "name": "N.Jackson",
+          "points": 10
+        },
+        "200": {
+          "name": "Lacroix",
+          "points": 15
+        },
+        "268": {
+          "name": "King",
+          "points": 19
+        },
+        "350": {
+          "name": "A.Becker",
+          "points": 27
+        },
+        "358": {
+          "name": "Kerkez",
+          "points": 1
+        },
+        "389": {
+          "name": "Matheus N.",
+          "points": 1
+        },
+        "400": {
+          "name": "Doku",
+          "points": 1
+        },
+        "449": {
+          "name": "Hall",
+          "points": 17
+        },
+        "453": {
+          "name": "Barnes",
+          "points": 28
+        },
+        "552": {
+          "name": "Brobbey",
+          "points": 6
+        },
+        "580": {
+          "name": "Araujo",
+          "points": 13
+        }
+      },
+      "benchPoints": {
+        "6": {
+          "name": "Saliba",
+          "points": 0
+        },
+        "10": {
+          "name": "White",
+          "points": 0
+        },
+        "166": {
+          "name": "N.Jackson",
+          "points": 9
+        },
+        "385": {
+          "name": "Trafford",
+          "points": 30
+        },
+        "389": {
+          "name": "Matheus N.",
+          "points": 0
+        },
+        "400": {
+          "name": "Doku",
+          "points": 0
+        },
+        "512": {
+          "name": "Kudus",
+          "points": 0
+        },
+        "552": {
+          "name": "Brobbey",
+          "points": 18
+        }
+      },
+      "totalGoals": 9,
+      "totalBenchGoals": 4,
+      "totalAssists": 7,
+      "totalBenchAssists": 0,
+      "totalPoints": 231,
+      "totalBenchPoints": 57,
+      "calculatedAt": "2026-10-10T16:00:13.246Z"
+    },
+    {
+      "name": "Tony",
+      "entryName": "Klopp Tease FC",
+      "entryId": 122475,
+      "playerGoals": {
+        "79": {
+          "name": "Evanilson",
+          "goals": 1
+        },
+        "155": {
+          "name": "Enzo",
+          "goals": 1
+        },
+        "379": {
+          "name": "Isak",
+          "goals": 4
+        },
+        "397": {
+          "name": "Semenyo",
+          "goals": 2
+        }
+      },
+      "benchGoals": {
+        "588": {
+          "name": "Khalaili",
+          "goals": 1
+        }
+      },
+      "playerAssists": {
+        "79": {
+          "name": "Evanilson",
+          "assists": 3
+        },
+        "156": {
+          "name": "Neto",
+          "assists": 1
+        },
+        "366": {
+          "name": "Wirtz",
+          "assists": 2
+        },
+        "397": {
+          "name": "Semenyo",
+          "assists": 3
+        },
+        "469": {
+          "name": "N.Williams",
+          "assists": 1
+        }
+      },
+      "benchAssists": {},
+      "playerPoints": {
+        "61": {
+          "name": "Truffert",
+          "points": 7
+        },
+        "70": {
+          "name": "Kluivert",
+          "points": 7
+        },
+        "79": {
+          "name": "Evanilson",
+          "points": 25
+        },
+        "115": {
+          "name": "De Cuyper",
+          "points": 0
+        },
+        "155": {
+          "name": "Enzo",
+          "points": 12
+        },
+        "156": {
+          "name": "Neto",
+          "points": 9
+        },
+        "230": {
+          "name": "Branthwaite",
+          "points": 0
+        },
+        "233": {
+          "name": "Mykolenko",
+          "points": 6
+        },
+        "330": {
+          "name": "Bogle",
+          "points": 5
+        },
+        "362": {
+          "name": "Jacquet",
+          "points": 0
+        },
+        "366": {
+          "name": "Wirtz",
+          "points": 18
+        },
+        "379": {
+          "name": "Isak",
+          "points": 33
+        },
+        "397": {
+          "name": "Semenyo",
+          "points": 33
+        },
+        "415": {
+          "name": "Dorgu",
+          "points": 0
+        },
+        "439": {
+          "name": "Šeško",
+          "points": 2
+        },
+        "469": {
+          "name": "N.Williams",
+          "points": 19
+        },
+        "498": {
+          "name": "Senesi",
+          "points": 3
+        },
+        "529": {
+          "name": "Roefs",
+          "points": 7
+        },
+        "556": {
+          "name": "M.Sangaré",
+          "points": 9
+        },
+        "571": {
+          "name": "Tzolakis",
+          "points": 14
+        },
+        "588": {
+          "name": "Khalaili",
+          "points": 9
+        },
+        "595": {
+          "name": "Dedić",
+          "points": 0
+        }
+      },
+      "benchPoints": {
+        "61": {
+          "name": "Truffert",
+          "points": 1
+        },
+        "155": {
+          "name": "Enzo",
+          "points": 1
+        },
+        "233": {
+          "name": "Mykolenko",
+          "points": 4
+        },
+        "330": {
+          "name": "Bogle",
+          "points": 1
+        },
+        "362": {
+          "name": "Jacquet",
+          "points": 24
+        },
+        "379": {
+          "name": "Isak",
+          "points": 0
+        },
+        "412": {
+          "name": "Lammens",
+          "points": 3
+        },
+        "439": {
+          "name": "Šeško",
+          "points": 1
+        },
+        "529": {
+          "name": "Roefs",
+          "points": 5
+        },
+        "569": {
+          "name": "Gonzalo",
+          "points": 2
+        },
+        "588": {
+          "name": "Khalaili",
+          "points": 7
+        },
+        "595": {
+          "name": "Dedić",
+          "points": 1
+        }
+      },
+      "totalGoals": 8,
+      "totalBenchGoals": 1,
+      "totalAssists": 10,
+      "totalBenchAssists": 0,
+      "totalPoints": 218,
+      "totalBenchPoints": 50,
+      "calculatedAt": "2026-10-10T16:00:14.995Z"
+    },
+    {
+      "name": "Dan",
+      "entryName": "Resist The Commish",
+      "entryId": 122476,
+      "playerGoals": {
+        "40": {
+          "name": "Rogers",
+          "goals": 4
+        },
+        "68": {
+          "name": "Tavernier",
+          "goals": 3
+        },
+        "106": {
+          "name": "Thiago",
+          "goals": 1
+        },
+        "124": {
+          "name": "Groß",
+          "goals": 2
+        },
+        "229": {
+          "name": "Tarkowski",
+          "goals": 1
+        },
+        "452": {
+          "name": "Bruno G.",
+          "goals": 2
+        }
+      },
+      "benchGoals": {
+        "115": {
+          "name": "De Cuyper",
+          "goals": 1
+        }
+      },
+      "playerAssists": {
+        "40": {
+          "name": "Rogers",
+          "assists": 1
+        },
+        "106": {
+          "name": "Thiago",
+          "assists": 1
+        },
+        "124": {
+          "name": "Groß",
+          "assists": 4
+        },
+        "229": {
+          "name": "Tarkowski",
+          "assists": 1
+        },
+        "465": {
+          "name": "Osula",
+          "assists": 1
+        }
+      },
+      "benchAssists": {},
+      "playerPoints": {
+        "40": {
+          "name": "Rogers",
+          "points": 38
+        },
+        "57": {
+          "name": "Petrović",
+          "points": 1
+        },
+        "68": {
+          "name": "Tavernier",
+          "points": 32
+        },
+        "88": {
+          "name": "Kayode",
+          "points": 10
+        },
+        "106": {
+          "name": "Thiago",
+          "points": 14
+        },
+        "112": {
+          "name": "Van Hecke",
+          "points": 1
+        },
+        "113": {
+          "name": "F.Kadıoğlu",
+          "points": 8
+        },
+        "115": {
+          "name": "De Cuyper",
+          "points": 6
+        },
+        "124": {
+          "name": "Groß",
+          "points": 38
+        },
+        "226": {
+          "name": "Pickford",
+          "points": 24
+        },
+        "229": {
+          "name": "Tarkowski",
+          "points": 40
+        },
+        "239": {
+          "name": "Garner",
+          "points": 2
+        },
+        "253": {
+          "name": "Andersen",
+          "points": 2
+        },
+        "260": {
+          "name": "Wilson",
+          "points": 4
+        },
+        "279": {
+          "name": "Ajayi",
+          "points": 5
+        },
+        "377": {
+          "name": "Munoz",
+          "points": 5
+        },
+        "401": {
+          "name": "Marmoush",
+          "points": 6
+        },
+        "452": {
+          "name": "Bruno G.",
+          "points": 18
+        },
+        "465": {
+          "name": "Osula",
+          "points": 4
+        },
+        "580": {
+          "name": "Araujo",
+          "points": 1
+        }
+      },
+      "benchPoints": {
+        "57": {
+          "name": "Petrović",
+          "points": 8
+        },
+        "113": {
+          "name": "F.Kadıoğlu",
+          "points": 0
+        },
+        "115": {
+          "name": "De Cuyper",
+          "points": 15
+        },
+        "226": {
+          "name": "Pickford",
+          "points": 1
+        },
+        "229": {
+          "name": "Tarkowski",
+          "points": 3
+        },
+        "237": {
+          "name": "Ndiaye",
+          "points": 0
+        },
+        "253": {
+          "name": "Andersen",
+          "points": 1
+        },
+        "279": {
+          "name": "Ajayi",
+          "points": 2
+        },
+        "401": {
+          "name": "Marmoush",
+          "points": 2
+        },
+        "452": {
+          "name": "Bruno G.",
+          "points": 0
+        },
+        "465": {
+          "name": "Osula",
+          "points": 0
+        }
+      },
+      "totalGoals": 13,
+      "totalBenchGoals": 1,
+      "totalAssists": 8,
+      "totalBenchAssists": 0,
+      "totalPoints": 259,
+      "totalBenchPoints": 32,
+      "calculatedAt": "2026-10-10T16:00:16.784Z"
+    },
+    {
+      "name": "Erick",
+      "entryName": "Please Savio me",
+      "entryId": 122477,
+      "playerGoals": {
+        "316": {
+          "name": "Emersonn",
+          "goals": 1
+        },
+        "491": {
+          "name": "Igor Jesus",
+          "goals": 1
+        }
+      },
+      "benchGoals": {},
+      "playerAssists": {
+        "13": {
+          "name": "Rice",
+          "assists": 3
+        },
+        "286": {
+          "name": "Belloumi",
+          "assists": 1
+        },
+        "316": {
+          "name": "Emersonn",
+          "assists": 1
+        }
+      },
+      "benchAssists": {},
+      "playerPoints": {
+        "13": {
+          "name": "Rice",
+          "points": 27
+        },
+        "25": {
+          "name": "Gyökeres",
+          "points": 1
+        },
+        "55": {
+          "name": "Watkins",
+          "points": 0
+        },
+        "82": {
+          "name": "Kelleher",
+          "points": 22
+        },
+        "157": {
+          "name": "Estêvão",
+          "points": 2
+        },
+        "201": {
+          "name": "Muñoz",
+          "points": 5
+        },
+        "233": {
+          "name": "Mykolenko",
+          "points": 5
+        },
+        "277": {
+          "name": "Egan",
+          "points": 1
+        },
+        "286": {
+          "name": "Belloumi",
+          "points": 4
+        },
+        "316": {
+          "name": "Emersonn",
+          "points": 18
+        },
+        "357": {
+          "name": "Frimpong",
+          "points": 2
+        },
+        "403": {
+          "name": "Sávio",
+          "points": 8
+        },
+        "429": {
+          "name": "Rashford",
+          "points": 10
+        },
+        "471": {
+          "name": "Milenković",
+          "points": 12
+        },
+        "491": {
+          "name": "Igor Jesus",
+          "points": 12
+        },
+        "499": {
+          "name": "Pedro Porro",
+          "points": 9
+        },
+        "525": {
+          "name": "Fernandes",
+          "points": 6
+        }
+      },
+      "benchPoints": {
+        "25": {
+          "name": "Gyökeres",
+          "points": 0
+        },
+        "152": {
+          "name": "Palestra",
+          "points": 0
+        },
+        "157": {
+          "name": "Estêvão",
+          "points": 1
+        },
+        "201": {
+          "name": "Muñoz",
+          "points": 0
+        },
+        "222": {
+          "name": "Strand Larsen",
+          "points": 2
+        },
+        "357": {
+          "name": "Frimpong",
+          "points": 0
+        },
+        "403": {
+          "name": "Sávio",
+          "points": 0
+        },
+        "442": {
+          "name": "Pope",
+          "points": 0
+        },
+        "499": {
+          "name": "Pedro Porro",
+          "points": 0
+        },
+        "525": {
+          "name": "Fernandes",
+          "points": 1
+        }
+      },
+      "totalGoals": 2,
+      "totalBenchGoals": 0,
+      "totalAssists": 5,
+      "totalBenchAssists": 0,
+      "totalPoints": 144,
+      "totalBenchPoints": 4,
+      "calculatedAt": "2026-10-10T16:00:18.496Z"
+    },
+    {
+      "name": "Matthew",
+      "entryName": "Haalandaise Sauce",
+      "entryId": 122478,
+      "playerGoals": {
+        "367": {
+          "name": "Gakpo",
+          "goals": 1
+        },
+        "411": {
+          "name": "Haaland",
+          "goals": 5
+        },
+        "427": {
+          "name": "Mbeumo",
+          "goals": 2
+        },
+        "428": {
+          "name": "Cunha",
+          "goals": 1
+        }
+      },
+      "benchGoals": {},
+      "playerAssists": {
+        "367": {
+          "name": "Gakpo",
+          "assists": 3
+        },
+        "398": {
+          "name": "Foden",
+          "assists": 2
+        },
+        "427": {
+          "name": "Mbeumo",
+          "assists": 1
+        },
+        "428": {
+          "name": "Cunha",
+          "assists": 2
+        },
+        "472": {
+          "name": "Murillo",
+          "assists": 1
+        }
+      },
+      "benchAssists": {},
+      "playerPoints": {
+        "5": {
+          "name": "J.Timber",
+          "points": 1
+        },
+        "28": {
+          "name": "Martinez",
+          "points": 12
+        },
+        "78": {
+          "name": "Kroupi.Jr",
+          "points": 0
+        },
+        "84": {
+          "name": "Collins",
+          "points": 10
+        },
+        "138": {
+          "name": "Kostoulas",
+          "points": 1
+        },
+        "140": {
+          "name": "Sánchez",
+          "points": 2
+        },
+        "367": {
+          "name": "Gakpo",
+          "points": 32
+        },
+        "390": {
+          "name": "Rúben",
+          "points": 17
+        },
+        "393": {
+          "name": "Khusanov",
+          "points": 9
+        },
+        "398": {
+          "name": "Foden",
+          "points": 9
+        },
+        "411": {
+          "name": "Haaland",
+          "points": 39
+        },
+        "427": {
+          "name": "Mbeumo",
+          "points": 25
+        },
+        "428": {
+          "name": "Cunha",
+          "points": 26
+        },
+        "472": {
+          "name": "Murillo",
+          "points": 23
+        },
+        "527": {
+          "name": "Richarlison",
+          "points": 2
+        }
+      },
+      "benchPoints": {
+        "5": {
+          "name": "J.Timber",
+          "points": 1
+        },
+        "28": {
+          "name": "Martinez",
+          "points": 0
+        },
+        "78": {
+          "name": "Kroupi.Jr",
+          "points": 0
+        },
+        "84": {
+          "name": "Collins",
+          "points": 0
+        },
+        "140": {
+          "name": "Sánchez",
+          "points": 0
+        },
+        "380": {
+          "name": "Ekitiké",
+          "points": 0
+        },
+        "393": {
+          "name": "Khusanov",
+          "points": 0
+        }
+      },
+      "totalGoals": 9,
+      "totalBenchGoals": 0,
+      "totalAssists": 9,
+      "totalBenchAssists": 0,
+      "totalPoints": 208,
+      "totalBenchPoints": 1,
+      "calculatedAt": "2026-10-10T16:00:20.425Z"
+    }
+  ]
+}
